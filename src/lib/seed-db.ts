@@ -1,6 +1,8 @@
+
 'use client';
 import { collection, writeBatch, getDocs, Firestore, Timestamp, doc } from 'firebase/firestore';
 import { orders as mockOrders } from '@/lib/data';
+import { errorEmitter, FirestorePermissionError } from '@/firebase';
 
 // NOTE: This is a one-time-use utility to seed the database.
 // It is not part of the main application logic.
@@ -8,8 +10,16 @@ export async function seedDatabase(db: Firestore) {
   const ordersCollection = collection(db, 'orders');
 
   // Check if there's already data
-  const snapshot = await getDocs(ordersCollection);
-  if (!snapshot.empty) {
+  const snapshot = await getDocs(ordersCollection).catch(error => {
+    const contextualError = new FirestorePermissionError({
+        path: ordersCollection.path,
+        operation: 'list',
+    });
+    errorEmitter.emit('permission-error', contextualError);
+    return null;
+  });
+
+  if (!snapshot || !snapshot.empty) {
     // console.log('Database already seeded. Skipping.');
     return;
   }
@@ -17,9 +27,9 @@ export async function seedDatabase(db: Firestore) {
   console.log('Seeding database...');
   const batch = writeBatch(db);
 
-  mockOrders.forEach((order) => {
-    const docRef = doc(db, 'orders', order.id);
-    const orderData = {
+  const ordersData = mockOrders.map(order => ({
+    id: order.id,
+    data: {
       shopId: order.shopName.toLowerCase().replace(/\s/g, '-'),
       shopName: order.shopName,
       orderDate: Timestamp.fromDate(new Date(order.date)),
@@ -27,8 +37,11 @@ export async function seedDatabase(db: Firestore) {
       totalAmount: order.total,
       itemCount: order.itemCount,
     }
-    // In a real app, you'd use addDoc, but we need a specific ID for the mock data
-    batch.set(docRef, orderData);
+  }));
+
+  ordersData.forEach(order => {
+    const docRef = doc(db, 'orders', order.id);
+    batch.set(docRef, order.data);
   });
 
   try {
@@ -36,5 +49,11 @@ export async function seedDatabase(db: Firestore) {
     console.log('Database seeded successfully!');
   } catch (error) {
     console.error('Error seeding database: ', error);
+    const contextualError = new FirestorePermissionError({
+        path: ordersCollection.path,
+        operation: 'write',
+        requestResourceData: ordersData.map(o => o.data),
+    });
+    errorEmitter.emit('permission-error', contextualError);
   }
 }
