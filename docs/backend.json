@@ -1,0 +1,293 @@
+{
+  "entities": {
+    "Shop": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Shop",
+      "type": "object",
+      "description": "Represents a shop or customer location that places orders.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Shop entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the shop."
+        },
+        "address": {
+          "type": "string",
+          "description": "Address of the shop."
+        },
+        "contact": {
+          "type": "string",
+          "description": "Contact information for the shop."
+        },
+        "location": {
+          "type": "string",
+          "description": "GPS coordinates of the shop."
+        },
+        "outstandingBalance": {
+          "type": "number",
+          "description": "The outstanding balance of the shop."
+        },
+        "salesVolumeClass": {
+          "type": "string",
+          "description": "Classification of the shop by sales volume (A/B/C type)."
+        },
+        "creditLimit": {
+          "type": "number",
+          "description": "The credit limit assigned to the shop."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "address"
+      ]
+    },
+    "Product": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Product",
+      "type": "object",
+      "description": "Represents a Pepsi product available for order.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Product entity."
+        },
+        "sku": {
+          "type": "string",
+          "description": "Stock keeping unit of the product."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the product."
+        },
+        "price": {
+          "type": "number",
+          "description": "Price of the product."
+        },
+        "size": {
+          "type": "string",
+          "description": "Size of the product (e.g., 500ml, 1L)."
+        },
+        "offers": {
+          "type": "string",
+          "description": "Any offers or discounts available for the product."
+        }
+      },
+      "required": [
+        "id",
+        "sku",
+        "name",
+        "price"
+      ]
+    },
+    "Order": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Order",
+      "type": "object",
+      "description": "Represents an order placed by a shop.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Order entity."
+        },
+        "shopId": {
+          "type": "string",
+          "description": "Reference to Shop. (Relationship: Shop 1:N Order)"
+        },
+        "orderDate": {
+          "type": "string",
+          "description": "Date the order was placed.",
+          "format": "date-time"
+        },
+        "status": {
+          "type": "string",
+          "description": "Status of the order (Pending, Confirmed, Dispatched, Delivered)."
+        },
+        "totalAmount": {
+          "type": "number",
+          "description": "Total amount of the order."
+        },
+        "salesmanId": {
+          "type": "string",
+          "description": "Reference to Salesman. (Relationship: Salesman 1:N Order)"
+        }
+      },
+      "required": [
+        "id",
+        "shopId",
+        "orderDate",
+        "status",
+        "totalAmount"
+      ]
+    },
+    "OrderItem": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "OrderItem",
+      "type": "object",
+      "description": "Represents a line item within an order, specifying the product and quantity.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the OrderItem entity."
+        },
+        "orderId": {
+          "type": "string",
+          "description": "Reference to Order. (Relationship: Order 1:N OrderItem)"
+        },
+        "productId": {
+          "type": "string",
+          "description": "Reference to Product. (Relationship: Product 1:N OrderItem)"
+        },
+        "quantity": {
+          "type": "number",
+          "description": "Quantity of the product ordered."
+        },
+        "unitPrice": {
+          "type": "number",
+          "description": "Price of one unit of the product at the time of order."
+        }
+      },
+      "required": [
+        "id",
+        "orderId",
+        "productId",
+        "quantity",
+        "unitPrice"
+      ]
+    },
+    "Salesman": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Salesman",
+      "type": "object",
+      "description": "Represents a salesman or delivery staff member.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Salesman entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the salesman."
+        },
+        "contact": {
+          "type": "string",
+          "description": "Contact information for the salesman."
+        },
+        "dailyTarget": {
+          "type": "number",
+          "description": "Daily sales target for the salesman."
+        }
+      },
+      "required": [
+        "id",
+        "name"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/shops/{shopId}",
+        "definition": {
+          "entityName": "Shop",
+          "schema": {
+            "$ref": "#/backend/entities/Shop"
+          },
+          "description": "Represents a shop. Includes denormalized 'shopId' for authorization independence.",
+          "params": [
+            {
+              "name": "shopId",
+              "description": "Unique identifier for the shop."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/shops/{shopId}/orders/{orderId}",
+        "definition": {
+          "entityName": "Order",
+          "schema": {
+            "$ref": "#/backend/entities/Order"
+          },
+          "description": "Represents an order placed by a shop. Includes denormalized 'shopId' and 'salesmanId' for authorization independence.",
+          "params": [
+            {
+              "name": "shopId",
+              "description": "Unique identifier for the shop."
+            },
+            {
+              "name": "orderId",
+              "description": "Unique identifier for the order."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/shops/{shopId}/orders/{orderId}/orderItems/{orderItemId}",
+        "definition": {
+          "entityName": "OrderItem",
+          "schema": {
+            "$ref": "#/backend/entities/OrderItem"
+          },
+          "description": "Represents a line item within an order. Includes denormalized 'orderId' for authorization independence.",
+          "params": [
+            {
+              "name": "shopId",
+              "description": "Unique identifier for the shop."
+            },
+            {
+              "name": "orderId",
+              "description": "Unique identifier for the order."
+            },
+            {
+              "name": "orderItemId",
+              "description": "Unique identifier for the order item."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/products/{productId}",
+        "definition": {
+          "entityName": "Product",
+          "schema": {
+            "$ref": "#/backend/entities/Product"
+          },
+          "description": "Represents a Pepsi product.",
+          "params": [
+            {
+              "name": "productId",
+              "description": "Unique identifier for the product."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/salesmen/{salesmanId}",
+        "definition": {
+          "entityName": "Salesman",
+          "schema": {
+            "$ref": "#/backend/entities/Salesman"
+          },
+          "description": "Represents a salesman or delivery staff member.",
+          "params": [
+            {
+              "name": "salesmanId",
+              "description": "Unique identifier for the salesman."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "This Firestore structure prioritizes authorization independence and efficient data retrieval for the PepsiConnect app. It leverages path-based ownership for user-specific data and denormalization to avoid complex security rules that rely on `get()` calls. The structure enables simple, robust, and easily debuggable security rules.\n\n**Authorization Independence:**\n\n*   The structure uses path-based ownership for the `orders` subcollection under `/shops/{shopId}`. This ensures that access control for orders is determined solely by the shop to which they belong. To create an order you have to know the `shopId`.\n*   Salesman information (`salesmanId`) is stored directly in the `orders` collection. This design avoids the need to fetch Salesman documents to determine access rights.\n\n**Structural Segregation:**\n\n*   The structure separates product catalogs into its own collection: `/products`. This enables efficient querying and management of products without interfering with shop or order data.\n\n**Access Modeling:**\n\n*   **Path-Based Ownership:** The `/shops/{shopId}/orders/{orderId}` path establishes clear ownership. The shop ID is part of the path, making it easy to secure orders based on the shop.\n\n**Data Clarity and Predictability:**\n\n*   Consistent naming conventions are used (e.g., `shopId`, `orderId`).\n*   Explicit data modeling is used for order status with a `status` field."
+  }
+}
