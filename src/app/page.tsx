@@ -1,3 +1,5 @@
+'use client';
+
 import { StatsCards } from '@/components/dashboard/stats-cards';
 import { SalesChart } from '@/components/dashboard/sales-chart';
 import { RecentOrders } from '@/components/dashboard/recent-orders';
