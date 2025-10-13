@@ -1,6 +1,5 @@
-
 'use client';
-import { collection, writeBatch, getDocs, Firestore, Timestamp } from 'firebase/firestore';
+import { collection, writeBatch, getDocs, Firestore, Timestamp, doc } from 'firebase/firestore';
 import { orders as mockOrders } from '@/lib/data';
 
 // NOTE: This is a one-time-use utility to seed the database.
@@ -11,7 +10,7 @@ export async function seedDatabase(db: Firestore) {
   // Check if there's already data
   const snapshot = await getDocs(ordersCollection);
   if (!snapshot.empty) {
-    console.log('Database already seeded. Skipping.');
+    // console.log('Database already seeded. Skipping.');
     return;
   }
 
@@ -19,7 +18,7 @@ export async function seedDatabase(db: Firestore) {
   const batch = writeBatch(db);
 
   mockOrders.forEach((order) => {
-    const docRef = collection(db, 'orders');
+    const docRef = doc(db, 'orders', order.id);
     const orderData = {
       shopId: order.shopName.toLowerCase().replace(/\s/g, '-'),
       shopName: order.shopName,
@@ -29,7 +28,7 @@ export async function seedDatabase(db: Firestore) {
       itemCount: order.itemCount,
     }
     // In a real app, you'd use addDoc, but we need a specific ID for the mock data
-    batch.set(docRef.doc(order.id), orderData);
+    batch.set(docRef, orderData);
   });
 
   try {
