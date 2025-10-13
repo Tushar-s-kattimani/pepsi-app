@@ -1,68 +1,77 @@
 /**
- * @fileoverview Firestore Security Rules for the application.
+ * @file Firestore Security Rules
+ * @description This ruleset defines access control for the Firestore database.
  *
  * Core Philosophy:
- * This ruleset prioritizes security by enforcing ownership and restricting unauthorized data access.
- * It leverages denormalization and helper functions to create efficient and maintainable rules.
+ * This ruleset prioritizes strong authorization.
+ * - Users can only read and write their own user profiles.
+ * - Products are publicly readable but only writeable under specific conditions (not yet defined).
+ * - Orders are currently not secured and need to be secured by some role or shop id.
  *
  * Data Structure:
- * - `/users/{userId}`: Stores user profiles. Access is restricted to the owner.
- * - `/products/{productId}`: Stores product information. Read access is public. Write access is not defined in the schema.
- * - `/orders/{orderId}`: Stores order information. Write access is not defined in the schema.
+ * - /users/{userId}: Stores user profile information.
+ * - /products/{productId}: Stores product information.
+ * - /orders/{orderId}: Stores order information.
  *
  * Key Security Decisions:
- * - User listing is disabled to prevent unauthorized information harvesting.
- * - Public read access is enabled for the `/products` collection, assuming product information is intended to be public.
- * - The default security posture for ambiguous write relationships (e.g., to `/orders`) is to deny access and flag a TODO, pending further clarification.
+ * - User listing is disallowed.
+ * - Data shape is not strictly enforced in this prototyping phase.
  *
- * Denormalization for Authorization:
- * N/A. The current schema does not require denormalization for authorization.
- *
- * Structural Segregation:
- * N/A. No explicit segregation of private and public data is specified in the current schema.
+ * Authorization Denormalization Strategy:
+ *  - The orders collection should have shop id on the orders collection.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Protects user profiles, ensuring only the owner can read and write their data.
+     * @description Controls access to user profile information.
      * @path /users/{userId}
-     * @allow (read, write) if the user is the owner of the profile.
-     * @deny (read, write) if the user is not the owner of the profile.
-     * @principle Enforces document ownership for all operations.
+     * @allow (create) Authenticated user can create their own profile if the userId matches their auth UID.
+     * @allow (get, update, delete) Authenticated user can only access their own profile.
+     * @deny (create) If the userId does not match the authenticated user's UID.
+     * @deny (list) Listing of users is not allowed.
+     * @principle Enforces strict user-ownership for profile data.
      */
     match /users/{userId} {
+      // Helper function to check if the requested user ID matches the authenticated user's ID.
       function isOwner(userId) {
-        return request.auth != null && request.auth.uid == userId;
+        return request.auth.uid == userId;
+      }
+
+      // Helper function to determine if the user is signed in
+      function isSignedIn() {
+        return request.auth != null;
       }
       allow get: if isOwner(userId);
-      allow list: if false; // User listing is not allowed.
-      allow create: if isOwner(userId);
-      allow update: if isOwner(userId);
-      allow delete: if isOwner(userId);
+      allow list: if false;
+      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.id == userId;
+      allow update: if isSignedIn() && isOwner(userId) && resource.data.id == userId;
+      allow delete: if isSignedIn() && isOwner(userId) && resource.data.id == userId;
     }
 
     /**
-     * @description Allows public read access to product information, but restricts write access.
+     * @description Controls access to product information.
      * @path /products/{productId}
-     * @allow (get, list) to anyone.
-     * @deny (create, update, delete) to everyone, until write permissions are defined.
-     * @principle Allows public reads, but restricts writes.
+     * @allow (get, list) Anyone can read product information.
+     * @deny (create, update, delete) Only authorized users can create, update, or delete products.
+     * @principle Public read, protected write for product catalog.
      */
     match /products/{productId} {
       allow get, list: if true;
-      allow create, update, delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+      allow create, update, delete: if false; // TODO: Implement product creation/modification authorization.
     }
 
-    /**
-     * @description Restricts access to orders. No access is granted until rules are defined.
-     * @path /orders/{orderId}
-     * @deny (get, list, create, update, delete) to everyone, until permissions are defined.
-     * @principle Restricts all access to orders until rules are defined.
-     */
+     /**
+      * @description Controls access to order information.
+      * @path /orders/{orderId}
+      * @allow (get, list) Anyone can read order information.
+      * @deny (create, update, delete) Only authorized users can create, update, or delete orders.
+      * @principle Open Access - This is not secured.
+      */
     match /orders/{orderId} {
-      allow get, list, create, update, delete: if false; // TODO: Implement order access control.
+      allow get, list: if true;
+      allow create, update, delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
     }
   }
 }
