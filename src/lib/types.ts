@@ -1,3 +1,5 @@
+import { Timestamp } from "firebase/firestore";
+
 export type Product = {
   id: string;
   name: string;
@@ -11,10 +13,11 @@ export type Product = {
 
 export type Order = {
   id: string;
-  shopName: string;
-  date: string;
-  total: number;
+  shopId: string;
+  shopName?: string; // Denormalized for display
+  orderDate: Timestamp;
   status: 'Pending' | 'Confirmed' | 'Dispatched' | 'Delivered' | 'Cancelled';
+  totalAmount: number;
   itemCount: number;
 };
 

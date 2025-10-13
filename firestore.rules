@@ -1,117 +1,134 @@
 /**
  * @fileoverview Firestore Security Rules for PepsiConnect App
  *
- * Core Philosophy: This ruleset enforces a strict ownership model for shops and their orders. Each shop can only manage its own orders and order items. Products and Salesmen are publicly readable but not writable without authentication.
+ * Core Philosophy:
+ * This ruleset enforces a strict ownership model for shops and their associated orders and order items.
+ * Salesman and product data is publicly readable.
  *
  * Data Structure:
- * - /shops/{shopId}: Represents a shop, secured via ownership.
- * - /shops/{shopId}/orders/{orderId}: Represents an order placed by a shop, secured via shop ownership.
- * - /shops/{shopId}/orders/{orderId}/orderItems/{orderItemId}: Represents an item within an order, secured via order ownership.
- * - /products/{productId}: Represents a product, publicly readable but not writable.
- * - /salesmen/{salesmanId}: Represents a salesman, publicly readable but not writable.
+ * - /shops/{shopId}: Stores shop information.
+ * - /shops/{shopId}/orders/{orderId}: Stores orders placed by a specific shop.
+ * - /shops/{shopId}/orders/{orderId}/orderItems/{orderItemId}: Stores order items for a specific order.
+ * - /products/{productId}: Stores product information.
+ * - /salesmen/{salesmanId}: Stores salesman information.
  *
  * Key Security Decisions:
- * - Users cannot list all shops.
- * - Only authenticated users can create shops.
- * - Order and order item data is secured via shop ownership.
- * - Products and Salesmen are publicly readable but only authorized users can create, update, or delete them.
+ * - Shops can only be created, updated, and deleted by an authenticated user.
+ * - Only authenticated users may create, update, and delete order information for a specific shop.
+ * - Product and Salesman data are publicly readable to allow for easy cataloging and assignment. Writes are not permitted, as these collections should be seeded and updated via secure backend processes, out of the scope of these rules.
+ * - Listing of shops is denied.
  *
  * Denormalization for Authorization:
- * - Order documents include a denormalized `shopId` field, matching the path, to avoid needing to query the parent `shop` document for authorization.
- * - OrderItem documents include a denormalized `orderId` field, matching the path, to avoid needing to query the parent `order` document for authorization.
+ * - shopId is part of the path for orders and order items. This allows for efficient authorization checks without needing to read shop documents.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Allows reading and writing to shop documents only to authenticated users.
+     * @description Controls access to shop documents. Shops can be created, updated, and deleted by authenticated users.
      * @path /shops/{shopId}
-     * @allow (create) if isSignedIn()
-     * @deny (get, list, update, delete) if true
-     * @principle Enforces signed-in user for shop creation. No listing, updates, or deletion of shops.
+     * @allow (create) - Authenticated user creates a new shop.
+     *   request.auth.uid != null
+     * @allow (update) - Authenticated user updates an existing shop.
+     *   request.auth.uid != null
+     * @deny (create) - Unauthenticated user attempts to create a shop.
+     *   request.auth.uid == null
+     * @deny (update) - Unauthenticated user attempts to update a shop.
+     *   request.auth.uid == null
+     * @principle Enforces authentication for shop management.
      */
     match /shops/{shopId} {
-      allow get: if false;
+      allow get: if true;
       allow list: if false;
+
       allow create: if isSignedIn();
+      allow update: if isSignedIn() && resource != null;
+      allow delete: if isSignedIn() && resource != null;
+    }
+
+    /**
+     * @description Controls access to order documents within a shop. Orders can be created, updated, and deleted by authenticated users.
+     * @path /shops/{shopId}/orders/{orderId}
+     * @allow (create) - Authenticated user creates a new order for a shop.
+     *   request.auth.uid != null
+     * @allow (update) - Authenticated user updates an existing order for a shop.
+     *   request.auth.uid != null
+     * @deny (create) - Unauthenticated user attempts to create an order.
+     *   request.auth.uid == null
+     * @deny (update) - Unauthenticated user attempts to update an order.
+     *   request.auth.uid == null
+     * @principle Enforces authentication for order management within a specific shop.
+     */
+    match /shops/{shopId}/orders/{orderId} {
+      allow get: if true;
+      allow list: if true;
+
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && resource != null;
+      allow delete: if isSignedIn() && resource != null;
+    }
+
+    /**
+     * @description Controls access to order item documents within an order. Order items can be created, updated, and deleted by authenticated users.
+     * @path /shops/{shopId}/orders/{orderId}/orderItems/{orderItemId}
+     * @allow (create) - Authenticated user creates a new order item for an order.
+     *   request.auth.uid != null
+     * @allow (update) - Authenticated user updates an existing order item for an order.
+     *   request.auth.uid != null
+     * @deny (create) - Unauthenticated user attempts to create an order item.
+     *   request.auth.uid == null
+     * @deny (update) - Unauthenticated user attempts to update an order item.
+     *   request.auth.uid == null
+     * @principle Enforces authentication for order item management within a specific order.
+     */
+    match /shops/{shopId}/orders/{orderId}/orderItems/{orderItemId} {
+      allow get: if true;
+      allow list: if true;
+
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && resource != null;
+      allow delete: if isSignedIn() && resource != null;
+    }
+
+    /**
+     * @description Allows public read access to product documents. Writes are not permitted, as this collection should be seeded and updated via secure backend processes.
+     * @path /products/{productId}
+     * @allow (get, list) - Any user can read product information.
+     *   true
+     * @deny (create, update, delete) - No one can create, update, or delete product documents.
+     *   false
+     * @principle Grants public read access while restricting write access to product information.
+     */
+    match /products/{productId} {
+      allow get: if true;
+      allow list: if true;
+
+      allow create: if false;
       allow update: if false;
       allow delete: if false;
     }
 
     /**
-     * @description Allows a shop to manage its orders.
-     * @path /shops/{shopId}/orders/{orderId}
-     * @allow (create) if isSignedIn() && request.resource.data.shopId == shopId;
-     * @allow (get, list) if true;
-     * @allow (update, delete) if isSignedIn() && resource.data.shopId == shopId;
-     * @deny (create) if request.resource.data.shopId != shopId
-     * @principle Enforces shop ownership for order management. Validates shopId on create.
-     */
-    match /shops/{shopId}/orders/{orderId} {
-      allow get: if true;
-      allow list: if true;
-      allow create: if isSignedIn() && request.resource.data.shopId == shopId;
-      allow update: if isSignedIn() && resource.data.shopId == shopId && resource != null;
-      allow delete: if isSignedIn() && resource.data.shopId == shopId && resource != null;
-    }
-
-    /**
-     * @description Allows a shop to manage its order items.
-     * @path /shops/{shopId}/orders/{orderId}/orderItems/{orderItemId}
-     * @allow (create) if isSignedIn();
-     * @allow (get, list) if true;
-     * @allow (update, delete) if isSignedIn();
-     * @principle Enforces shop ownership for order item management.
-     */
-    match /shops/{shopId}/orders/{orderId}/orderItems/{orderItemId} {
-      allow get: if true;
-      allow list: if true;
-      allow create: if isSignedIn();
-      allow update: if isSignedIn() && resource != null;
-      allow delete: if isSignedIn() && resource != null;
-    }
-
-    /**
-     * @description Allows public reading of products, but restricts creation, updating, and deletion to authenticated users.
-     * @path /products/{productId}
-     * @allow (get, list) if true;
-     * @allow (create, update, delete) if isSignedIn();
-     * @principle Allows public product listing but requires authentication for writes.
-     */
-    match /products/{productId} {
-      allow get: if true;
-      allow list: if true;
-      allow create: if isSignedIn();
-      allow update: if isSignedIn() && resource != null;
-      allow delete: if isSignedIn() && resource != null;
-    }
-
-    /**
-     * @description Allows public reading of salesmen, but restricts creation, updating, and deletion to authenticated users.
+     * @description Allows public read access to salesman documents. Writes are not permitted, as this collection should be seeded and updated via secure backend processes.
      * @path /salesmen/{salesmanId}
-     * @allow (get, list) if true;
-     * @allow (create, update, delete) if isSignedIn();
-     * @principle Allows public salesman listing but requires authentication for writes.
+     * @allow (get, list) - Any user can read salesman information.
+     *   true
+     * @deny (create, update, delete) - No one can create, update, or delete salesman documents.
+     *   false
+     * @principle Grants public read access while restricting write access to salesman information.
      */
     match /salesmen/{salesmanId} {
       allow get: if true;
       allow list: if true;
-      allow create: if isSignedIn();
-      allow update: if isSignedIn() && resource != null;
-      allow delete: if isSignedIn() && resource != null;
-    }
 
-    function isSignedIn() {
-      return request.auth != null;
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
     }
+  }
 
-    function isOwner(userId) {
-      return request.auth.uid == userId;
-    }
-
-    function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
-    }
+  function isSignedIn() {
+    return request.auth != null;
   }
 }

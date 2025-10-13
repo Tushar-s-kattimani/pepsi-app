@@ -1,4 +1,5 @@
-import { stockItems } from '@/lib/data';
+'use client';
+
 import {
   Card,
   CardContent,
@@ -17,6 +18,10 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, query, orderBy } from 'firebase/firestore';
+import type { Product } from '@/lib/types';
+import { Loader2 } from 'lucide-react';
 
 const statusColorMap: { [key: string]: string } = {
   'In Stock': 'bg-green-500',
@@ -25,12 +30,26 @@ const statusColorMap: { [key: string]: string } = {
 };
 
 const progressColorMap: { [key: string]: string } = {
-    'In Stock': 'bg-green-500',
-    'Low Stock': 'bg-yellow-400',
-    'Out of Stock': 'bg-red-500',
-}
+  'In Stock': 'bg-green-500',
+  'Low Stock': 'bg-yellow-400',
+  'Out of Stock': 'bg-red-500',
+};
+
+const MAX_QUANTITY = 2000;
 
 export default function StockPage() {
+  const firestore = useFirestore();
+  const productsQuery = useMemoFirebase(() => 
+    firestore ? query(collection(firestore, 'products'), orderBy('name')) : null
+  , [firestore]);
+  const { data: products, isLoading } = useCollection<Product>(productsQuery);
+
+  const getStockStatus = (quantity: number): 'In Stock' | 'Low Stock' | 'Out of Stock' => {
+    if (quantity === 0) return 'Out of Stock';
+    if (quantity < 500) return 'Low Stock';
+    return 'In Stock';
+  }
+
   return (
     <div className="flex flex-col gap-8">
       <header>
@@ -59,31 +78,56 @@ export default function StockPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {stockItems.map((item) => (
-                <TableRow key={item.id}>
-                  <TableCell className="font-medium">{item.name}</TableCell>
-                  <TableCell>{item.sku}</TableCell>
-                  <TableCell>
-                    <Badge
-                      variant="default"
-                      className={cn("text-white hover:text-black", statusColorMap[item.status])}
-                    >
-                      {item.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">{item.quantity}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                        <Progress 
-                            value={(item.quantity / item.maxQuantity) * 100} 
-                            className="h-2"
-                            indicatorClassName={cn(progressColorMap[item.status])}
-                        />
-                        <span className="text-xs text-muted-foreground">{Math.round((item.quantity / item.maxQuantity) * 100)}%</span>
-                    </div>
+              {isLoading && (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center">
+                    <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
+                    <p className="mt-2 text-muted-foreground">Loading stock levels...</p>
                   </TableCell>
                 </TableRow>
-              ))}
+              )}
+               {!isLoading && products?.length === 0 && (
+                 <TableRow>
+                    <TableCell colSpan={5} className="text-center">
+                        <p className="text-muted-foreground">No stock data found.</p>
+                    </TableCell>
+                 </TableRow>
+              )}
+              {products?.map((item) => {
+                const status = getStockStatus(item.stock);
+                const stockPercentage = Math.round((item.stock / MAX_QUANTITY) * 100);
+
+                return (
+                  <TableRow key={item.id}>
+                    <TableCell className="font-medium">{item.name}</TableCell>
+                    <TableCell>{item.sku}</TableCell>
+                    <TableCell>
+                      <Badge
+                        variant="default"
+                        className={cn(
+                          'text-white hover:text-black',
+                          statusColorMap[status]
+                        )}
+                      >
+                        {status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">{item.stock}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Progress
+                          value={stockPercentage}
+                          className="h-2"
+                          indicatorClassName={cn(progressColorMap[status])}
+                        />
+                        <span className="text-xs text-muted-foreground">
+                          {stockPercentage}%
+                        </span>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </CardContent>
@@ -93,8 +137,9 @@ export default function StockPage() {
 }
 
 // Add indicatorClassName to Progress component props
-declare module "@/components/ui/progress" {
-    interface ProgressProps extends React.ComponentPropsWithoutRef<typeof ProgressPrimitive.Root> {
-        indicatorClassName?: string
-    }
+declare module '@/components/ui/progress' {
+  interface ProgressProps
+    extends React.ComponentPropsWithoutRef<typeof ProgressPrimitive.Root> {
+    indicatorClassName?: string;
+  }
 }

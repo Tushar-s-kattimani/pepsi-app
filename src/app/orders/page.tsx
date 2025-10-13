@@ -1,4 +1,5 @@
-import { orders } from '@/lib/data';
+'use client';
+
 import {
   Card,
   CardContent,
@@ -16,7 +17,7 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { MoreHorizontal, PlusCircle } from 'lucide-react';
+import { MoreHorizontal, PlusCircle, Loader2 } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,8 +26,12 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, query, orderBy } from 'firebase/firestore';
+import type { Order } from '@/lib/types';
+import { format } from 'date-fns';
 
-const statusColorMap = {
+const statusColorMap: Record<Order['status'], string> = {
   Pending: 'bg-yellow-400',
   Confirmed: 'bg-blue-500',
   Dispatched: 'bg-indigo-500',
@@ -35,6 +40,13 @@ const statusColorMap = {
 };
 
 export default function OrdersPage() {
+  const firestore = useFirestore();
+  const ordersQuery = useMemoFirebase(() => 
+    firestore ? query(collection(firestore, 'orders'), orderBy('orderDate', 'desc')) : null
+  , [firestore]);
+
+  const { data: orders, isLoading } = useCollection<Order>(ordersQuery);
+
   return (
     <div className="flex flex-col gap-8">
       <div className="flex items-center justify-between">
@@ -63,6 +75,7 @@ export default function OrdersPage() {
               <TableRow>
                 <TableHead>Order ID</TableHead>
                 <TableHead>Shop Name</TableHead>
+                <TableHead>Order Date</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Items</TableHead>
                 <TableHead className="text-right">Total</TableHead>
@@ -70,15 +83,33 @@ export default function OrdersPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {orders.map((order) => (
+              {isLoading && (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center">
+                    <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
+                    <p className="mt-2 text-muted-foreground">Loading orders...</p>
+                  </TableCell>
+                </TableRow>
+              )}
+              {!isLoading && orders?.length === 0 && (
+                 <TableRow>
+                    <TableCell colSpan={7} className="text-center">
+                        <p className="text-muted-foreground">No orders found.</p>
+                    </TableCell>
+                 </TableRow>
+              )}
+              {orders?.map((order) => (
                 <TableRow key={order.id}>
-                  <TableCell className="font-medium">{order.id}</TableCell>
-                  <TableCell>{order.shopName}</TableCell>
+                  <TableCell className="font-medium">{order.id.substring(0,7)}</TableCell>
+                  <TableCell>{order.shopName || order.shopId}</TableCell>
+                   <TableCell>
+                    {format(order.orderDate.toDate(), 'PPP')}
+                  </TableCell>
                   <TableCell>
                     <Badge
                       variant="default"
                       className={cn(
-                        "text-white hover:text-black",
+                        'text-white hover:text-black',
                         statusColorMap[order.status]
                       )}
                     >
@@ -86,7 +117,9 @@ export default function OrdersPage() {
                     </Badge>
                   </TableCell>
                   <TableCell>{order.itemCount}</TableCell>
-                  <TableCell className="text-right">${order.total.toFixed(2)}</TableCell>
+                  <TableCell className="text-right">
+                    ${order.totalAmount.toFixed(2)}
+                  </TableCell>
                   <TableCell className="text-center">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
