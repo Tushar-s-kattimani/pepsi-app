@@ -20,7 +20,7 @@ import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { doc, setDoc } from 'firebase/firestore';
-import { useFirestore } from '@/firebase';
+import { useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase';
 
 
 export default function SignUpPage() {
@@ -56,10 +56,20 @@ export default function SignUpPage() {
       
       // Create user profile in Firestore
       const userRef = doc(firestore, 'users', user.uid);
-      await setDoc(userRef, {
+      const userProfileData = {
         displayName: name,
         email: user.email,
-      });
+      };
+
+      setDoc(userRef, userProfileData)
+        .catch(error => {
+            const contextualError = new FirestorePermissionError({
+                path: userRef.path,
+                operation: 'create',
+                requestResourceData: userProfileData,
+            });
+            errorEmitter.emit('permission-error', contextualError);
+        });
 
 
       toast({
@@ -68,7 +78,6 @@ export default function SignUpPage() {
       });
       router.push('/');
     } catch (error: any) {
-      console.error('Sign up error', error);
       toast({
         variant: 'destructive',
         title: 'Sign Up Failed',
