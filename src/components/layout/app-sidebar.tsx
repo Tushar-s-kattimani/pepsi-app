@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from 'next/link';
@@ -20,6 +21,7 @@ import {
   Settings,
   CircleHelp,
   Droplets,
+  User,
 } from 'lucide-react';
 import { useSidebar } from '@/components/ui/sidebar';
 
@@ -70,6 +72,19 @@ export function AppSidebar() {
       </SidebarContent>
       <SidebarFooter className="p-2">
         <SidebarMenu>
+           <SidebarMenuItem>
+            <SidebarMenuButton
+              asChild
+              isActive={pathname === '/profile'}
+              tooltip={{ children: "Profile", side: 'right' }}
+              className="justify-start"
+            >
+              <Link href="/profile">
+                <User />
+                <span>Profile</span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild

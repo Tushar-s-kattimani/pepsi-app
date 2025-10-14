@@ -1,3 +1,4 @@
+
 import { Timestamp } from "firebase/firestore";
 
 export type Product = {
@@ -28,4 +29,12 @@ export type StockItem = {
   quantity: number;
   maxQuantity: number;
   status: 'In Stock' | 'Low Stock' | 'Out of Stock';
+};
+
+export type UserProfile = {
+  displayName: string;
+  email: string;
+  shopName?: string;
+  place?: string;
+  phoneNumber?: string;
 };
