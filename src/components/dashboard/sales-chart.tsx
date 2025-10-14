@@ -90,7 +90,7 @@ export function SalesChart() {
                 />
                 <ChartTooltip
                     cursor={{ fill: 'hsl(var(--muted))' }}
-                    content={<ChartTooltipContent />}
+                    content={<ChartTooltipContent formatter={(value, name) => [`₹${Number(value).toLocaleString()}`, name.charAt(0).toUpperCase() + name.slice(1)]}/>}
                 />
                 <Bar dataKey="sales" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
                 </BarChart>
