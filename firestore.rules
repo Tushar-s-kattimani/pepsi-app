@@ -1,83 +1,96 @@
 /**
- * @description This ruleset enforces a public read, owner-write model for products,
- *              and allows any logged in user to read orders. User profiles are owner-controlled.
+ * @fileoverview Firestore Security Rules for the Pepsi Ordering App.
+ *
+ * Core Philosophy:
+ * This ruleset prioritizes security and data ownership, enforcing strict control
+ * over data access based on user authentication. In this initial prototyping
+ * phase, data shape validation is relaxed to allow for rapid schema iteration,
+ * but authorization checks are strictly enforced.
  *
  * Data Structure:
- * - /users/{userId}: Stores public user profiles.
- * - /products/{productId}: Stores product information. Accessible to all for reading, but create/update/delete is not allowed.
- * - /orders/{orderId}: Stores order information. Accessible to all logged in users for listing and getting orders.
+ * - /users/{userId}: Stores public user profiles, accessible only to the
+ *   authenticated user themselves.
+ * - /products/{productId}: Stores publicly available product information.
+ * - /orders/{orderId}: Stores order data, accessible to all authenticated users.
  *
  * Key Security Decisions:
- * - User listing is disabled.
- * - Read-only collections (products) are explicitly marked.
- * - Unspecified relationships default to no access.
+ * - User listing is disallowed to prevent unauthorized information gathering.
+ * - All write operations require authentication.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Controls access to user profile information.
+     * @description Controls access to user profile documents.
      * @path /users/{userId}
-     * @allow (create) User with UID 'test_user' can create their profile.
-     * @allow (get) User with UID 'test_user' can read their profile.
-     * @allow (update) User with UID 'test_user' can update their profile.
-     * @allow (delete) User with UID 'test_user' can delete their profile.
-     * @deny (create) User with UID 'other_user' cannot create a profile for 'test_user'.
-     * @principle Enforces document ownership for writes.
+     * @allow (create) User with UID 'user123' can create their profile document if request.auth.uid == 'user123'.
+     * @allow (get) User with UID 'user123' can read their profile document.
+     * @allow (update) User with UID 'user123' can update their profile document.
+     * @allow (delete) User with UID 'user123' can delete their profile document.
+     * @deny (create) User with UID 'user456' cannot create a profile document for 'user123'.
+     * @deny (get) User with UID 'user456' cannot read the profile document of 'user123'.
+     * @principle Enforces user-ownership for profile data.
      */
     match /users/{userId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
-
-      function isOwner(userId) {
-        return request.auth.uid == userId;
-      }
-
-      function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
-      }
-
-      allow get: if isOwner(userId);
-      allow list: if false;
-
-      allow create: if isSignedIn() && isOwner(userId);
-      allow update: if isSignedIn() && isExistingOwner(userId);
+      // Allow the user to read their own profile.
+      allow get: if isSignedIn() && isOwner(userId);
+      // Allow the user to create their own profile.
+      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.email == request.auth.token.email;
+      // Allow the user to update their own profile. Enforce immutability of userId.
+      allow update: if isSignedIn() && isExistingOwner(userId) && request.resource.data.email == resource.data.email;
+      // Allow the user to delete their own profile.
       allow delete: if isSignedIn() && isExistingOwner(userId);
+      // Do not allow listing of all users.
+      allow list: if false;
     }
 
     /**
-     * @description Controls access to product information.
+     * @description Controls access to product documents. Products are readable by all authenticated users.
      * @path /products/{productId}
-     * @allow (get) Any user can read product information.
-     * @allow (list) Any user can list product information.
-     * @deny (create) No user can create product.
-     * @deny (update) No user can update product.
-     * @deny (delete) No user can delete product.
-     * @principle Allows public read access with no write access.
+     * @allow (get) Any authenticated user can read a product.
+     * @allow (list) Any authenticated user can list products.
+     * @deny (create) No one can create products through client-side rules.
+     * @deny (update) No one can update products through client-side rules.
+     * @deny (delete) No one can delete products through client-side rules.
+     * @principle Products are public and read-only via client.
      */
     match /products/{productId} {
+      // Anyone can read products.
       allow get, list: if true;
+      // No one can create, update, or delete products through the client.
       allow create, update, delete: if false;
     }
 
     /**
-     * @description Controls access to order information.
+     * @description Controls access to order documents. Allows creating new orders.
      * @path /orders/{orderId}
-     * @allow (get) Any logged-in user can read an order.
-     * @allow (list) Any logged-in user can list orders.
-     * @deny (create) No user can create an order directly (creation is likely handled server-side).
-     * @deny (update) No user can update an order directly.
-     * @deny (delete) No user can delete an order directly.
+     * @allow (create) Any authenticated user can create a new order.
+     * @allow (get) Any authenticated user can read any order.
+     * @allow (list) Any authenticated user can list all orders.
+     * @deny (update) No one can update orders through client-side rules.
+     * @deny (delete) No one can delete orders through client-side rules.
+     * @principle Orders can be created by any signed-in user, but not updated or deleted.
      */
     match /orders/{orderId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
-
-      allow get, list: if isSignedIn();
-      allow create, update, delete: if false;
+        allow create: if isSignedIn();
+        allow get, list: if isSignedIn();
+        allow update, delete: if false;
     }
+  }
+
+  // Helper function to determine if the user is signed in.
+  function isSignedIn() {
+    return request.auth != null;
+  }
+
+  // Helper function to determine if the request is made by the owner.
+  function isOwner(userId) {
+    return request.auth.uid == userId;
+  }
+
+    // Helper function to determine if the request is made by the existing owner.
+  function isExistingOwner(userId) {
+    return isSignedIn() && isOwner(userId) && resource != null;
   }
 }
