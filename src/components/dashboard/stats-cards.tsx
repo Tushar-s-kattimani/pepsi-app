@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -19,7 +20,7 @@ export function StatsCards() {
   const stats = useMemo(() => {
     if (!orders) {
       return [
-        { title: "Total Revenue", value: "$0.00", icon: DollarSign, change: "" },
+        { title: "Total Revenue", value: "₹0.00", icon: DollarSign, change: "" },
         { title: "Today's Orders", value: "0", icon: ShoppingCart, change: "" },
         { title: "New Shops", value: "4", icon: Users, change: "+2 since last week" },
         { title: "Pending Deliveries", value: "0", icon: Truck, change: "" },
@@ -39,7 +40,7 @@ export function StatsCards() {
     return [
       {
         title: "Total Revenue",
-        value: `$${totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+        value: `₹${totalRevenue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
         icon: DollarSign,
         change: `from ${orders.length} orders`
       },

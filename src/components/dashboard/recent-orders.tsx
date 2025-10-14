@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -74,7 +75,7 @@ export function RecentOrders() {
               <p className="text-sm text-muted-foreground">{order.id.substring(0,7)}</p>
             </div>
             <div className="ml-auto font-medium">
-              +${order.totalAmount.toFixed(2)}
+              +₹{order.totalAmount.toFixed(2)}
             </div>
           </div>
         ))}

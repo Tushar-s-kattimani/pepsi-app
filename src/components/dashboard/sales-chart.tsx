@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, CartesianGrid } from 'recharts';
@@ -85,7 +86,7 @@ export function SalesChart() {
                     fontSize={12}
                     tickLine={false}
                     axisLine={false}
-                    tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
+                    tickFormatter={(value) => `₹${(value / 1000).toFixed(0)}k`}
                 />
                 <ChartTooltip
                     cursor={{ fill: 'hsl(var(--muted))' }}

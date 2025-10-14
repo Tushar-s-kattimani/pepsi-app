@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -149,7 +150,7 @@ export default function OrdersPage() {
                   </TableCell>
                   <TableCell>{order.itemCount}</TableCell>
                   <TableCell className="text-right">
-                    ${order.totalAmount.toFixed(2)}
+                    ₹{order.totalAmount.toFixed(2)}
                   </TableCell>
                   <TableCell className="text-center">
                     <DropdownMenu>

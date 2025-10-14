@@ -1,3 +1,4 @@
+
 'use client';
 import Image from 'next/image';
 import {
@@ -88,7 +89,7 @@ export default function ProductsPage() {
             </CardContent>
             <CardFooter className="p-4 pt-0 flex justify-between items-center">
               <p className="text-lg font-semibold">
-                ${product.price.toFixed(2)}
+                ₹{product.price.toFixed(2)}
               </p>
               <Button size="sm" disabled={product.stock === 0}>
                 <PlusCircle className="mr-2 h-4 w-4" />
