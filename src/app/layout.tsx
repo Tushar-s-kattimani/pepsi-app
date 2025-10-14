@@ -10,6 +10,7 @@ import { Header } from '@/components/layout/header';
 import { FirebaseClientProvider, useUser } from '@/firebase';
 import { withAuth } from '@/components/auth/with-auth';
 import { usePathname } from 'next/navigation';
+import { CartProvider } from '@/context/cart-context';
 
 function AppLayout({
   children,
@@ -62,13 +63,14 @@ export default function RootLayout({
         )}
       >
         <FirebaseClientProvider>
-          <AppLayoutWithAuth>
-            {children}
-          </AppLayoutWithAuth>
+          <CartProvider>
+            <AppLayoutWithAuth>
+              {children}
+            </AppLayoutWithAuth>
+          </CartProvider>
         </FirebaseClientProvider>
         <Toaster />
       </body>
     </html>
   );
 }
-

@@ -108,6 +108,29 @@
         "stock"
       ]
     },
+    "OrderItem": {
+      "title": "Order Item",
+      "type": "object",
+      "description": "Represents a single item within an order.",
+      "properties": {
+        "productId": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "price": {
+          "type": "number"
+        },
+        "quantity": {
+          "type": "number"
+        },
+        "imageUrl": {
+          "type": "string"
+        }
+      },
+      "required": ["productId", "name", "price", "quantity"]
+    },
     "Order": {
       "title": "Order",
       "type": "object",
@@ -138,6 +161,12 @@
         "itemCount": {
             "type": "number",
             "description": "Total number of items in the order."
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/entities/OrderItem"
+          }
         }
       },
       "required": [
@@ -145,7 +174,8 @@
         "orderDate",
         "status",
         "totalAmount",
-        "itemCount"
+        "itemCount",
+        "items"
       ]
     }
   },

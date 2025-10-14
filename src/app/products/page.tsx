@@ -17,9 +17,13 @@ import { collection, query, orderBy } from 'firebase/firestore';
 import type { Product } from '@/lib/types';
 import { seedDatabase as seedProductsStore } from '@/lib/seed-products';
 import { useEffect } from 'react';
+import { useCart } from '@/context/cart-context';
+import { useToast } from '@/hooks/use-toast';
 
 export default function ProductsPage() {
   const firestore = useFirestore();
+  const { addToCart } = useCart();
+  const { toast } = useToast();
 
   useEffect(() => {
     if(firestore) {
@@ -31,6 +35,20 @@ export default function ProductsPage() {
     firestore ? query(collection(firestore, 'products'), orderBy('name')) : null
   , [firestore]);
   const { data: products, isLoading } = useCollection<Product>(productsQuery);
+
+  const handleAddToCart = (product: Product) => {
+    addToCart({
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      imageUrl: product.imageUrl,
+      quantity: 1,
+    });
+    toast({
+      title: 'Added to cart',
+      description: `${product.name} has been added to your cart.`,
+    });
+  };
 
   return (
     <div className="flex flex-col gap-8">
@@ -91,7 +109,7 @@ export default function ProductsPage() {
               <p className="text-lg font-semibold">
                 ₹{product.price.toFixed(2)}
               </p>
-              <Button size="sm" disabled={product.stock === 0}>
+              <Button size="sm" disabled={product.stock === 0} onClick={() => handleAddToCart(product)}>
                 <PlusCircle className="mr-2 h-4 w-4" />
                 Add
               </Button>

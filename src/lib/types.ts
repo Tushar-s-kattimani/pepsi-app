@@ -12,6 +12,14 @@ export type Product = {
   imageHint: string;
 };
 
+export type OrderItem = {
+  productId: string;
+  name: string;
+  price: number;
+  quantity: number;
+  imageUrl?: string;
+};
+
 export type Order = {
   id: string;
   shopId: string;
@@ -20,6 +28,7 @@ export type Order = {
   status: 'Pending' | 'Confirmed' | 'Dispatched' | 'Delivered' | 'Cancelled';
   totalAmount: number;
   itemCount: number;
+  items: OrderItem[];
 };
 
 export type StockItem = {
@@ -38,3 +47,12 @@ export type UserProfile = {
   place?: string;
   phoneNumber?: string;
 };
+
+export type CartItem = {
+  id: string;
+  name: string;
+  price: number;
+  imageUrl: string;
+  quantity: number;
+};
+
