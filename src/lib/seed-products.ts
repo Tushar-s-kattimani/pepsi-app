@@ -1,6 +1,6 @@
 
 'use client';
-import { collection, writeBatch, getDocs, Firestore } from 'firebase/firestore';
+import { collection, writeBatch, getDocs, Firestore, doc } from 'firebase/firestore';
 import { products as mockProducts } from '@/lib/data';
 import { errorEmitter, FirestorePermissionError } from '@/firebase';
 
@@ -30,7 +30,7 @@ export async function seedDatabase(db: Firestore) {
   const batch = writeBatch(db);
 
   mockProducts.forEach((product) => {
-    const docRef = collection(db, 'products').doc(); // Auto-generate ID
+    const docRef = doc(collection(db, 'products')); // Auto-generate ID
     batch.set(docRef, product);
   });
 
