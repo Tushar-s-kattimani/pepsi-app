@@ -30,6 +30,7 @@ import { useCollection, useFirestore, useMemoFirebase, errorEmitter, FirestorePe
 import { collection, query, orderBy, addDoc, Timestamp } from 'firebase/firestore';
 import type { Order } from '@/lib/types';
 import { format } from 'date-fns';
+import { useToast } from '@/hooks/use-toast';
 
 const statusColorMap: Record<Order['status'], string> = {
   Pending: 'bg-yellow-400',
@@ -41,6 +42,7 @@ const statusColorMap: Record<Order['status'], string> = {
 
 export default function OrdersPage() {
   const firestore = useFirestore();
+  const { toast } = useToast();
   const ordersQuery = useMemoFirebase(() => 
     firestore ? query(collection(firestore, 'orders'), orderBy('orderDate', 'desc')) : null
   , [firestore]);
@@ -58,19 +60,22 @@ export default function OrdersPage() {
       totalAmount: Math.floor(Math.random() * 200) + 50,
       itemCount: Math.floor(Math.random() * 10) + 1,
     };
-    try {
-        addDoc(ordersCollection, newOrder)
-        .catch(err => {
-            const contextualError = new FirestorePermissionError({
-                path: ordersCollection.path,
-                operation: 'create',
-                requestResourceData: newOrder
-            });
-            errorEmitter.emit('permission-error', contextualError);
+    
+    addDoc(ordersCollection, newOrder)
+    .then(() => {
+        toast({
+            title: 'Order Created',
+            description: `A new order for ${newOrder.shopName} has been created.`,
         });
-    } catch(err) {
-        console.error("Error creating order:", err);
-    }
+    })
+    .catch(err => {
+        const contextualError = new FirestorePermissionError({
+            path: ordersCollection.path,
+            operation: 'create',
+            requestResourceData: newOrder
+        });
+        errorEmitter.emit('permission-error', contextualError);
+    });
   };
 
   return (
