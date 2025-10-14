@@ -8,7 +8,8 @@ import { getFirestore } from 'firebase/firestore'
 // IMPORTANT: DO NOT MODIFY THIS FUNCTION
 export function initializeFirebase() {
   if (!getApps().length) {
-    // Pass the firebaseConfig object to initializeApp to ensure connection.
+    // In this environment, we'll directly initialize with the config
+    // to ensure a stable connection.
     const firebaseApp = initializeApp(firebaseConfig);
     return getSdks(firebaseApp);
   }
