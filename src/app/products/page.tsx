@@ -50,8 +50,11 @@ export default function ProductsPage() {
 
       {!isLoading && products?.length === 0 && (
         <Card className="flex items-center justify-center h-64">
-          <CardContent className="text-center">
+          <CardContent className="text-center pt-6">
             <p className="text-muted-foreground">No products found.</p>
+             <p className="text-sm text-muted-foreground mt-2">
+                It looks like your database might be empty. The app attempts to seed data automatically.
+            </p>
           </CardContent>
         </Card>
       )}
