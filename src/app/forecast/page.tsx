@@ -1,6 +1,8 @@
+
 'use client';
 
-import { useFormState, useFormStatus } from 'react-dom';
+import { useActionState } from 'react';
+import { useFormStatus } from 'react-dom';
 import { generateForecast } from './actions';
 import { Button } from '@/components/ui/button';
 import {
@@ -40,7 +42,7 @@ function SubmitButton() {
 }
 
 export default function ForecastPage() {
-  const [state, formAction] = useFormState(generateForecast, initialState);
+  const [state, formAction] = useActionState(generateForecast, initialState);
 
   return (
     <div className="flex flex-col gap-8">
