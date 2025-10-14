@@ -27,6 +27,9 @@ export default function SignUpPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [shopName, setShopName] = useState('');
+  const [place, setPlace] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const auth = useAuth();
   const firestore = useFirestore();
@@ -59,6 +62,9 @@ export default function SignUpPage() {
       const userProfileData = {
         displayName: name,
         email: user.email,
+        shopName: shopName,
+        place: place,
+        phoneNumber: phoneNumber,
       };
 
       setDoc(userRef, userProfileData)
@@ -123,6 +129,36 @@ export default function SignUpPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 autoComplete="email"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="shopName">Shop Name</Label>
+              <Input
+                id="shopName"
+                type="text"
+                placeholder="The Corner Store"
+                value={shopName}
+                onChange={(e) => setShopName(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="place">Place</Label>
+              <Input
+                id="place"
+                type="text"
+                placeholder="New York"
+                value={place}
+                onChange={(e) => setPlace(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="phoneNumber">Phone Number</Label>
+              <Input
+                id="phoneNumber"
+                type="tel"
+                placeholder="123-456-7890"
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
               />
             </div>
             <div className="space-y-2">

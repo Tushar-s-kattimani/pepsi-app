@@ -12,6 +12,18 @@
         "email": {
           "type": "string",
           "format": "email"
+        },
+        "shopName": {
+          "type": "string",
+          "description": "The name of the user's shop."
+        },
+        "place": {
+          "type": "string",
+          "description": "The location or place of the user's shop."
+        },
+        "phoneNumber": {
+          "type": "string",
+          "description": "The user's contact phone number."
         }
       },
       "required": ["displayName", "email"]
