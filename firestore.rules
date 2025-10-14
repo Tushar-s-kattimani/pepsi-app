@@ -1,84 +1,83 @@
 /**
- * @fileoverview Firestore Security Rules for the application.
- *
- * Core Philosophy:
- * This ruleset prioritizes security by enforcing user-based access control and validating data relationships.
- * All write operations require authentication.
+ * @description This ruleset enforces a public read, owner-write model for products,
+ *              and allows any logged in user to read orders. User profiles are owner-controlled.
  *
  * Data Structure:
- * - /users/{userId}: Stores public user profile information. Access is restricted to the owning user.
- * - /products/{productId}: Stores product information. Read access is public, but write access is restricted to authenticated users.
- * - /orders/{orderId}: Stores order information. Write access is restricted to authenticated users.
+ * - /users/{userId}: Stores public user profiles.
+ * - /products/{productId}: Stores product information. Accessible to all for reading, but create/update/delete is not allowed.
+ * - /orders/{orderId}: Stores order information. Accessible to all logged in users for listing and getting orders.
  *
  * Key Security Decisions:
- * - User listing is disabled to prevent enumeration.
- * - The `products` collection is publicly readable to allow all users to view the product catalog.
+ * - User listing is disabled.
+ * - Read-only collections (products) are explicitly marked.
+ * - Unspecified relationships default to no access.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Controls access to user profile documents.
+     * @description Controls access to user profile information.
      * @path /users/{userId}
-     * @allow (create) User with UID 'user_abc' can create their profile document.
-     * @allow (get, list, update, delete) User with UID 'user_abc' can access their own profile.
-     * @deny (create) User with UID 'user_xyz' cannot create a profile document for 'user_abc'.
-     * @deny (get, list, update, delete) User with UID 'user_xyz' cannot access user 'user_abc' profile.
-     * @principle Enforces document ownership for all operations.
+     * @allow (create) User with UID 'test_user' can create their profile.
+     * @allow (get) User with UID 'test_user' can read their profile.
+     * @allow (update) User with UID 'test_user' can update their profile.
+     * @allow (delete) User with UID 'test_user' can delete their profile.
+     * @deny (create) User with UID 'other_user' cannot create a profile for 'test_user'.
+     * @principle Enforces document ownership for writes.
      */
     match /users/{userId} {
-      // Helper function to check if the authenticated user is the owner of the document.
-      function isOwner(userId) {
-        return request.auth != null && request.auth.uid == userId;
-      }
-
-      // Allow the user to create their own document, enforcing that the userId matches the auth.uid.
-      allow create: if isOwner(userId);
-
-      // Allow the user to get, update, and delete their own document.
-      allow get, update, delete: if isOwner(userId) && resource != null;
-
-      // Prevent listing of all users.
-      allow list: if false;
-    }
-
-    /**
-     * @description Controls access to product documents.
-     * @path /products/{productId}
-     * @allow (get, list) Any user can read product information.
-     * @allow (create, update, delete) Authenticated users can manage product data.
-     * @deny (create, update, delete) Unauthenticated users cannot manage product data.
-     * @principle Allows public read access but restricts write access to authenticated users.
-     */
-    match /products/{productId} {
-      // Allow anyone to read product information.
-      allow get, list: if true;
-
-      // Allow authenticated users to create, update, and delete products.
-      allow create, update, delete: if isSignedIn();
-
       function isSignedIn() {
         return request.auth != null;
       }
+
+      function isOwner(userId) {
+        return request.auth.uid == userId;
+      }
+
+      function isExistingOwner(userId) {
+        return isOwner(userId) && resource != null;
+      }
+
+      allow get: if isOwner(userId);
+      allow list: if false;
+
+      allow create: if isSignedIn() && isOwner(userId);
+      allow update: if isSignedIn() && isExistingOwner(userId);
+      allow delete: if isSignedIn() && isExistingOwner(userId);
     }
 
-     /**
-      * @description Controls access to order documents.
-      * @path /orders/{orderId}
-      * @allow (create, update, delete) Authenticated users can manage order data.
-      * @deny (create, update, delete) Unauthenticated users cannot manage order data.
-      */
+    /**
+     * @description Controls access to product information.
+     * @path /products/{productId}
+     * @allow (get) Any user can read product information.
+     * @allow (list) Any user can list product information.
+     * @deny (create) No user can create product.
+     * @deny (update) No user can update product.
+     * @deny (delete) No user can delete product.
+     * @principle Allows public read access with no write access.
+     */
+    match /products/{productId} {
+      allow get, list: if true;
+      allow create, update, delete: if false;
+    }
+
+    /**
+     * @description Controls access to order information.
+     * @path /orders/{orderId}
+     * @allow (get) Any logged-in user can read an order.
+     * @allow (list) Any logged-in user can list orders.
+     * @deny (create) No user can create an order directly (creation is likely handled server-side).
+     * @deny (update) No user can update an order directly.
+     * @deny (delete) No user can delete an order directly.
+     */
     match /orders/{orderId} {
-         // Allow authenticated users to create, update, and delete orders.
-         allow create, update, delete: if isSignedIn();
+      function isSignedIn() {
+        return request.auth != null;
+      }
 
-         // Deny read and list access to orders.
-         allow get, list: if false;
-
-         function isSignedIn() {
-            return request.auth != null;
-         }
+      allow get, list: if isSignedIn();
+      allow create, update, delete: if false;
     }
   }
 }
