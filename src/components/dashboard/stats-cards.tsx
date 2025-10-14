@@ -2,7 +2,7 @@
 'use client';
 
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { DollarSign, ShoppingCart, Users, Truck, Loader2 } from 'lucide-react';
+import { IndianRupee, ShoppingCart, Users, Truck, Loader2 } from 'lucide-react';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, where, Timestamp } from 'firebase/firestore';
 import type { Order } from '@/lib/types';
@@ -20,7 +20,7 @@ export function StatsCards() {
   const stats = useMemo(() => {
     if (!orders) {
       return [
-        { title: "Total Revenue", value: "₹0.00", icon: DollarSign, change: "" },
+        { title: "Total Revenue", value: "₹0.00", icon: IndianRupee, change: "" },
         { title: "Today's Orders", value: "0", icon: ShoppingCart, change: "" },
         { title: "New Shops", value: "4", icon: Users, change: "+2 since last week" },
         { title: "Pending Deliveries", value: "0", icon: Truck, change: "" },
@@ -41,7 +41,7 @@ export function StatsCards() {
       {
         title: "Total Revenue",
         value: `₹${totalRevenue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-        icon: DollarSign,
+        icon: IndianRupee,
         change: `from ${orders.length} orders`
       },
       {
