@@ -26,8 +26,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy } from 'firebase/firestore';
+import { useCollection, useFirestore, useMemoFirebase, errorEmitter, FirestorePermissionError } from '@/firebase';
+import { collection, query, orderBy, addDoc, Timestamp } from 'firebase/firestore';
 import type { Order } from '@/lib/types';
 import { format } from 'date-fns';
 
@@ -47,6 +47,32 @@ export default function OrdersPage() {
 
   const { data: orders, isLoading } = useCollection<Order>(ordersQuery);
 
+  const handleCreateOrder = async () => {
+    if (!firestore) return;
+    const ordersCollection = collection(firestore, 'orders');
+    const newOrder = {
+      shopId: 'new-shop-' + Math.random().toString(36).substring(7),
+      shopName: 'New Online Store',
+      orderDate: Timestamp.now(),
+      status: 'Pending' as const,
+      totalAmount: Math.floor(Math.random() * 200) + 50,
+      itemCount: Math.floor(Math.random() * 10) + 1,
+    };
+    try {
+        addDoc(ordersCollection, newOrder)
+        .catch(err => {
+            const contextualError = new FirestorePermissionError({
+                path: ordersCollection.path,
+                operation: 'create',
+                requestResourceData: newOrder
+            });
+            errorEmitter.emit('permission-error', contextualError);
+        });
+    } catch(err) {
+        console.error("Error creating order:", err);
+    }
+  };
+
   return (
     <div className="flex flex-col gap-8">
       <div className="flex items-center justify-between">
@@ -58,7 +84,7 @@ export default function OrdersPage() {
             Track and manage all customer orders.
           </p>
         </header>
-        <Button>
+        <Button onClick={handleCreateOrder}>
           <PlusCircle className="mr-2 h-4 w-4" />
           Create Order
         </Button>
