@@ -1,24 +1,124 @@
 
 'use client';
 
-import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
-import { doc } from 'firebase/firestore';
+import { useState } from 'react';
+import { useUser, useFirestore, useDoc, useMemoFirebase, useAuth } from '@/firebase';
+import { doc, updateDoc } from 'firebase/firestore';
+import { updateProfile } from 'firebase/auth';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Loader2, User, Building, MapPin, Phone } from 'lucide-react';
+import { Loader2, User, Building, MapPin, Phone, Save } from 'lucide-react';
 import type { UserProfile } from '@/lib/types';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogClose,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useToast } from '@/hooks/use-toast';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { errorEmitter, FirestorePermissionError } from '@/firebase/errors';
+
+
+const profileSchema = z.object({
+  displayName: z.string().min(1, 'Display name is required'),
+  shopName: z.string().optional(),
+  place: z.string().optional(),
+  phoneNumber: z.string().optional(),
+});
+
+type ProfileFormData = z.infer<typeof profileSchema>;
+
 
 export default function ProfilePage() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
+  const auth = useAuth();
+  const { toast } = useToast();
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const userProfileRef = useMemoFirebase(
     () => (firestore && user ? doc(firestore, 'users', user.uid) : null),
     [firestore, user]
   );
 
-  const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
+  const { data: userProfile, isLoading: isProfileLoading, error } = useDoc<UserProfile>(userProfileRef);
+
+  const {
+    control,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<ProfileFormData>({
+    resolver: zodResolver(profileSchema),
+    defaultValues: {
+      displayName: '',
+      shopName: '',
+      place: '',
+      phoneNumber: '',
+    },
+  });
+
+  React.useEffect(() => {
+    if (userProfile) {
+      reset({
+        displayName: userProfile.displayName,
+        shopName: userProfile.shopName || '',
+        place: userProfile.place || '',
+        phoneNumber: userProfile.phoneNumber || '',
+      });
+    }
+  }, [userProfile, reset]);
+
+  const onSubmit = async (data: ProfileFormData) => {
+    if (!user || !userProfileRef) return;
+    setIsUpdating(true);
+
+    try {
+      // Update Firestore document
+      updateDoc(userProfileRef, data)
+        .catch(error => {
+          const contextualError = new FirestorePermissionError({
+            path: userProfileRef.path,
+            operation: 'update',
+            requestResourceData: data,
+          });
+          errorEmitter.emit('permission-error', contextualError);
+          throw error; // Rethrow to be caught by the outer catch
+        });
+
+      // Update Firebase Auth profile
+      if (user.displayName !== data.displayName) {
+        await updateProfile(user, { displayName: data.displayName });
+      }
+
+      toast({
+        title: 'Profile Updated',
+        description: 'Your profile has been successfully updated.',
+      });
+      setIsDialogOpen(false);
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Update Failed',
+        description: 'Could not update your profile. Please try again.',
+      });
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
 
   const isLoading = isUserLoading || isProfileLoading;
 
@@ -34,6 +134,7 @@ export default function ProfilePage() {
     return (
       <div className="text-center">
         <p>Could not load user profile.</p>
+        {error && <p className="text-destructive">{error.message}</p>}
       </div>
     );
   }
@@ -93,7 +194,70 @@ export default function ProfilePage() {
                 </div>
             </div>
             <div className="pt-4">
-                 <Button className="w-full">Edit Profile</Button>
+                <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                    <DialogTrigger asChild>
+                        <Button className="w-full">Edit Profile</Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-[425px]">
+                        <DialogHeader>
+                            <DialogTitle>Edit Profile</DialogTitle>
+                            <DialogDescription>
+                                Make changes to your profile here. Click save when you&apos;re done.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="displayName">Full Name</Label>
+                                <Controller
+                                    name="displayName"
+                                    control={control}
+                                    render={({ field }) => <Input id="displayName" {...field} />}
+                                />
+                                {errors.displayName && <p className="text-destructive text-sm">{errors.displayName.message}</p>}
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="shopName">Shop Name</Label>
+                                <Controller
+                                    name="shopName"
+                                    control={control}
+                                    render={({ field }) => <Input id="shopName" {...field} />}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="place">Place</Label>
+                                <Controller
+                                    name="place"
+                                    control={control}
+                                    render={({ field }) => <Input id="place" {...field} />}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="phoneNumber">Phone Number</Label>
+                                <Controller
+                                    name="phoneNumber"
+                                    control={control}
+                                    render={({ field }) => <Input id="phoneNumber" type="tel" {...field} />}
+                                />
+                            </div>
+
+                            <DialogFooter>
+                                <DialogClose asChild>
+                                    <Button type="button" variant="secondary">
+                                        Cancel
+                                    </Button>
+                                </DialogClose>
+                                <Button type="submit" disabled={isUpdating}>
+                                    {isUpdating ? (
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    ) : (
+                                        <Save className="mr-2 h-4 w-4" />
+                                    )}
+                                    Save Changes
+                                </Button>
+                            </DialogFooter>
+                        </form>
+                    </DialogContent>
+                </Dialog>
             </div>
         </CardContent>
       </Card>
