@@ -2,78 +2,104 @@
  * @fileoverview Firestore Security Rules for the Pepsi Ordering App.
  *
  * Core Philosophy:
- * This ruleset prioritizes secure data access based on user identity and defined roles.
- * User data is protected using an ownership model, while product data is publicly readable but only writable by authorized users.
- * Orders can be created by anyone, but modification/deletion is restricted.
+ * This ruleset prioritizes secure data access by enforcing strict ownership for user profiles
+ * and employing a public read/owner-write pattern for products. Orders are publicly readable and
+ * writable only by authenticated users, but this is intended for prototyping and will
+ * require a mechanism for linking orders to specific shops in the future.
  *
  * Data Structure:
- * - /users/{userId}: Stores user profile information; access is restricted to the owning user.
- * - /products/{productId}: Stores product information; publicly readable, writable by authorized users only.
- * - /orders/{orderId}: Stores order information; create is allowed to any signed-in user, but modification and deletion are restricted.
+ * - /users/{userId}: Stores user profile data, accessible only by the user themselves.
+ * - /products/{productId}: Stores product catalog data, publicly readable but only writable by the owner.
+ * - /orders/{orderId}: Stores order data. Publicly readable, but write access is restricted to authenticated users.
  *
  * Key Security Decisions:
- * - User listing is disallowed to prevent unauthorized data scraping.
- * - Product data is publicly readable to facilitate browsing without authentication.
- * - Order modifications and deletions are highly restricted for data integrity.
+ * - User listing is disallowed for privacy.
+ * - The 'products' collection uses a public read/owner-write pattern, assuming an 'ownerId' field will be added later.
+ * - Orders are currently publicly readable for prototyping but should later be restricted.
+ *
+ * Denormalization for Authorization:
+ *  No denormalization is strictly used, but shopName is denormalized into the Order document
+ *  to improve query performance.
+ *
+ * Structural Segregation:
+ *  No explicit structural segregation is applied in this version.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Allows access to user profile information only to the authenticated user.
+     * @description Controls access to user profiles.
      * @path /users/{userId}
-     * @allow (read, write) if request.auth.uid == userId
-     * @deny (read, write) if request.auth.uid != userId
-     * @principle Enforces document ownership for user profiles.
+     * @allow (create) User with ID 'user123' can create their own profile.
+     *   Request: { "auth": { "uid": "user123" }, "resource": { "data": { "displayName": "John Doe", "email": "john@example.com", "id": "user123" } } }
+     * @allow (get) User with ID 'user123' can read their own profile.
+     *   Request: { "auth": { "uid": "user123" } }
+     * @allow (update) User with ID 'user123' can update their own profile.
+     *   Request: { "auth": { "uid": "user123" } }
+     * @allow (delete) User with ID 'user123' can delete their own profile.
+     *   Request: { "auth": { "uid": "user123" } }
+     * @deny (create) User with ID 'user456' cannot create a profile for user 'user123'.
+     *   Request: { "auth": { "uid": "user456" }, "resource": { "data": { "displayName": "John Doe", "email": "john@example.com", "id": "user123" } } }
+     * @deny (get) User with ID 'user456' cannot read the profile of user 'user123'.
+     *   Request: { "auth": { "uid": "user456" } }
+     * @principle Enforces document ownership for writes.
      */
     match /users/{userId} {
+      // Verify identity
+      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.id == userId;
       allow get: if isSignedIn() && isOwner(userId);
-      allow list: if false; // Disallowing user listing for privacy.
-      allow create: if isSignedIn() && isOwner(userId);
-      allow update: if isSignedIn() && isExistingOwner(userId);
+      allow list: if false;
+      allow update: if isSignedIn() && isExistingOwner(userId) && request.resource.data.id == resource.data.id;
       allow delete: if isSignedIn() && isExistingOwner(userId);
     }
 
     /**
-     * @description Allows public read access to product information, but restricts write access.
+     * @description Controls access to the products collection. Publicly readable, writable by owner.
      * @path /products/{productId}
-     * @allow (read) if true
-     * @allow (write) if false // TODO: Add admin role check.
-     * @deny (write) if true
-     * @principle Allows public read access for product browsing, but restricts modification to authorized users only.
+     * @allow (get) Any user can read any product.
+     *   Request: { "auth": null }
+     * @allow (list) Any user can list products.
+     *   Request: { "auth": null }
+     * @deny (create) No one can create since no ownerId exists
+     *   Request: { "auth": { "uid": "user123" }, "resource": { "data": { "sku": "123", "name": "Pepsi", "price": 1.50, "stock": 100 } } }
+     * @principle Public read, owner-only writes.
      */
     match /products/{productId} {
-      allow get, list: if true;
-      allow create, update, delete: if false; // TODO: Add admin role check.
+        allow get, list: if true;
+        // CRITICAL: Cannot implement owner-only writes. The 'Product' entity is missing an 'ownerId' or 'authorId' field.
+        allow create, update, delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
     }
 
     /**
-     * @description Allows creation of orders by any authenticated user, but restricts modification and deletion.
+     * @description Controls access to the orders collection. Publicly readable, writable by any authenticated user.
      * @path /orders/{orderId}
-     * @allow (create) if request.auth != null
-     * @deny (update, delete) always
-     * @principle Allows order creation to any signed-in user, but restricts modification and deletion for data integrity.
+     * @allow (get) Any user can read any order.
+     *   Request: { "auth": null }
+     * @allow (list) Any user can list all orders.
+     *   Request: { "auth": null }
+     * @allow (create) Any signed in user can create an order
+     *   Request: { "auth": { "uid": "user123" }, "resource": { "data": { "shopId": "shop123", "orderDate": "2024-01-01", "status": "Pending", "totalAmount": 100, "itemCount": 10 } } }
+     * @principle Public read, authenticated user writes (for prototyping, needs refinement).
      */
     match /orders/{orderId} {
-      allow get: if isSignedIn();
-      allow list: if isSignedIn();
-      allow create: if isSignedIn();
-      allow update: if false;
-      allow delete: if false;
+        allow get, list: if true;
+        allow create: if isSignedIn();
+        allow update: if isSignedIn() && resource != null;
+        allow delete: if isSignedIn() && resource != null;
     }
+  }
 
-    // Helper functions
-    function isSignedIn() {
-      return request.auth != null;
-    }
+  // Helper functions
+  function isSignedIn() {
+    return request.auth != null;
+  }
 
-    function isOwner(userId) {
-      return request.auth.uid == userId;
-    }
+  function isOwner(userId) {
+    return request.auth.uid == userId;
+  }
 
-    function isExistingOwner(userId) {
-      return isSignedIn() && isOwner(userId) && resource != null;
-    }
+  function isExistingOwner(userId) {
+      return isOwner(userId) && resource != null;
   }
 }
