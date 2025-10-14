@@ -1,105 +1,84 @@
 /**
- * @fileoverview Firestore Security Rules for the Pepsi Ordering App.
+ * @fileoverview Firestore Security Rules for the application.
  *
  * Core Philosophy:
- * This ruleset prioritizes secure data access by enforcing strict ownership for user profiles
- * and employing a public read/owner-write pattern for products. Orders are publicly readable and
- * writable only by authenticated users, but this is intended for prototyping and will
- * require a mechanism for linking orders to specific shops in the future.
+ * This ruleset prioritizes security by enforcing user-based access control and validating data relationships.
+ * All write operations require authentication.
  *
  * Data Structure:
- * - /users/{userId}: Stores user profile data, accessible only by the user themselves.
- * - /products/{productId}: Stores product catalog data, publicly readable but only writable by the owner.
- * - /orders/{orderId}: Stores order data. Publicly readable, but write access is restricted to authenticated users.
+ * - /users/{userId}: Stores public user profile information. Access is restricted to the owning user.
+ * - /products/{productId}: Stores product information. Read access is public, but write access is restricted to authenticated users.
+ * - /orders/{orderId}: Stores order information. Write access is restricted to authenticated users.
  *
  * Key Security Decisions:
- * - User listing is disallowed for privacy.
- * - The 'products' collection uses a public read/owner-write pattern, assuming an 'ownerId' field will be added later.
- * - Orders are currently publicly readable for prototyping but should later be restricted.
- *
- * Denormalization for Authorization:
- *  No denormalization is strictly used, but shopName is denormalized into the Order document
- *  to improve query performance.
- *
- * Structural Segregation:
- *  No explicit structural segregation is applied in this version.
+ * - User listing is disabled to prevent enumeration.
+ * - The `products` collection is publicly readable to allow all users to view the product catalog.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Controls access to user profiles.
+     * @description Controls access to user profile documents.
      * @path /users/{userId}
-     * @allow (create) User with ID 'user123' can create their own profile.
-     *   Request: { "auth": { "uid": "user123" }, "resource": { "data": { "displayName": "John Doe", "email": "john@example.com", "id": "user123" } } }
-     * @allow (get) User with ID 'user123' can read their own profile.
-     *   Request: { "auth": { "uid": "user123" } }
-     * @allow (update) User with ID 'user123' can update their own profile.
-     *   Request: { "auth": { "uid": "user123" } }
-     * @allow (delete) User with ID 'user123' can delete their own profile.
-     *   Request: { "auth": { "uid": "user123" } }
-     * @deny (create) User with ID 'user456' cannot create a profile for user 'user123'.
-     *   Request: { "auth": { "uid": "user456" }, "resource": { "data": { "displayName": "John Doe", "email": "john@example.com", "id": "user123" } } }
-     * @deny (get) User with ID 'user456' cannot read the profile of user 'user123'.
-     *   Request: { "auth": { "uid": "user456" } }
-     * @principle Enforces document ownership for writes.
+     * @allow (create) User with UID 'user_abc' can create their profile document.
+     * @allow (get, list, update, delete) User with UID 'user_abc' can access their own profile.
+     * @deny (create) User with UID 'user_xyz' cannot create a profile document for 'user_abc'.
+     * @deny (get, list, update, delete) User with UID 'user_xyz' cannot access user 'user_abc' profile.
+     * @principle Enforces document ownership for all operations.
      */
     match /users/{userId} {
-      // Verify identity
-      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.id == userId;
-      allow get: if isSignedIn() && isOwner(userId);
+      // Helper function to check if the authenticated user is the owner of the document.
+      function isOwner(userId) {
+        return request.auth != null && request.auth.uid == userId;
+      }
+
+      // Allow the user to create their own document, enforcing that the userId matches the auth.uid.
+      allow create: if isOwner(userId);
+
+      // Allow the user to get, update, and delete their own document.
+      allow get, update, delete: if isOwner(userId) && resource != null;
+
+      // Prevent listing of all users.
       allow list: if false;
-      allow update: if isSignedIn() && isExistingOwner(userId) && request.resource.data.id == resource.data.id;
-      allow delete: if isSignedIn() && isExistingOwner(userId);
     }
 
     /**
-     * @description Controls access to the products collection. Publicly readable, writable by owner.
+     * @description Controls access to product documents.
      * @path /products/{productId}
-     * @allow (get) Any user can read any product.
-     *   Request: { "auth": null }
-     * @allow (list) Any user can list products.
-     *   Request: { "auth": null }
-     * @deny (create) No one can create since no ownerId exists
-     *   Request: { "auth": { "uid": "user123" }, "resource": { "data": { "sku": "123", "name": "Pepsi", "price": 1.50, "stock": 100 } } }
-     * @principle Public read, owner-only writes.
+     * @allow (get, list) Any user can read product information.
+     * @allow (create, update, delete) Authenticated users can manage product data.
+     * @deny (create, update, delete) Unauthenticated users cannot manage product data.
+     * @principle Allows public read access but restricts write access to authenticated users.
      */
     match /products/{productId} {
-        allow get, list: if true;
-        // CRITICAL: Cannot implement owner-only writes. The 'Product' entity is missing an 'ownerId' or 'authorId' field.
-        allow create, update, delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+      // Allow anyone to read product information.
+      allow get, list: if true;
+
+      // Allow authenticated users to create, update, and delete products.
+      allow create, update, delete: if isSignedIn();
+
+      function isSignedIn() {
+        return request.auth != null;
+      }
     }
 
-    /**
-     * @description Controls access to the orders collection. Publicly readable, writable by any authenticated user.
-     * @path /orders/{orderId}
-     * @allow (get) Any user can read any order.
-     *   Request: { "auth": null }
-     * @allow (list) Any user can list all orders.
-     *   Request: { "auth": null }
-     * @allow (create) Any signed in user can create an order
-     *   Request: { "auth": { "uid": "user123" }, "resource": { "data": { "shopId": "shop123", "orderDate": "2024-01-01", "status": "Pending", "totalAmount": 100, "itemCount": 10 } } }
-     * @principle Public read, authenticated user writes (for prototyping, needs refinement).
-     */
+     /**
+      * @description Controls access to order documents.
+      * @path /orders/{orderId}
+      * @allow (create, update, delete) Authenticated users can manage order data.
+      * @deny (create, update, delete) Unauthenticated users cannot manage order data.
+      */
     match /orders/{orderId} {
-        allow get, list: if true;
-        allow create: if isSignedIn();
-        allow update: if isSignedIn() && resource != null;
-        allow delete: if isSignedIn() && resource != null;
+         // Allow authenticated users to create, update, and delete orders.
+         allow create, update, delete: if isSignedIn();
+
+         // Deny read and list access to orders.
+         allow get, list: if false;
+
+         function isSignedIn() {
+            return request.auth != null;
+         }
     }
-  }
-
-  // Helper functions
-  function isSignedIn() {
-    return request.auth != null;
-  }
-
-  function isOwner(userId) {
-    return request.auth.uid == userId;
-  }
-
-  function isExistingOwner(userId) {
-      return isOwner(userId) && resource != null;
   }
 }
