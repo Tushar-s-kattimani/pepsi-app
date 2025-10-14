@@ -1,8 +1,8 @@
 
 'use client';
 
-import { useState } from 'react';
-import { useUser, useFirestore, useDoc, useMemoFirebase, useAuth } from '@/firebase';
+import { useState, useEffect } from 'react';
+import { useUser, useFirestore, useDoc, useMemoFirebase, useAuth, errorEmitter } from '@/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
 import { updateProfile } from 'firebase/auth';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -26,7 +26,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { errorEmitter, FirestorePermissionError } from '@/firebase/errors';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 
 const profileSchema = z.object({
@@ -69,7 +69,7 @@ export default function ProfilePage() {
     },
   });
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (userProfile) {
       reset({
         displayName: userProfile.displayName,
@@ -140,6 +140,7 @@ export default function ProfilePage() {
   }
   
   const getInitials = (name: string) => {
+    if (!name) return '';
     return name.split(' ').map(n => n[0]).join('');
   }
 
