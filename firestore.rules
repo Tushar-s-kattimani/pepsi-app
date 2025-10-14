@@ -1,77 +1,105 @@
 /**
- * @file Firestore Security Rules
- * @description This ruleset defines access control for the Firestore database.
+ * @fileoverview Firestore Security Rules for the application.
  *
  * Core Philosophy:
- * This ruleset prioritizes strong authorization.
- * - Users can only read and write their own user profiles.
- * - Products are publicly readable but only writeable under specific conditions (not yet defined).
- * - Orders are currently not secured and need to be secured by some role or shop id.
+ * This ruleset prioritizes security by enforcing strict ownership and explicit access control.
+ * It uses denormalization and helper functions to ensure efficient and maintainable rules.
  *
  * Data Structure:
- * - /users/{userId}: Stores user profile information.
- * - /products/{productId}: Stores product information.
- * - /orders/{orderId}: Stores order information.
+ * - User profiles are stored under `/users/{userId}`.
+ * - Products are stored under `/products/{productId}` and are publicly readable.
+ * - Orders are stored under `/orders/{orderId}` and are publicly readable, with restricted write access.
  *
  * Key Security Decisions:
  * - User listing is disallowed.
- * - Data shape is not strictly enforced in this prototyping phase.
+ * - Public read access is granted to the `/products` and `/orders` collections.
+ * - Write access to the `/orders` collection is currently open (TODO: Implement shop-based access control).
  *
- * Authorization Denormalization Strategy:
- *  - The orders collection should have shop id on the orders collection.
+ * Denormalization for Authorization:
+ * - The `Order` entity includes `shopId` to enable efficient shop-based authorization for order writes.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Controls access to user profile information.
-     * @path /users/{userId}
-     * @allow (create) Authenticated user can create their own profile if the userId matches their auth UID.
-     * @allow (get, update, delete) Authenticated user can only access their own profile.
-     * @deny (create) If the userId does not match the authenticated user's UID.
-     * @deny (list) Listing of users is not allowed.
-     * @principle Enforces strict user-ownership for profile data.
+     * @description Checks if the request is authenticated.
      */
-    match /users/{userId} {
-      // Helper function to check if the requested user ID matches the authenticated user's ID.
-      function isOwner(userId) {
-        return request.auth.uid == userId;
-      }
-
-      // Helper function to determine if the user is signed in
-      function isSignedIn() {
-        return request.auth != null;
-      }
-      allow get: if isOwner(userId);
-      allow list: if false;
-      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.id == userId;
-      allow update: if isSignedIn() && isOwner(userId) && resource.data.id == userId;
-      allow delete: if isSignedIn() && isOwner(userId) && resource.data.id == userId;
+    function isSignedIn() {
+      return request.auth != null;
     }
 
     /**
-     * @description Controls access to product information.
-     * @path /products/{productId}
-     * @allow (get, list) Anyone can read product information.
-     * @deny (create, update, delete) Only authorized users can create, update, or delete products.
-     * @principle Public read, protected write for product catalog.
+     * @description Checks if the authenticated user's UID matches the provided userId.
+     * @param {string} userId - The user ID to compare against.
      */
-    match /products/{productId} {
-      allow get, list: if true;
-      allow create, update, delete: if false; // TODO: Implement product creation/modification authorization.
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
     }
 
-     /**
-      * @description Controls access to order information.
-      * @path /orders/{orderId}
-      * @allow (get, list) Anyone can read order information.
-      * @deny (create, update, delete) Only authorized users can create, update, or delete orders.
-      * @principle Open Access - This is not secured.
-      */
+    /**
+     * @description Checks if the authenticated user's UID matches the ownerId in the resource data.
+     * @param {string} ownerId - The owner ID to compare against from the resource data.
+     */
+    function isResourceOwner(ownerId) {
+        return isSignedIn() && request.auth.uid == ownerId;
+    }
+
+    /**
+     * @description Checks if the user is the owner and the resource exists (for update/delete).
+     * @param {string} userId - The user ID to compare against.
+     */
+    function isExistingOwner(userId) {
+        return isOwner(userId) && resource.data != null;
+    }
+
+    /**
+     * @description Rules for user profiles.
+     * @path /users/{userId}
+     * @allow (create) - A user can create their own profile if the userId matches their auth.uid.
+     * @allow (get, update, delete) - A user can only access/modify their own profile.
+     * @deny (list) - User listing is not allowed.
+     * @deny (create) - A user cannot create a profile for another user.
+     * @principle Enforces document ownership for user profiles.
+     */
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow list: if false;
+
+      allow create: if isOwner(userId) && request.resource.data.email is string && request.resource.data.displayName is string;
+      allow update: if isOwner(userId);
+      allow delete: if isOwner(userId);
+    }
+
+    /**
+     * @description Rules for products.
+     * @path /products/{productId}
+     * @allow (get, list) - Anyone can read product information.
+     * @deny (create, update, delete) - Only admins can create, update, or delete products (TODO: Implement admin role).
+     * @principle Public read access with restricted write access for admins.
+     */
+    match /products/{productId} {
+      allow get: if true;
+      allow list: if true;
+      allow create: if false; // TODO: Implement admin role check
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    /**
+     * @description Rules for orders.
+     * @path /orders/{orderId}
+     * @allow (get, list) - Anyone can read order information.
+     * @allow (create) - Anyone can create order, but must provide shopId, orderDate, status, totalAmount and itemCount.
+     * @deny (update, delete) - Nobody can update or delete orders.
+     * @principle Public read access, but need to control write access based on shopId.
+     */
     match /orders/{orderId} {
-      allow get, list: if true;
-      allow create, update, delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+        allow get: if true;
+        allow list: if true;
+        allow create: if isSignedIn() && request.resource.data.shopId is string && request.resource.data.orderDate is string && request.resource.data.status is string && request.resource.data.totalAmount is number && request.resource.data.itemCount is number;
+        allow update: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+        allow delete: if false;
     }
   }
 }
