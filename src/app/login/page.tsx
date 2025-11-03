@@ -57,25 +57,32 @@ export default function LoginPage() {
     }
   };
 
-  const handleAdminLogin = async () => {
+  const handleAdminAuth = async (action: (email: string, pass: string) => Promise<any>) => {
+    if (!adminEmail || !adminPassword) {
+      setError("Email and password cannot be empty.");
+      return;
+    }
+    if (!adminEmail.endsWith('@admin.com')) {
+        setError("Invalid email format for an admin account.");
+        return;
+    }
     setLoading(true);
     setError('');
     try {
-      await signIn(adminEmail, adminPassword);
+      await action(adminEmail, adminPassword);
     } catch (e: any) {
-      if (e.code === 'auth/user-not-found') {
-        try {
-          await signUp(adminEmail, adminPassword);
-        } catch (signUpError: any) {
-           setError('Failed to create admin account. Please try again.');
-        }
-      } else {
-        setError('Admin sign-in failed. Please check credentials.');
+       let friendlyMessage = 'An unexpected error occurred.';
+      if (e.code === 'auth/user-not-found' || e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential') {
+        friendlyMessage = 'Invalid email or password. Please try again.';
+      } else if (e.code === 'auth/email-already-in-use') {
+        friendlyMessage = 'An admin account with this email already exists. Please sign in.';
       }
+      setError(friendlyMessage);
     } finally {
       setLoading(false);
     }
-  }
+  };
+
 
   if (authLoading || (!authLoading && user)) {
     return (
@@ -170,15 +177,25 @@ export default function LoginPage() {
                     />
                 </div>
                 {error && <p className="text-sm text-center text-red-500 font-medium">{error}</p>}
-                <Button
-                    onClick={handleAdminLogin}
-                    disabled={loading}
-                    className="w-full py-6 text-lg"
-                >
-                    {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : 'Sign In as Admin'}
-                </Button>
+                 <div className="space-y-3">
+                    <Button
+                        onClick={() => handleAdminAuth(signIn)}
+                        disabled={loading}
+                        className="w-full py-6 text-lg"
+                    >
+                        {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : 'Sign In as Admin'}
+                    </Button>
+                     <Button
+                        onClick={() => handleAdminAuth(signUp)}
+                        disabled={loading}
+                        variant="outline"
+                        className="w-full py-6 text-lg"
+                    >
+                        {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : 'Create Admin Account'}
+                    </Button>
+                </div>
                 <p className="text-xs text-center text-gray-500">
-                    Use the provided administrator credentials to access the admin dashboard.
+                    Use an email ending in @admin.com to create an admin account.
                 </p>
             </TabsContent>
 
