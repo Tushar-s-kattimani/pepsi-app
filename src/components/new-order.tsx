@@ -5,17 +5,41 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/components/ui/use-toast';
-import { Loader2, PlusCircle, Trash2 } from 'lucide-react';
+import { Loader2, PlusCircle, Trash2, Box } from 'lucide-react';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/firebase/config';
 import { useUser } from '@/firebase';
 import { useState } from 'react';
+import { Input } from '@/components/ui/input';
 
 export function NewOrder({ products = [], loading }: { products: any[], loading: boolean }) {
   const { cart, addToCart, updateQuantity, clearCart, subtotal, total, tax } = useCart();
   const { toast } = useToast();
   const { user } = useUser();
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
+  const [quantities, setQuantities] = useState<{ [key: string]: number }>({});
+
+  const handleQuantityChange = (productId: string, value: string) => {
+    const quantity = parseInt(value, 10);
+    setQuantities(prev => ({ ...prev, [productId]: isNaN(quantity) ? 1 : quantity }));
+  };
+  
+  const handleAddToCart = (product: any) => {
+    const quantityToAdd = quantities[product.id] || 1;
+    addToCart(product, quantityToAdd);
+  };
+  
+  const handleAddBox = (product: any) => {
+    if (product.boxQuantity > 0) {
+      addToCart(product, product.boxQuantity);
+    } else {
+      toast({
+        variant: 'destructive',
+        title: 'No Box Quantity Set',
+        description: `A standard box quantity hasn't been set for ${product.name}.`,
+      });
+    }
+  };
 
   const handlePlaceOrder = async () => {
     if (!user) {
@@ -57,10 +81,9 @@ export function NewOrder({ products = [], loading }: { products: any[], loading:
                   <TableRow>
                     <TableHead>Product</TableHead>
                     <TableHead>Size</TableHead>
-                    <TableHead>Box Quantity</TableHead>
                     <TableHead>Price</TableHead>
                     <TableHead>Stock</TableHead>
-                    <TableHead>Action</TableHead>
+                    <TableHead className="text-center">Action</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -68,14 +91,27 @@ export function NewOrder({ products = [], loading }: { products: any[], loading:
                     <TableRow key={product.id}>
                       <TableCell>{product.name}</TableCell>
                       <TableCell>{product.size}</TableCell>
-                      <TableCell>{product.boxQuantity || 'N/A'}</TableCell>
                       <TableCell>₹{product.price.toFixed(2)}</TableCell>
                       <TableCell>{product.stock}</TableCell>
                       <TableCell>
                         {product.stock > 0 ? (
-                          <Button size="sm" onClick={() => addToCart(product)}>
-                            <PlusCircle className="mr-2 h-4 w-4" /> Add
-                          </Button>
+                          <div className="flex items-center gap-2">
+                            <Input
+                              type="number"
+                              min="1"
+                              value={quantities[product.id] || '1'}
+                              onChange={(e) => handleQuantityChange(product.id, e.target.value)}
+                              className="w-16 h-9"
+                            />
+                            <Button size="sm" onClick={() => handleAddToCart(product)} className="h-9">
+                              <PlusCircle className="mr-2 h-4 w-4" /> Add
+                            </Button>
+                             {product.boxQuantity > 0 && (
+                                <Button size="sm" variant="outline" onClick={() => handleAddBox(product)} className="h-9">
+                                  <Box className="mr-2 h-4 w-4" /> Add Box
+                                </Button>
+                             )}
+                          </div>
                         ) : (
                           <Button size="sm" disabled variant="outline">
                             Out of stock
