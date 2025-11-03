@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -64,11 +65,12 @@ export function AllOrders({ orders = [], users = [], loading }: { orders: any[],
         acc[order.shopId].orders.push(order);
         if (order.items && Array.isArray(order.items)) {
           order.items.forEach((item: any) => {
-            const existingItem = acc[order.shopId].aggregatedItems.get(item.id);
+            const compositeKey = `${item.id}-${item.size}`;
+            const existingItem = acc[order.shopId].aggregatedItems.get(compositeKey);
             if (existingItem) {
               existingItem.quantity += item.quantity;
             } else {
-              acc[order.shopId].aggregatedItems.set(item.id, { ...item });
+              acc[order.shopId].aggregatedItems.set(compositeKey, { ...item });
             }
           });
         }
@@ -136,7 +138,7 @@ export function AllOrders({ orders = [], users = [], loading }: { orders: any[],
                                         </TableHeader>
                                         <TableBody>
                                             {aggregatedItems.map((item: any) => (
-                                            <TableRow key={item.id}>
+                                            <TableRow key={`${item.id}-${item.size}`}>
                                                 <TableCell>{item.name} ({item.size})</TableCell>
                                                 <TableCell>{item.quantity}</TableCell>
                                             </TableRow>
