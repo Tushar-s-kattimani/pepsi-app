@@ -17,7 +17,7 @@ export default function Home() {
     }
   }, [user, loading, router]);
 
-  if (loading || !user) {
+  if (loading || !user || !role) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-gray-100">
         <div className="flex flex-col items-center gap-4">
@@ -36,12 +36,13 @@ export default function Home() {
     return <ShopDashboard />;
   }
 
+  // This is a fallback that should ideally not be reached if roles are assigned correctly
   return (
     <div className="flex h-screen w-full items-center justify-center bg-gray-100">
-      <div className="flex flex-col items-center gap-4">
-        <Loader2 className="h-12 w-12 animate-spin text-blue-500" />
-        <p className="text-lg text-gray-700">Authenticating and fetching role...</p>
-      </div>
+       <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-12 w-12 animate-spin text-blue-500" />
+          <p className="text-lg text-gray-700">Verifying user role...</p>
+        </div>
     </div>
   );
 }
