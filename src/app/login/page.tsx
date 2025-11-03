@@ -62,19 +62,19 @@ export default function LoginPage() {
     setError('');
     try {
       await signIn(adminEmail, adminPassword);
-      // The useEffect will handle the redirect
     } catch (e: any) {
-        // The user does not exist, so we need to create it.
-        if (e.code === 'auth/user-not-found') {
-            try {
-                await signUp(adminEmail, adminPassword);
-                // The useEffect and provider will handle the redirect and role assignment.
-            } catch (signUpError: any) {
-                 setError('Failed to create admin account. Please try again.');
-            }
-        } else {
-             setError('Admin sign-in failed. Please check credentials.');
+      if (e.code === 'auth/user-not-found') {
+        try {
+          await signUp(adminEmail, adminPassword);
+          // On successful sign-up, the useEffect will handle the redirect.
+        } catch (signUpError: any) {
+          setError('Failed to create admin account. Please try again.');
         }
+      } else if (e.code === 'auth/invalid-credential' || e.code === 'auth/wrong-password') {
+        setError('Admin sign-in failed. Please check credentials.');
+      } else {
+        setError('An unexpected error occurred during admin sign-in.');
+      }
     } finally {
       setLoading(false);
     }
