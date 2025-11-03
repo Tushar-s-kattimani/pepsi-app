@@ -143,7 +143,7 @@ export function ProductManagement({ products = [], loading }: { products: any[],
                   <TableCell className="space-x-2">
                     <Button variant="outline" size="sm" onClick={() => handleOpenDialog(product)}>Edit</Button>
                     <Button variant="destructive" size="sm" onClick={() => handleDelete(product.id)}>
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 className="mr-2 h-4 w-4" /> Delete
                     </Button>
                   </TableCell>
                 </TableRow>
