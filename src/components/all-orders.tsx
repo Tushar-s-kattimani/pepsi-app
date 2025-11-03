@@ -7,6 +7,7 @@ import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/firebase/config';
 import { useToast } from '@/components/ui/use-toast';
 import { Loader2 } from 'lucide-react';
+import { useMemo } from 'react';
 
 const statusColors: { [key: string]: string } = {
   Pending: 'bg-yellow-100 text-yellow-800',
@@ -14,7 +15,7 @@ const statusColors: { [key: string]: string } = {
   Delivered: 'bg-green-100 text-green-800',
 };
 
-export function AllOrders({ orders = [], loading }: { orders: any[], loading: boolean }) {
+export function AllOrders({ orders = [], users = [], loading }: { orders: any[], users: any[], loading: boolean }) {
   const { toast } = useToast();
 
   const handleStatusChange = async (orderId: string, newStatus: string) => {
@@ -26,6 +27,12 @@ export function AllOrders({ orders = [], loading }: { orders: any[], loading: bo
       toast({ variant: 'destructive', title: 'Error', description: error.message });
     }
   };
+
+  const usersMap = useMemo(() => {
+    const map = new Map();
+    users.forEach(user => map.set(user.id, user));
+    return map;
+  }, [users]);
   
   return (
     <Card>
@@ -40,7 +47,9 @@ export function AllOrders({ orders = [], loading }: { orders: any[], loading: bo
             <TableHeader>
               <TableRow>
                 <TableHead>Order ID</TableHead>
-                <TableHead>Shop Email</TableHead>
+                <TableHead>Shop Name</TableHead>
+                <TableHead>Location</TableHead>
+                <TableHead>Phone</TableHead>
                 <TableHead>Date</TableHead>
                 <TableHead>Total</TableHead>
                 <TableHead>Status</TableHead>
@@ -48,31 +57,36 @@ export function AllOrders({ orders = [], loading }: { orders: any[], loading: bo
               </TableRow>
             </TableHeader>
             <TableBody>
-              {orders.map((order) => (
-                <TableRow key={order.id}>
-                  <TableCell className="font-mono text-xs">{order.id.substring(0, 8)}</TableCell>
-                  <TableCell>{order.shopEmail}</TableCell>
-                  <TableCell>{order.createdAt ? new Date(order.createdAt.toMillis()).toLocaleDateString() : 'N/A'}</TableCell>
-                  <TableCell>₹{order.totalAmount.toFixed(2)}</TableCell>
-                  <TableCell>
-                    <span className={`px-2 py-1 text-xs font-semibold rounded-full ${statusColors[order.status]}`}>
-                      {order.status}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <Select onValueChange={(value) => handleStatusChange(order.id, value)} defaultValue={order.status}>
-                      <SelectTrigger className="w-[120px]">
-                        <SelectValue placeholder="Status" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Pending">Pending</SelectItem>
-                        <SelectItem value="Confirmed">Confirmed</SelectItem>
-                        <SelectItem value="Delivered">Delivered</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {orders.map((order) => {
+                const shopUser = usersMap.get(order.shopId);
+                return (
+                  <TableRow key={order.id}>
+                    <TableCell className="font-mono text-xs">{order.id.substring(0, 8)}</TableCell>
+                    <TableCell>{shopUser?.shopName || 'N/A'}</TableCell>
+                    <TableCell>{shopUser?.location || 'N/A'}</TableCell>
+                    <TableCell>{shopUser?.phoneNumber || 'N/A'}</TableCell>
+                    <TableCell>{order.createdAt ? new Date(order.createdAt.toMillis()).toLocaleDateString() : 'N/A'}</TableCell>
+                    <TableCell>₹{order.totalAmount.toFixed(2)}</TableCell>
+                    <TableCell>
+                      <span className={`px-2 py-1 text-xs font-semibold rounded-full ${statusColors[order.status]}`}>
+                        {order.status}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <Select onValueChange={(value) => handleStatusChange(order.id, value)} defaultValue={order.status}>
+                        <SelectTrigger className="w-[120px]">
+                          <SelectValue placeholder="Status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Pending">Pending</SelectItem>
+                          <SelectItem value="Confirmed">Confirmed</SelectItem>
+                          <SelectItem value="Delivered">Delivered</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
+                  </TableRow>
+                )
+              })}
             </TableBody>
           </Table>
         )}

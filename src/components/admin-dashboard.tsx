@@ -22,7 +22,7 @@ export function AdminDashboard() {
       case 'products':
         return <ProductManagement />;
       case 'orders':
-        return <AllOrders orders={orders} loading={ordersLoading} />;
+        return <AllOrders orders={orders} users={users} loading={ordersLoading || usersLoading} />;
        case 'shops':
         return <ShopManagement users={users} loading={usersLoading} />;
       default:
