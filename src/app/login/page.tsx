@@ -12,8 +12,8 @@ import { Loader2, Package, User as UserIcon, Shield } from 'lucide-react';
 export default function LoginPage() {
   const [shopEmail, setShopEmail] = useState('');
   const [shopPassword, setShopPassword] = useState('');
-  const [adminEmail, setAdminEmail] = useState('');
-  const [adminPassword, setAdminPassword] = useState('');
+  const [adminEmail, setAdminEmail] = useState('tushar@admin.com');
+  const [adminPassword, setAdminPassword] = useState('tushar@123');
 
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -58,35 +58,25 @@ export default function LoginPage() {
   };
 
   const handleAdminLogin = async () => {
-    if (adminEmail.toLowerCase() !== 'tushar@admin.com') {
-      setError("Invalid admin email address.");
-      return;
-    }
-
     setLoading(true);
     setError('');
-    const adminPass = 'tushar@123';
-
     try {
-      await signIn(adminEmail, adminPass);
-      // Successful sign-in will be handled by the useEffect
+      await signIn(adminEmail, adminPassword);
+      // The useEffect will handle the redirect
     } catch (e: any) {
-      if (e.code === 'auth/user-not-found') {
-        // If admin user doesn't exist, create it. The provider will handle the redirect.
-        // No need to show an error here, the useEffect will redirect upon successful creation.
-        await signUp(adminEmail, adminPass).catch(signUpError => {
-            // This inner catch is for a potential failure during the sign-up itself (e.g., network error)
+        // The user does not exist, so we need to create it.
+        if (e.code === 'auth/user-not-found') {
+            try {
+                await signUp(adminEmail, adminPassword);
+                // The useEffect and provider will handle the redirect and role assignment.
+            } catch (signUpError: any) {
+                 setError('Failed to create admin account. Please try again.');
+            }
+        } else {
              setError('Admin sign-in failed. Please check credentials.');
-        });
-      } else {
-        // Handle other sign-in errors like wrong password
-        setError('Admin sign-in failed. Please check credentials.');
-      }
+        }
     } finally {
-      // Set loading to false only if there's an error and no redirect is imminent
-      if (error) {
-        setLoading(false);
-      }
+      setLoading(false);
     }
   }
 
