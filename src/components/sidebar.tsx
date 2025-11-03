@@ -24,22 +24,37 @@ const navItems = {
 };
 
 const GaneshaIcon = () => (
-    <svg 
-        xmlns="http://www.w3.org/2000/svg" 
-        viewBox="0 0 24 24" 
-        fill="none" 
-        stroke="currentColor" 
-        strokeWidth="1.5" 
-        strokeLinecap="round" 
-        strokeLinejoin="round"
-    >
-        <title>Stylized Ganesha Icon</title>
-        <path d="M7 10.5C7 8 9 6 12 6s5 2 5 4.5" />
-        <path d="M12 6V5a2 2 0 0 1 2-2h0a2 2 0 0 1 2 2v0" />
-        <path d="M12 18c-2 0-3-1-3-3v-2" />
-        <path d="M12 13c-2 0-3 1-3 3 0 2 1 3 3 3s3-1 3-3" />
-        <path d="M19 12a7 7 0 1 1-14 0" />
-        <path d="M10 13a2 2 0 1 0 4 0" />
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+        <defs>
+            <linearGradient id="gradientTrunk" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style={{stopColor:"#FFD700",stopOpacity:1}} />
+            <stop offset="100%" style={{stopColor:"#FFA500",stopOpacity:1}} />
+            </linearGradient>
+            <linearGradient id="gradientHead" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style={{stopColor:"#FFECB3",stopOpacity:1}} />
+            <stop offset="100%" style={{stopColor:"#FFCC80",stopOpacity:1}} />
+            </linearGradient>
+            <filter id="shadow">
+            <feDropShadow dx="2" dy="2" stdDeviation="2" floodColor="#000" floodOpacity="0.3"/>
+            </filter>
+        </defs>
+
+        <path d="M50 20 C 70 5 90 25 90 50 C 90 75 70 95 50 90 C 30 95 10 75 10 50 C 10 25 30 5 50 20 Z" 
+                fill="url(#gradientHead)" stroke="#6D4C41" strokeWidth="2" filter="url(#shadow)"/>
+
+        <path d="M40 15 Q 20 0 5 40 Q 15 70 35 60 Z" fill="#FFB74D" stroke="#6D4C41" strokeWidth="1.5"/>
+        <path d="M60 15 Q 80 0 95 40 Q 85 70 65 60 Z" fill="#FFB74D" stroke="#6D4C41" strokeWidth="1.5"/>
+
+        <path d="M50 50 C 55 65 45 80 50 85 C 55 90 60 75 55 60 Z" 
+                fill="url(#gradientTrunk)" stroke="#6D4C41" strokeWidth="2"/>
+
+        <circle cx="40" cy="40" r="4" fill="#212121"/>
+        <circle cx="60" cy="40" r="4" fill="#212121"/>
+
+        <path d="M50 30 L53 35 Q50 40 47 35 L50 30 Z" fill="#D32F2F"/>
+        
+        <path d="M60 55 Q 65 50 60 45 L 65 48 Z" fill="#FFFFFF" stroke="#6D4C41" strokeWidth="1.5"/>
+        <path d="M40 55 Q 35 50 40 45 L 35 48 Z" fill="#FFFFFF" stroke="#6D4C41" strokeWidth="1.5"/>
     </svg>
 );
 
