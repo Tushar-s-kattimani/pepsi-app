@@ -9,7 +9,7 @@ import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '@/firebase/config';
 import { useToast } from '@/components/ui/use-toast';
 import { Loader2, MapPin, ShoppingCart, User } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 
 const statusColors: { [key: string]: string } = {
   Pending: 'bg-yellow-100 text-yellow-800',
@@ -21,7 +21,7 @@ export function AllOrders({ orders: initialOrders = [], users = [], loading }: {
   const { toast } = useToast();
   const [orders, setOrders] = useState(initialOrders);
 
-  useMemo(() => {
+  useEffect(() => {
     setOrders(initialOrders);
   }, [initialOrders]);
 
