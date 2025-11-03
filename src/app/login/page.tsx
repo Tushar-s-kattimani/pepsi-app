@@ -78,10 +78,7 @@ export default function LoginPage() {
     } catch (e: any) {
       if (e.code === 'auth/user-not-found' || e.code === 'auth/invalid-credential') {
         // If admin user doesn't exist, create it. The provider will handle the rest.
-        await signUp(adminEmail, adminPassword).catch(signUpError => {
-            // This catch is a safeguard for the signUp call itself
-            setError('Failed to create admin account. Please try again.');
-        });
+        await signUp(adminEmail, adminPassword);
       } else {
         setError('Admin sign-in failed. Please check credentials.');
       }
