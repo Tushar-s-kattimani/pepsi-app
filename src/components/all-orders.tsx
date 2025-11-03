@@ -56,14 +56,16 @@ export function AllOrders({ orders = [], users = [], loading }: { orders: any[],
           };
         }
         acc[order.shopId].orders.push(order);
-        order.items.forEach((item: any) => {
-          const existingItem = acc[order.shopId].aggregatedItems.get(item.id);
-          if (existingItem) {
-            existingItem.quantity += item.quantity;
-          } else {
-            acc[order.shopId].aggregatedItems.set(item.id, { ...item });
-          }
-        });
+        if (order.items && Array.isArray(order.items)) {
+          order.items.forEach((item: any) => {
+            const existingItem = acc[order.shopId].aggregatedItems.get(item.id);
+            if (existingItem) {
+              existingItem.quantity += item.quantity;
+            } else {
+              acc[order.shopId].aggregatedItems.set(item.id, { ...item });
+            }
+          });
+        }
         return acc;
       }, {} as any);
 
