@@ -57,6 +57,7 @@ export function NewOrder({ products = [], loading }: { products: any[], loading:
                   <TableRow>
                     <TableHead>Product</TableHead>
                     <TableHead>Size</TableHead>
+                    <TableHead>Box Quantity</TableHead>
                     <TableHead>Price</TableHead>
                     <TableHead>Stock</TableHead>
                     <TableHead>Action</TableHead>
@@ -67,6 +68,7 @@ export function NewOrder({ products = [], loading }: { products: any[], loading:
                     <TableRow key={product.id}>
                       <TableCell>{product.name}</TableCell>
                       <TableCell>{product.size}</TableCell>
+                      <TableCell>{product.boxQuantity || 'N/A'}</TableCell>
                       <TableCell>₹{product.price.toFixed(2)}</TableCell>
                       <TableCell>{product.stock}</TableCell>
                       <TableCell>

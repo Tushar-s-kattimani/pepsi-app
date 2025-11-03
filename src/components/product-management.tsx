@@ -11,7 +11,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useToast } from '@/components/ui/use-toast';
-import { addDoc, collection, doc, updateDoc } from 'firebase/firestore';
+import { addDoc, collection, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '@/firebase/config';
 import { useCollection } from '@/firebase';
 import { Loader2, PackagePlus } from 'lucide-react';
@@ -21,12 +21,13 @@ const productSchema = z.object({
   size: z.string().min(1, 'Product size is required'),
   price: z.coerce.number().min(0.01, 'Price must be greater than 0'),
   stock: z.coerce.number().int().min(0, 'Stock cannot be negative'),
+  boxQuantity: z.coerce.number().int().min(0, 'Box quantity cannot be negative'),
 });
 
 type ProductFormValues = z.infer<typeof productSchema>;
 
 export function ProductManagement() {
-  const { data: products = [], loading } = useCollection('products');
+  const { data: products, loading } = useCollection('products');
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any | null>(null);
@@ -39,9 +40,9 @@ export function ProductManagement() {
   const handleOpenDialog = (product: any | null = null) => {
     setEditingProduct(product);
     if (product) {
-      reset({ name: product.name, size: product.size, price: product.price, stock: product.stock });
+      reset({ name: product.name, size: product.size, price: product.price, stock: product.stock, boxQuantity: product.boxQuantity || 0 });
     } else {
-      reset({ name: '', size: '', price: 0, stock: 0 });
+      reset({ name: '', size: '', price: 0, stock: 0, boxQuantity: 0 });
     }
     setOpen(true);
   };
@@ -69,6 +70,19 @@ export function ProductManagement() {
       setIsSubmitting(false);
     }
   };
+
+  const handleDelete = async (productId: string) => {
+    if (window.confirm('Are you sure you want to delete this product?')) {
+        try {
+            await deleteDoc(doc(db, 'products', productId));
+            toast({ title: 'Success', description: 'Product deleted successfully.' });
+            handleCloseDialog(); // Close dialog if open
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Error', description: `Failed to delete product: ${error.message}` });
+        }
+    }
+  };
+
 
   return (
     <Card>
@@ -105,13 +119,25 @@ export function ProductManagement() {
                 <Input id="stock" type="number" {...register('stock')} />
                 {errors.stock && <p className="text-sm text-red-500 mt-1">{errors.stock.message}</p>}
               </div>
+               <div>
+                <Label htmlFor="boxQuantity">Box Quantity</Label>
+                <Input id="boxQuantity" type="number" {...register('boxQuantity')} />
+                {errors.boxQuantity && <p className="text-sm text-red-500 mt-1">{errors.boxQuantity.message}</p>}
+              </div>
               <DialogFooter className="sm:justify-end pt-4">
-                <div className="flex gap-2">
-                  <Button type="button" variant="ghost" onClick={handleCloseDialog}>Cancel</Button>
-                  <Button type="submit" disabled={isSubmitting}>
-                    {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                    {editingProduct ? 'Update Product' : 'Save Product'}
-                  </Button>
+                <div className="flex w-full justify-between">
+                    {editingProduct && (
+                        <Button type="button" variant="destructive" onClick={() => handleDelete(editingProduct.id)} disabled={isSubmitting}>
+                            Delete
+                        </Button>
+                    )}
+                    <div className="flex gap-2 ml-auto">
+                        <Button type="button" variant="ghost" onClick={handleCloseDialog}>Cancel</Button>
+                        <Button type="submit" disabled={isSubmitting}>
+                            {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                            {editingProduct ? 'Update Product' : 'Save Product'}
+                        </Button>
+                    </div>
                 </div>
               </DialogFooter>
             </form>
@@ -127,6 +153,7 @@ export function ProductManagement() {
               <TableRow>
                 <TableHead>Product</TableHead>
                 <TableHead>Size</TableHead>
+                <TableHead>Box Quantity</TableHead>
                 <TableHead>Price</TableHead>
                 <TableHead>Stock</TableHead>
                 <TableHead>Actions</TableHead>
@@ -137,6 +164,7 @@ export function ProductManagement() {
                 <TableRow key={product.id}>
                   <TableCell>{product.name}</TableCell>
                   <TableCell>{product.size}</TableCell>
+                  <TableCell>{product.boxQuantity || 'N/A'}</TableCell>
                   <TableCell>₹{product.price.toFixed(2)}</TableCell>
                   <TableCell>{product.stock}</TableCell>
                   <TableCell>
