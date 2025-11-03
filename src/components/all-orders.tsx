@@ -8,8 +8,9 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '@/firebase/config';
 import { useToast } from '@/components/ui/use-toast';
-import { Loader2, MapPin, User } from 'lucide-react';
+import { Loader2, MapPin, User, Download } from 'lucide-react';
 import { useMemo, useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
 
 const statusColors: { [key: string]: string } = {
   Pending: 'bg-yellow-100 text-yellow-800',
@@ -57,6 +58,9 @@ export function AllOrders({ orders: initialOrders = [], users = [], loading }: {
     const groupedByLocation: { [key: string]: any[] } = {};
     orders.forEach(order => {
       const shopUser = usersMap.get(order.shopId);
+      // Skip orders from users who are not found (e.g., old data)
+      if (!shopUser) return;
+      
       const location = shopUser?.location || 'Unknown Location';
       if (!groupedByLocation[location]) {
         groupedByLocation[location] = [];
@@ -67,7 +71,7 @@ export function AllOrders({ orders: initialOrders = [], users = [], loading }: {
     const processedData = Object.entries(groupedByLocation).map(([location, locationOrders]) => {
       const ordersByShop = locationOrders.reduce((acc, order) => {
         const shopInfo = usersMap.get(order.shopId);
-        // If shopInfo doesn't exist for an order, skip it.
+        // This check is redundant due to the check above but good for safety
         if (!shopInfo) {
           return acc;
         }
@@ -107,11 +111,44 @@ export function AllOrders({ orders: initialOrders = [], users = [], loading }: {
     return processedData.sort((a, b) => a.location.localeCompare(b.location));
   }, [orders, usersMap]);
 
+  const handleDownload = () => {
+    let csvContent = "data:text/csv;charset=utf-8,";
+    csvContent += "Shop Name,Phone Number,Location,Product Name,Product Size,Total Quantity\r\n";
+
+    ordersByLocation.forEach(({ location, shops }) => {
+      shops.forEach(({ shopInfo, aggregatedItems }) => {
+        aggregatedItems.forEach((item: any) => {
+          const row = [
+            `"${shopInfo.shopName || ''}"`,
+            `"${shopInfo.phoneNumber || ''}"`,
+            `"${location}"`,
+            `"${item.name}"`,
+            `"${item.size}"`,
+            item.quantity,
+          ].join(',');
+          csvContent += row + "\r\n";
+        });
+      });
+    });
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "orders_report.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>All Customer Orders</CardTitle>
+        <Button onClick={handleDownload} variant="outline" size="sm">
+          <Download className="mr-2 h-4 w-4" />
+          Download Report
+        </Button>
       </CardHeader>
       <CardContent>
         {loading && initialOrders.length === 0 ? (
