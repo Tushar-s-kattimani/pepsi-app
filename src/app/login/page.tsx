@@ -69,19 +69,25 @@ export default function LoginPage() {
 
     try {
       await signIn(adminEmail, adminPass);
+      // Successful sign-in will be handled by the useEffect
     } catch (e: any) {
       if (e.code === 'auth/user-not-found') {
-        // If admin user doesn't exist, create it.
-        try {
-          await signUp(adminEmail, adminPass);
-        } catch (signUpError: any) {
-          setError('Failed to create admin account. Please try again.');
-        }
+        // If admin user doesn't exist, create it. The provider will handle the redirect.
+        await signUp(adminEmail, adminPass).catch(signUpError => {
+            // This catch is for the signup attempt itself, which could fail
+            // for reasons like network errors.
+            setError('Failed to create admin account. Please try again.');
+        });
       } else {
+        // Handle other sign-in errors like wrong password
         setError('Admin sign-in failed. Please check credentials.');
       }
     } finally {
-      setLoading(false);
+      // Set loading to false only if there's an error,
+      // otherwise the page will redirect.
+      if (error) {
+        setLoading(false);
+      }
     }
   }
 
