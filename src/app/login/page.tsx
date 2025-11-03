@@ -57,24 +57,42 @@ export default function LoginPage() {
     }
   };
 
-  const handleAdminAuth = async (action: (email: string, pass: string) => Promise<any>) => {
+  const handleAdminSignIn = async () => {
+    if (!adminEmail || !adminPassword) {
+      setError("Email and password cannot be empty.");
+      return;
+    }
+    setLoading(true);
+    setError('');
+    try {
+      await signIn(adminEmail, adminPassword);
+    } catch (e: any) {
+      let friendlyMessage = 'An unexpected error occurred.';
+      if (e.code === 'auth/user-not-found' || e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential') {
+        friendlyMessage = 'Invalid email or password. Please try again.';
+      }
+      setError(friendlyMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAdminSignUp = async () => {
     if (!adminEmail || !adminPassword) {
       setError("Email and password cannot be empty.");
       return;
     }
     if (!adminEmail.endsWith('@admin.com')) {
-        setError("Invalid email format for an admin account.");
-        return;
+      setError("Invalid email format for an admin account.");
+      return;
     }
     setLoading(true);
     setError('');
     try {
-      await action(adminEmail, adminPassword);
+      await signUp(adminEmail, adminPassword);
     } catch (e: any) {
-       let friendlyMessage = 'An unexpected error occurred.';
-      if (e.code === 'auth/user-not-found' || e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential') {
-        friendlyMessage = 'Invalid email or password. Please try again.';
-      } else if (e.code === 'auth/email-already-in-use') {
+      let friendlyMessage = 'An unexpected error occurred.';
+      if (e.code === 'auth/email-already-in-use') {
         friendlyMessage = 'An admin account with this email already exists. Please sign in.';
       }
       setError(friendlyMessage);
@@ -179,14 +197,14 @@ export default function LoginPage() {
                 {error && <p className="text-sm text-center text-red-500 font-medium">{error}</p>}
                  <div className="space-y-3">
                     <Button
-                        onClick={() => handleAdminAuth(signIn)}
+                        onClick={handleAdminSignIn}
                         disabled={loading}
                         className="w-full py-6 text-lg"
                     >
                         {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : 'Sign In as Admin'}
                     </Button>
                      <Button
-                        onClick={() => handleAdminAuth(signUp)}
+                        onClick={handleAdminSignUp}
                         disabled={loading}
                         variant="outline"
                         className="w-full py-6 text-lg"
