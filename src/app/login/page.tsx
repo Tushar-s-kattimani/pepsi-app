@@ -74,7 +74,11 @@ export default function LoginPage() {
     } catch (e: any) {
       if (e.code === 'auth/user-not-found') {
         // If admin user doesn't exist, create it with the specified password.
-        await signUp(adminEmail, 'tushar@123');
+        try {
+            await signUp(adminEmail, 'tushar@123');
+        } catch (signUpError: any) {
+             setError('Failed to create admin account. Please try again.');
+        }
       } else {
         setError('Admin sign-in failed. Please check credentials.');
       }
