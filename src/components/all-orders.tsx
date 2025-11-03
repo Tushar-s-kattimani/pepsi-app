@@ -9,7 +9,7 @@ import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '@/firebase/config';
 import { useToast } from '@/components/ui/use-toast';
 import { Loader2, MapPin, ShoppingCart, User } from 'lucide-react';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 
 const statusColors: { [key: string]: string } = {
   Pending: 'bg-yellow-100 text-yellow-800',
@@ -17,14 +17,21 @@ const statusColors: { [key: string]: string } = {
   Delivered: 'bg-green-100 text-green-800',
 };
 
-export function AllOrders({ orders = [], users = [], loading }: { orders: any[], users: any[], loading: boolean }) {
+export function AllOrders({ orders: initialOrders = [], users = [], loading }: { orders: any[], users: any[], loading: boolean }) {
   const { toast } = useToast();
+  const [orders, setOrders] = useState(initialOrders);
+
+  useMemo(() => {
+    setOrders(initialOrders);
+  }, [initialOrders]);
+
 
   const handleStatusChange = async (orderId: string, newStatus: string) => {
     const orderRef = doc(db, 'orders', orderId);
     if (newStatus === 'Delivered') {
       try {
         await deleteDoc(orderRef);
+        setOrders(prevOrders => prevOrders.filter(o => o.id !== orderId));
         toast({ title: 'Success', description: 'Order marked as delivered and removed.' });
       } catch (error: any) {
         toast({ variant: 'destructive', title: 'Error', description: `Failed to delete order: ${error.message}` });
@@ -32,6 +39,7 @@ export function AllOrders({ orders = [], users = [], loading }: { orders: any[],
     } else {
       try {
         await updateDoc(orderRef, { status: newStatus });
+        setOrders(prevOrders => prevOrders.map(o => o.id === orderId ? {...o, status: newStatus} : o));
         toast({ title: 'Success', description: 'Order status updated.' });
       } catch (error: any) {
         toast({ variant: 'destructive', title: 'Error', description: `Failed to update status: ${error.message}` });
@@ -106,7 +114,7 @@ export function AllOrders({ orders = [], users = [], loading }: { orders: any[],
         <CardTitle>All Customer Orders</CardTitle>
       </CardHeader>
       <CardContent>
-        {loading ? (
+        {loading && initialOrders.length === 0 ? (
             <div className="flex justify-center py-10"><Loader2 className="h-8 w-8 animate-spin" /></div>
         ) : (
           <Accordion type="multiple" className="w-full space-y-4">
