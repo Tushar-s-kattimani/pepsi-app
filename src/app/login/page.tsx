@@ -13,7 +13,7 @@ export default function LoginPage() {
   const [shopEmail, setShopEmail] = useState('');
   const [shopPassword, setShopPassword] = useState('');
   const [adminEmail, setAdminEmail] = useState('tushar@admin.com');
-  const [adminPassword, setAdminPassword] = useState('tushar@123');
+  const [adminPassword, setAdminPassword] = useState('tus@12');
 
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
