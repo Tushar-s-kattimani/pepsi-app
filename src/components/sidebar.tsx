@@ -59,8 +59,8 @@ export function Sidebar({ role, activeSection, setActiveSection }: SidebarProps)
 
   return (
     <aside className="hidden w-64 flex-col border-r bg-white p-4 shadow-xl md:flex">
-      <div className="mb-8 flex items-center gap-3 border-b pb-4">
-        <div className="h-10 w-10">
+      <div className="mb-8 flex items-center gap-4 rounded-xl bg-gradient-to-br from-blue-100 to-indigo-200 p-4 shadow-md">
+        <div className="h-10 w-10 flex-shrink-0">
           <PepsiBottleLogo />
         </div>
         <h1 className="text-xl font-bold text-gray-800 text-shadow-md">{role === 'admin' ? 'Gajanan Enterprises' : 'Shop Portal'}</h1>
