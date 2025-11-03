@@ -8,10 +8,15 @@ import { AdminOverview } from '@/components/admin-overview';
 import { ProductManagement } from '@/components/product-management';
 import { AllOrders } from '@/components/all-orders';
 import { ShopManagement } from '@/components/shop-management';
+import { query, collection, orderBy } from 'firebase/firestore';
+import { db } from '@/firebase/config';
 
 export function AdminDashboard() {
   const [activeSection, setActiveSection] = useState('dashboard');
-  const { data: orders, loading: ordersLoading } = useCollection('orders');
+
+  const ordersQuery = query(collection(db, 'orders'), orderBy('createdAt', 'desc'));
+  
+  const { data: orders, loading: ordersLoading } = useCollection(ordersQuery);
   const { data: products, loading: productsLoading } = useCollection('products');
   const { data: users, loading: usersLoading } = useCollection('users');
 
