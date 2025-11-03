@@ -32,7 +32,7 @@ export function Sidebar({ role, activeSection, setActiveSection }: SidebarProps)
         <div className="rounded-lg bg-blue-600 p-2 text-white">
           <Package className="h-6 w-6" />
         </div>
-        <h1 className="text-xl font-bold text-gray-800">DMS ({role.toUpperCase()})</h1>
+        <h1 className="text-xl font-bold text-gray-800">{role === 'admin' ? 'Gajanan Enterprises' : 'Shop Portal'}</h1>
       </div>
       <nav className="flex-1 space-y-2">
         {items.map((item) => (
