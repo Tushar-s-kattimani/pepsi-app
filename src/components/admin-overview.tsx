@@ -2,7 +2,7 @@
 
 import { Bar, Line } from 'react-chartjs-2';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { IndianRupee, Package, ShoppingCart, Users, Loader2 } from 'lucide-react';
+import { IndianRupee, Package, ShoppingCart, Users, Loader2, Clock, CheckCircle, Truck } from 'lucide-react';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, LineElement, Title, Tooltip, Legend, PointElement } from 'chart.js';
 import { useMemo } from 'react';
 
@@ -71,16 +71,19 @@ export function AdminOverview({ orders = [], products = [], users = [], loading 
   }
 
   const totalRevenue = orders.reduce((sum, order) => sum + order.totalAmount, 0);
-  const totalOrders = orders.length;
   const totalProducts = products.length;
   const totalShops = users.filter(u => u.role === 'shop').length;
+  
+  const pendingOrders = orders.filter(o => o.status === 'Pending').length;
+  const confirmedOrders = orders.filter(o => o.status === 'Confirmed').length;
+  const deliveredOrders = orders.filter(o => o.status === 'Delivered').length;
 
 
   return (
     <div className="space-y-8">
       <h2 className="text-3xl font-bold">Dashboard Overview</h2>
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+        <Card className="lg:col-span-2">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
             <IndianRupee className="h-4 w-4 text-muted-foreground" />
@@ -91,11 +94,29 @@ export function AdminOverview({ orders = [], products = [], users = [], loading 
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
-            <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Pending Orders</CardTitle>
+            <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalOrders}</div>
+            <div className="text-2xl font-bold">{pendingOrders}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Confirmed Orders</CardTitle>
+            <CheckCircle className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{confirmedOrders}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Delivered Orders</CardTitle>
+            <Truck className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{deliveredOrders}</div>
           </CardContent>
         </Card>
         <Card>
@@ -107,7 +128,8 @@ export function AdminOverview({ orders = [], products = [], users = [], loading 
             <div className="text-2xl font-bold">{totalProducts}</div>
           </CardContent>
         </Card>
-        <Card>
+        {/* This card is removed to make space for the order status breakdown */}
+        {/* <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Active Shops</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
@@ -115,7 +137,7 @@ export function AdminOverview({ orders = [], products = [], users = [], loading 
           <CardContent>
             <div className="text-2xl font-bold">{totalShops}</div>
           </CardContent>
-        </Card>
+        </Card> */}
       </div>
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
