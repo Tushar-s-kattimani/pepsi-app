@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '@/firebase/config';
 import { useToast } from '@/components/ui/use-toast';
 import { Loader2, MapPin, ShoppingCart, User } from 'lucide-react';
@@ -21,12 +21,21 @@ export function AllOrders({ orders = [], users = [], loading }: { orders: any[],
   const { toast } = useToast();
 
   const handleStatusChange = async (orderId: string, newStatus: string) => {
-    try {
-      const orderRef = doc(db, 'orders', orderId);
-      await updateDoc(orderRef, { status: newStatus });
-      toast({ title: 'Success', description: 'Order status updated.' });
-    } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Error', description: error.message });
+    const orderRef = doc(db, 'orders', orderId);
+    if (newStatus === 'Delivered') {
+      try {
+        await deleteDoc(orderRef);
+        toast({ title: 'Success', description: 'Order marked as delivered and removed.' });
+      } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Error', description: `Failed to delete order: ${error.message}` });
+      }
+    } else {
+      try {
+        await updateDoc(orderRef, { status: newStatus });
+        toast({ title: 'Success', description: 'Order status updated.' });
+      } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Error', description: `Failed to update status: ${error.message}` });
+      }
     }
   };
 
@@ -89,6 +98,7 @@ export function AllOrders({ orders = [], users = [], loading }: { orders: any[],
 
     return processedData.sort((a, b) => a.location.localeCompare(b.location));
   }, [orders, usersMap]);
+
 
   return (
     <Card>
