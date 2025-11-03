@@ -17,16 +17,21 @@ export function NewOrder({ products = [], loading }: { products: any[], loading:
   const { toast } = useToast();
   const { user } = useUser();
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
-  const [quantities, setQuantities] = useState<{ [key: string]: number }>({});
+  const [quantities, setQuantities] = useState<{ [key: string]: string }>({});
 
   const handleQuantityChange = (productId: string, value: string) => {
-    const quantity = parseInt(value, 10);
-    setQuantities(prev => ({ ...prev, [productId]: isNaN(quantity) ? 1 : quantity }));
+    setQuantities(prev => ({ ...prev, [productId]: value }));
   };
   
   const handleAddToCart = (product: any) => {
-    const quantityToAdd = quantities[product.id] || 1;
+    const quantityToAdd = parseInt(quantities[product.id] || '1', 10);
+     if (isNaN(quantityToAdd) || quantityToAdd < 1) {
+        toast({ variant: 'destructive', title: 'Invalid Quantity', description: 'Please enter a valid quantity.' });
+        return;
+    }
     addToCart(product, quantityToAdd);
+    // Reset quantity to 1 after adding
+    handleQuantityChange(product.id, '1');
   };
   
   const handleAddBox = (product: any) => {
@@ -95,13 +100,13 @@ export function NewOrder({ products = [], loading }: { products: any[], loading:
                       <TableCell>{product.stock}</TableCell>
                       <TableCell>
                         {product.stock > 0 ? (
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center justify-center gap-2">
                             <Input
                               type="number"
                               min="1"
                               value={quantities[product.id] || '1'}
                               onChange={(e) => handleQuantityChange(product.id, e.target.value)}
-                              className="w-16 h-9"
+                              className="w-20 h-9"
                             />
                             <Button size="sm" onClick={() => handleAddToCart(product)} className="h-9">
                               <PlusCircle className="mr-2 h-4 w-4" /> Add
@@ -113,7 +118,7 @@ export function NewOrder({ products = [], loading }: { products: any[], loading:
                              )}
                           </div>
                         ) : (
-                          <Button size="sm" disabled variant="outline">
+                           <Button size="sm" disabled variant="outline">
                             Out of stock
                           </Button>
                         )}
