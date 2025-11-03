@@ -76,7 +76,7 @@ export default function LoginPage() {
     try {
       await signIn(adminEmail, adminPassword);
     } catch (e: any) {
-      if (e.code === 'auth/user-not-found' || e.code === 'auth/invalid-credential') {
+      if (e.code === 'auth/user-not-found') {
         // If admin user doesn't exist, create it. The provider will handle the rest.
         await signUp(adminEmail, adminPassword);
       } else {
