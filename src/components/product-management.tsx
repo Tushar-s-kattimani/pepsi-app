@@ -11,10 +11,10 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useToast } from '@/components/ui/use-toast';
-import { addDoc, collection, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { addDoc, collection, doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/firebase/config';
 import { useCollection } from '@/firebase';
-import { Loader2, PackagePlus, Trash2 } from 'lucide-react';
+import { Loader2, PackagePlus } from 'lucide-react';
 
 const productSchema = z.object({
   name: z.string().min(1, 'Product name is required'),
@@ -70,18 +70,6 @@ export function ProductManagement() {
     }
   };
 
-  const handleDelete = async (productId: string) => {
-    if (window.confirm('Are you sure you want to delete this product? This action cannot be undone.')) {
-      try {
-        await deleteDoc(doc(db, 'products', productId));
-        toast({ title: 'Success', description: 'Product deleted successfully.' });
-        handleCloseDialog();
-      } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Error', description: `Failed to delete product: ${error.message}` });
-      }
-    }
-  };
-
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
@@ -117,14 +105,7 @@ export function ProductManagement() {
                 <Input id="stock" type="number" {...register('stock')} />
                 {errors.stock && <p className="text-sm text-red-500 mt-1">{errors.stock.message}</p>}
               </div>
-              <DialogFooter className="sm:justify-between pt-4">
-                <div>
-                  {editingProduct && (
-                    <Button type="button" variant="destructive" onClick={() => handleDelete(editingProduct.id)}>
-                      <Trash2 className="mr-2 h-4 w-4" /> Delete
-                    </Button>
-                  )}
-                </div>
+              <DialogFooter className="sm:justify-end pt-4">
                 <div className="flex gap-2">
                   <Button type="button" variant="ghost" onClick={handleCloseDialog}>Cancel</Button>
                   <Button type="submit" disabled={isSubmitting}>
@@ -158,11 +139,8 @@ export function ProductManagement() {
                   <TableCell>{product.size}</TableCell>
                   <TableCell>₹{product.price.toFixed(2)}</TableCell>
                   <TableCell>{product.stock}</TableCell>
-                  <TableCell className="space-x-2">
+                  <TableCell>
                     <Button variant="outline" size="sm" onClick={() => handleOpenDialog(product)}>Edit</Button>
-                    <Button variant="destructive" size="sm" onClick={() => handleDelete(product.id)}>
-                      <Trash2 className="h-4 w-4 mr-1" /> Delete
-                    </Button>
                   </TableCell>
                 </TableRow>
               ))}
