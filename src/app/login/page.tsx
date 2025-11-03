@@ -62,45 +62,37 @@ export default function LoginPage() {
       setError("Email and password cannot be empty.");
       return;
     }
+    if (!adminEmail.endsWith('@admin.com')) {
+        setError("Invalid email format for an admin account.");
+        return;
+    }
     setLoading(true);
     setError('');
     try {
       await signIn(adminEmail, adminPassword);
     } catch (e: any) {
-      let friendlyMessage = 'An unexpected error occurred.';
-      if (e.code === 'auth/user-not-found' || e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential') {
-        friendlyMessage = 'Invalid email or password. Please try again.';
+      if (e.code === 'auth/user-not-found') {
+        // If user not found, try to sign them up
+        try {
+          await signUp(adminEmail, adminPassword);
+        } catch (signUpError: any) {
+           let friendlyMessage = 'An unexpected error occurred during sign up.';
+            if (signUpError.code === 'auth/email-already-in-use') {
+                friendlyMessage = 'An admin account with this email already exists. Please sign in.';
+            }
+            setError(friendlyMessage);
+        }
+      } else {
+         let friendlyMessage = 'An unexpected error occurred.';
+        if (e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential') {
+            friendlyMessage = 'Invalid email or password. Please try again.';
+        }
+        setError(friendlyMessage);
       }
-      setError(friendlyMessage);
     } finally {
       setLoading(false);
     }
   };
-
-  const handleAdminSignUp = async () => {
-    if (!adminEmail || !adminPassword) {
-      setError("Email and password cannot be empty.");
-      return;
-    }
-    if (!adminEmail.endsWith('@admin.com')) {
-      setError("Invalid email format for an admin account.");
-      return;
-    }
-    setLoading(true);
-    setError('');
-    try {
-      await signUp(adminEmail, adminPassword);
-    } catch (e: any) {
-      let friendlyMessage = 'An unexpected error occurred.';
-      if (e.code === 'auth/email-already-in-use') {
-        friendlyMessage = 'An admin account with this email already exists. Please sign in.';
-      }
-      setError(friendlyMessage);
-    } finally {
-      setLoading(false);
-    }
-  };
-
 
   if (authLoading || (!authLoading && user)) {
     return (
@@ -203,17 +195,9 @@ export default function LoginPage() {
                     >
                         {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : 'Sign In as Admin'}
                     </Button>
-                     <Button
-                        onClick={handleAdminSignUp}
-                        disabled={loading}
-                        variant="outline"
-                        className="w-full py-6 text-lg"
-                    >
-                        {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : 'Create Admin Account'}
-                    </Button>
                 </div>
                 <p className="text-xs text-center text-gray-500">
-                    Use an email ending in @admin.com to create an admin account.
+                    Use an email ending in @admin.com to create an admin account. If it doesn't exist, it will be created.
                 </p>
             </TabsContent>
 
