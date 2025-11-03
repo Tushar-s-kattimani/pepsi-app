@@ -58,10 +58,6 @@ export default function LoginPage() {
   };
 
   const handleAdminLogin = async () => {
-    if (!adminEmail || !adminPassword) {
-      setError("Admin email and password cannot be empty.");
-      return;
-    }
     if (adminEmail.toLowerCase() !== 'tushar@admin.com') {
       setError("Invalid admin email address.");
       return;
@@ -69,15 +65,17 @@ export default function LoginPage() {
 
     setLoading(true);
     setError('');
+    const adminPass = 'tushar@123';
+
     try {
-      await signIn(adminEmail, adminPassword);
+      await signIn(adminEmail, adminPass);
     } catch (e: any) {
       if (e.code === 'auth/user-not-found') {
-        // If admin user doesn't exist, create it with the specified password.
+        // If admin user doesn't exist, create it.
         try {
-            await signUp(adminEmail, 'tushar@123');
+          await signUp(adminEmail, adminPass);
         } catch (signUpError: any) {
-             setError('Failed to create admin account. Please try again.');
+          setError('Failed to create admin account. Please try again.');
         }
       } else {
         setError('Admin sign-in failed. Please check credentials.');
