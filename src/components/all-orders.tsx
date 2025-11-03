@@ -48,9 +48,15 @@ export function AllOrders({ orders = [], users = [], loading }: { orders: any[],
 
     const processedData = Object.entries(groupedByLocation).map(([location, locationOrders]) => {
       const ordersByShop = locationOrders.reduce((acc, order) => {
+        const shopInfo = usersMap.get(order.shopId);
+        // If shopInfo doesn't exist for an order, skip it.
+        if (!shopInfo) {
+          return acc;
+        }
+
         if (!acc[order.shopId]) {
           acc[order.shopId] = {
-            shopInfo: usersMap.get(order.shopId),
+            shopInfo: shopInfo,
             orders: [],
             aggregatedItems: new Map(),
           };
