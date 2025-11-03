@@ -8,8 +8,6 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2, Package, User, Shield } from 'lucide-react';
-import { useToast } from '@/components/ui/use-toast';
-
 
 export default function LoginPage() {
   const [shopEmail, setShopEmail] = useState('');
@@ -21,7 +19,6 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const { signUp, signIn, user, loading: authLoading } = useAuth();
   const router = useRouter();
-  const { toast } = useToast();
 
   useEffect(() => {
     if (!authLoading && user) {
@@ -49,7 +46,7 @@ export default function LoginPage() {
       // The useEffect will handle the redirect
     } catch (e: any) {
       let friendlyMessage = 'An unexpected error occurred.';
-      if (e.code === 'auth/user-not-found' || e.code === 'auth/wrong-password') {
+      if (e.code === 'auth/user-not-found' || e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential') {
         friendlyMessage = 'Invalid email or password. Please try again.';
       } else if (e.code === 'auth/email-already-in-use') {
         friendlyMessage = 'An account with this email already exists. Please sign in.';
@@ -78,15 +75,25 @@ export default function LoginPage() {
     setError('');
     try {
       await signIn(adminEmail, adminPassword);
-      // The useEffect will handle the redirect
+      // Successful sign-in, useEffect will redirect
     } catch (e: any) {
-      setError('Admin sign-in failed. Please check credentials.');
+      if (e.code === 'auth/user-not-found' || e.code === 'auth/invalid-credential') {
+        // If admin user doesn't exist, create it
+        try {
+          await signUp(adminEmail, adminPassword);
+           // Successful sign-up, useEffect will redirect
+        } catch (signUpError: any) {
+          setError('Failed to create admin account. Please try again.');
+        }
+      } else {
+        setError('Admin sign-in failed. Please check credentials.');
+      }
     } finally {
       setLoading(false);
     }
   }
 
-  if (authLoading || user) {
+  if (authLoading || (!authLoading && user)) {
     return (
        <div className="flex h-screen w-full items-center justify-center bg-gray-100 dark:bg-gray-900">
         <div className="flex flex-col items-center gap-4">
@@ -110,7 +117,7 @@ export default function LoginPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="shop" className="w-full">
+          <Tabs defaultValue="shop" className="w-full" onValueChange={() => setError('')}>
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="shop"><User className="mr-2 h-4 w-4" /> Shop</TabsTrigger>
               <TabsTrigger value="admin"><Shield className="mr-2 h-4 w-4" /> Admin</TabsTrigger>
