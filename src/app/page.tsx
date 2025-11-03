@@ -17,12 +17,12 @@ export default function Home() {
     }
   }, [user, loading, router]);
 
-  if (loading || !user || !role) {
+  if (loading || !role) {
     return (
-      <div className="flex h-screen w-full items-center justify-center bg-gray-100">
+      <div className="flex h-screen w-full items-center justify-center bg-gray-100 dark:bg-gray-900">
         <div className="flex flex-col items-center gap-4">
-          <Loader2 className="h-12 w-12 animate-spin text-blue-500" />
-          <p className="text-lg text-gray-700">Loading your dashboard...</p>
+          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+          <p className="text-lg text-gray-700 dark:text-gray-300">Authenticating and fetching role...</p>
         </div>
       </div>
     );
@@ -38,10 +38,10 @@ export default function Home() {
 
   // This is a fallback that should ideally not be reached if roles are assigned correctly
   return (
-    <div className="flex h-screen w-full items-center justify-center bg-gray-100">
+    <div className="flex h-screen w-full items-center justify-center bg-gray-100 dark:bg-gray-900">
        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="h-12 w-12 animate-spin text-blue-500" />
-          <p className="text-lg text-gray-700">Verifying user role...</p>
+          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+          <p className="text-lg text-gray-700 dark:text-gray-300">Verifying user role...</p>
         </div>
     </div>
   );
