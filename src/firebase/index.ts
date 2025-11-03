@@ -13,39 +13,47 @@ const auth = getAuth(firebaseApp);
 export { db, auth, firebaseApp };
 
 // --- HOOKS ---
-export const useCollection = (path: string | any) => {
+export const useCollection = (pathOrQuery: string | any) => {
     const [data, setData] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
-    const stableQuery = useMemo(() => {
-        if (!path) return null;
-        if (typeof path === 'string') {
-            return query(collection(db, path));
-        }
-        return path;
-    }, [path && typeof path !== 'string' ? path.path : path]);
-
     useEffect(() => {
-        if (!stableQuery) {
+        if (!pathOrQuery) {
             setData([]);
             setLoading(false);
             return;
         }
 
-        const unsubscribe = onSnapshot(stableQuery, 
-            (snapshot) => {
-                const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                setData(docs);
-                setLoading(false);
-            },
-            (error) => {
-                console.error(`Error fetching collection:`, error);
-                setLoading(false);
-            }
-        );
+        let unsubscribe: () => void;
+        try {
+            const queryToRun = typeof pathOrQuery === 'string' 
+                ? query(collection(db, pathOrQuery)) 
+                : pathOrQuery;
 
-        return () => unsubscribe();
-    }, [stableQuery]);
+            unsubscribe = onSnapshot(queryToRun, 
+                (snapshot) => {
+                    const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    setData(docs);
+                    setLoading(false);
+                },
+                (error) => {
+                    console.error(`Error fetching collection:`, error);
+                    setData([]);
+                    setLoading(false);
+                }
+            );
+        } catch (error) {
+            console.error("Error setting up collection listener:", error);
+            setData([]);
+            setLoading(false);
+        }
+
+        return () => {
+            if (unsubscribe) {
+                unsubscribe();
+            }
+        };
+    }, [pathOrQuery]);
     
     return { data, loading };
 };

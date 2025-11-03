@@ -1,12 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useUser, useCollection } from '@/firebase';
 import { Sidebar } from '@/components/sidebar';
 import { Header } from '@/components/header';
 import { NewOrder } from '@/components/new-order';
 import { OrderHistory } from '@/components/order-history';
-import { collection, query, where } from 'firebase/firestore';
+import { collection, query, where, orderBy } from 'firebase/firestore';
 import { db } from '@/firebase/config';
 import { ShopProfile } from '@/components/shop-profile';
 
@@ -14,7 +14,11 @@ export function ShopDashboard() {
   const [activeSection, setActiveSection] = useState('new_order');
   const { user } = useUser();
 
-  const userOrdersQuery = user ? query(collection(db, 'orders'), where('shopId', '==', user.uid)) : null;
+  const userOrdersQuery = useMemo(() => {
+    if (!user) return null;
+    return query(collection(db, 'orders'), where('shopId', '==', user.uid), orderBy('createdAt', 'desc'));
+  }, [user?.uid]);
+
   const { data: orders, loading: ordersLoading } = useCollection(userOrdersQuery);
 
   const { data: products, loading: productsLoading } = useCollection('products');

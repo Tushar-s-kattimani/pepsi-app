@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useCollection } from '@/firebase';
 import { Sidebar } from '@/components/sidebar';
 import { Header } from '@/components/header';
@@ -14,7 +14,7 @@ import { db } from '@/firebase/config';
 export function AdminDashboard() {
   const [activeSection, setActiveSection] = useState('dashboard');
 
-  const ordersQuery = query(collection(db, 'orders'), orderBy('createdAt', 'desc'));
+  const ordersQuery = useMemo(() => query(collection(db, 'orders'), orderBy('createdAt', 'desc')), []);
   
   const { data: orders, loading: ordersLoading } = useCollection(ordersQuery);
   const { data: products, loading: productsLoading } = useCollection('products');
