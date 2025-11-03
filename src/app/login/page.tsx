@@ -65,7 +65,6 @@ export default function LoginPage() {
     } catch (e: any) {
       if (e.code === 'auth/user-not-found') {
         try {
-          // If admin user doesn't exist, create it. The provider will handle the rest.
           await signUp(adminEmail, adminPassword);
         } catch (signUpError: any) {
            setError('Failed to create admin account. Please try again.');
