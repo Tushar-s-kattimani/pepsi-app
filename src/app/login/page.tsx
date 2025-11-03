@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -16,9 +16,11 @@ export default function LoginPage() {
   const { signUp, signIn, user } = useAuth();
   const router = useRouter();
 
-  if (user) {
-    router.push('/');
-  }
+  useEffect(() => {
+    if (user) {
+      router.push('/');
+    }
+  }, [user, router]);
 
   const handleAuthAction = async (action: (email: string, pass: string) => Promise<any>) => {
     if (password.length < 6) {
@@ -36,6 +38,17 @@ export default function LoginPage() {
       setLoading(false);
     }
   };
+
+  if (user) {
+    return (
+       <div className="flex h-screen w-full items-center justify-center bg-gray-100">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-12 w-12 animate-spin text-blue-500" />
+          <p className="text-lg text-gray-700">Redirecting...</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="flex min-h-screen w-full items-center justify-center bg-gray-100">
