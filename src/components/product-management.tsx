@@ -110,15 +110,17 @@ export function ProductManagement({ products = [], loading }: { products: any[],
                 <Input id="stock" type="number" {...register('stock')} />
                 {errors.stock && <p className="text-sm text-red-500 mt-1">{errors.stock.message}</p>}
               </div>
-              <DialogFooter className="sm:justify-between">
-                {editingProduct && (
-                   <Button type="button" variant="destructive" onClick={() => handleDelete(editingProduct.id)}>
-                      <Trash2 className="mr-2 h-4 w-4" /> Delete
-                    </Button>
-                )}
+              <DialogFooter className="sm:justify-between pt-4">
+                <div>
+                  {editingProduct && (
+                    <Button type="button" variant="destructive" onClick={() => handleDelete(editingProduct.id)}>
+                        <Trash2 className="mr-2 h-4 w-4" /> Delete
+                      </Button>
+                  )}
+                </div>
                 <Button type="submit" disabled={isSubmitting}>
                   {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                  {editingProduct ? 'Update' : 'Save'} Product
+                  {editingProduct ? 'Update Product' : 'Save Product'}
                 </Button>
               </DialogFooter>
             </form>
