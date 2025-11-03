@@ -1,13 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/firebase';
+import { useUser } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Package, User, Shield } from 'lucide-react';
+import { Loader2, Package, User as UserIcon, Shield } from 'lucide-react';
 
 export default function LoginPage() {
   const [shopEmail, setShopEmail] = useState('');
@@ -17,7 +17,7 @@ export default function LoginPage() {
 
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { signUp, signIn, user, loading: authLoading } = useAuth();
+  const { signUp, signIn, user, loading: authLoading } = useUser();
   const router = useRouter();
 
   useEffect(() => {
@@ -119,7 +119,7 @@ export default function LoginPage() {
         <CardContent>
           <Tabs defaultValue="shop" className="w-full" onValueChange={() => setError('')}>
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="shop"><User className="mr-2 h-4 w-4" /> Shop</TabsTrigger>
+              <TabsTrigger value="shop"><UserIcon className="mr-2 h-4 w-4" /> Shop</TabsTrigger>
               <TabsTrigger value="admin"><Shield className="mr-2 h-4 w-4" /> Admin</TabsTrigger>
             </TabsList>
             

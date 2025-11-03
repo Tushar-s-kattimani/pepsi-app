@@ -1,6 +1,6 @@
 'use client';
 
-import { useAuth } from '@/firebase';
+import { useUser } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { AdminDashboard } from '@/components/admin-dashboard';
@@ -8,7 +8,7 @@ import { ShopDashboard } from '@/components/shop-dashboard';
 import { Loader2 } from 'lucide-react';
 
 export default function Home() {
-  const { user, loading, role } = useAuth();
+  const { user, loading, role } = useUser();
   const router = useRouter();
 
   useEffect(() => {

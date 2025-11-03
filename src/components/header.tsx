@@ -1,13 +1,13 @@
 'use client';
 
-import { useAuth } from '@/firebase';
+import { useUser } from '@/firebase';
 import { Button } from '@/components/ui/button';
-import { ShoppingCart, LogOut, User as UserIcon, Building } from 'lucide-react';
+import { ShoppingCart, LogOut } from 'lucide-react';
 import { useCart } from '@/context/cart-context';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetFooter } from '@/components/ui/sheet';
 
 export function Header() {
-  const { user, signOut, role } = useAuth();
+  const { user, signOut, role } = useUser();
   const { cart, updateQuantity, clearCart, subtotal, total } = useCart();
 
   return (

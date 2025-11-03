@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useAuth, useCollection } from '@/firebase';
+import { useUser, useCollection } from '@/firebase';
 import { Sidebar } from '@/components/sidebar';
 import { Header } from '@/components/header';
 import { NewOrder } from '@/components/new-order';
@@ -11,7 +11,7 @@ import { db } from '@/firebase/config';
 
 export function ShopDashboard() {
   const [activeSection, setActiveSection] = useState('new_order');
-  const { user } = useAuth();
+  const { user } = useUser();
 
   const userOrdersQuery = user ? query(collection(db, 'orders'), where('shopId', '==', user.uid)) : null;
   const { data: orders, loading: ordersLoading } = useCollection(userOrdersQuery);

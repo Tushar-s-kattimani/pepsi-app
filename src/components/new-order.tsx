@@ -8,13 +8,13 @@ import { useToast } from '@/components/ui/use-toast';
 import { Loader2, PlusCircle, Trash2 } from 'lucide-react';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/firebase/config';
-import { useAuth } from '@/firebase';
+import { useUser } from '@/firebase';
 import { useState } from 'react';
 
 export function NewOrder({ products = [], loading }: { products: any[], loading: boolean }) {
   const { cart, addToCart, updateQuantity, clearCart, subtotal, total, tax } = useCart();
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user } = useUser();
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
 
   const handlePlaceOrder = async () => {

@@ -51,3 +51,4 @@ export const useCollection = (path: string | any) => {
 };
 
 export * from './provider';
+export * from './auth/use-user';
