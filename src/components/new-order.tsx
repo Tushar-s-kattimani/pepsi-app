@@ -70,9 +70,15 @@ export function NewOrder({ products = [], loading }: { products: any[], loading:
                       <TableCell>₹{product.price.toFixed(2)}</TableCell>
                       <TableCell>{product.stock}</TableCell>
                       <TableCell>
-                        <Button size="sm" onClick={() => addToCart(product)}>
-                          <PlusCircle className="mr-2 h-4 w-4" /> Add
-                        </Button>
+                        {product.stock > 0 ? (
+                          <Button size="sm" onClick={() => addToCart(product)}>
+                            <PlusCircle className="mr-2 h-4 w-4" /> Add
+                          </Button>
+                        ) : (
+                          <Button size="sm" disabled variant="outline">
+                            Out of stock
+                          </Button>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}
