@@ -43,6 +43,11 @@ export function ProductManagement({ products = [], loading }: { products: any[],
     }
     setOpen(true);
   };
+  
+  const handleCloseDialog = () => {
+    setOpen(false);
+    setEditingProduct(null);
+  }
 
   const onSubmit = async (data: ProductFormValues) => {
     setIsSubmitting(true);
@@ -55,7 +60,7 @@ export function ProductManagement({ products = [], loading }: { products: any[],
         await addDoc(collection(db, 'products'), data);
         toast({ title: 'Success', description: 'Product added successfully.' });
       }
-      setOpen(false);
+      handleCloseDialog();
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Error', description: error.message });
     } finally {
@@ -64,13 +69,13 @@ export function ProductManagement({ products = [], loading }: { products: any[],
   };
 
   const handleDelete = async (productId: string) => {
-    if (window.confirm('Are you sure you want to delete this product?')) {
+    if (window.confirm('Are you sure you want to delete this product? This action cannot be undone.')) {
       try {
         await deleteDoc(doc(db, 'products', productId));
         toast({ title: 'Success', description: 'Product deleted successfully.' });
-        setOpen(false); // Close dialog if deletion is successful from within it
+        handleCloseDialog();
       } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Error', description: error.message });
+        toast({ variant: 'destructive', title: 'Error', description: `Failed to delete product: ${error.message}` });
       }
     }
   };
