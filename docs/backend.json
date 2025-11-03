@@ -1,0 +1,124 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Represents a user in the system.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "The unique ID of the user."
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "The email address of the user."
+        },
+        "role": {
+          "type": "string",
+          "description": "The role of the user, e.g., 'admin' or 'shop'.",
+          "enum": ["admin", "shop"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The date and time the user was created."
+        }
+      },
+      "required": ["uid", "email", "role"]
+    },
+    "Product": {
+      "title": "Product",
+      "description": "Represents a product in the inventory.",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The name of the product."
+        },
+        "size": {
+          "type": "string",
+          "description": "The size of the product (e.g., '250ml', '1L')."
+        },
+        "price": {
+          "type": "number",
+          "description": "The price of the product."
+        },
+        "stock": {
+          "type": "number",
+          "description": "The current stock level of the product."
+        }
+      },
+      "required": ["name", "size", "price", "stock"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "Represents an order placed by a shop.",
+      "type": "object",
+      "properties": {
+        "shopId": {
+          "type": "string",
+          "description": "The UID of the shop that placed the order."
+        },
+        "shopEmail": {
+          "type": "string",
+          "format": "email",
+          "description": "The email of the shop that placed the order."
+        },
+        "items": {
+          "type": "array",
+          "description": "An array of items included in the order.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "name": { "type": "string" },
+              "size": { "type": "string" },
+              "price": { "type": "number" },
+              "quantity": { "type": "number" }
+            },
+            "required": ["id", "name", "price", "quantity"]
+          }
+        },
+        "totalAmount": {
+          "type": "number",
+          "description": "The total amount of the order."
+        },
+        "status": {
+          "type": "string",
+          "description": "The current status of the order.",
+          "enum": ["Pending", "Confirmed", "Delivered"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The timestamp when the order was placed."
+        }
+      },
+      "required": ["shopId", "items", "totalAmount", "status", "createdAt"]
+    }
+  },
+  "auth": {
+    "providers": ["password"]
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": {
+        "$ref": "#/entities/User"
+      },
+      "description": "Stores user profile information, including their role."
+    },
+    "/products/{productId}": {
+      "schema": {
+        "$ref": "#/entities/Product"
+      },
+      "description": "Stores all available products for the distribution system."
+    },
+    "/orders/{orderId}": {
+      "schema": {
+        "$ref": "#/entities/Order"
+      },
+      "description": "Stores all orders placed by shops."
+    }
+  }
+}

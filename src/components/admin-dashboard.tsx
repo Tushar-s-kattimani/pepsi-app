@@ -1,0 +1,44 @@
+'use client';
+
+import { useState } from 'react';
+import { useCollection } from '@/firebase';
+import { Sidebar } from '@/components/sidebar';
+import { Header } from '@/components/header';
+import { AdminOverview } from '@/components/admin-overview';
+import { ProductManagement } from '@/components/product-management';
+import { AllOrders } from '@/components/all-orders';
+import { ShopManagement } from '@/components/shop-management';
+
+export function AdminDashboard() {
+  const [activeSection, setActiveSection] = useState('dashboard');
+  const { data: orders, loading: ordersLoading } = useCollection('orders');
+  const { data: products, loading: productsLoading } = useCollection('products');
+  const { data: users, loading: usersLoading } = useCollection('users');
+
+  const renderContent = () => {
+    switch (activeSection) {
+      case 'dashboard':
+        return <AdminOverview orders={orders} products={products} users={users} loading={ordersLoading || productsLoading || usersLoading} />;
+      case 'products':
+        return <ProductManagement products={products} loading={productsLoading} />;
+      case 'orders':
+        return <AllOrders orders={orders} loading={ordersLoading} />;
+       case 'shops':
+        return <ShopManagement users={users} loading={usersLoading} />;
+      default:
+        return <AdminOverview orders={orders} products={products} users={users} loading={ordersLoading || productsLoading || usersLoading} />;
+    }
+  };
+
+  return (
+    <div className="flex h-screen bg-gray-50">
+      <Sidebar role="admin" activeSection={activeSection} setActiveSection={setActiveSection} />
+      <div className="flex flex-1 flex-col overflow-hidden">
+        <Header />
+        <main className="flex-1 overflow-y-auto p-6 md:p-10">
+          {renderContent()}
+        </main>
+      </div>
+    </div>
+  );
+}
