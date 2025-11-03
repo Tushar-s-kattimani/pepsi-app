@@ -8,6 +8,7 @@ import { NewOrder } from '@/components/new-order';
 import { OrderHistory } from '@/components/order-history';
 import { collection, query, where } from 'firebase/firestore';
 import { db } from '@/firebase/config';
+import { ShopProfile } from '@/components/shop-profile';
 
 export function ShopDashboard() {
   const [activeSection, setActiveSection] = useState('new_order');
@@ -24,6 +25,8 @@ export function ShopDashboard() {
         return <NewOrder products={products} loading={productsLoading} />;
       case 'order_history':
         return <OrderHistory orders={orders} loading={ordersLoading} />;
+      case 'profile':
+        return <ShopProfile />;
       default:
         return <NewOrder products={products} loading={productsLoading} />;
     }

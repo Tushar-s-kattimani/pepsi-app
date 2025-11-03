@@ -27,12 +27,19 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
           // Document doesn't exist, so this is a new sign-up
           const newRole = assignUserRole(user.email || '');
           try {
-            await setDoc(userDocRef, {
+            const userData: any = {
               uid: user.uid,
               email: user.email,
               role: newRole,
               createdAt: serverTimestamp(),
-            });
+            };
+            if (newRole === 'shop') {
+              userData.profileName = '';
+              userData.phoneNumber = '';
+              userData.shopName = '';
+              userData.location = '';
+            }
+            await setDoc(userDocRef, userData);
             setRole(newRole);
           } catch (error) {
             console.error("Error creating user document:", error);

@@ -19,16 +19,16 @@ export function ShopManagement({ users = [], loading }: { users: any[], loading:
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>Shop Name</TableHead>
                 <TableHead>Shop Email</TableHead>
-                <TableHead>User ID</TableHead>
                 <TableHead>Date Joined</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {shopUsers.map((user) => (
                 <TableRow key={user.id}>
+                  <TableCell>{user.shopName || 'N/A'}</TableCell>
                   <TableCell>{user.email}</TableCell>
-                  <TableCell className="font-mono text-xs">{user.uid}</TableCell>
                   <TableCell>{user.createdAt ? new Date(user.createdAt.toMillis()).toLocaleDateString() : 'N/A'}</TableCell>
                 </TableRow>
               ))}
