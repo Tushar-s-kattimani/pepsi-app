@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/components/ui/use-toast';
 import { Loader2, PlusCircle, Trash2, Box } from 'lucide-react';
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { addDoc, collection, serverTimestamp, doc, getDoc } from 'firebase/firestore';
 import { db } from '@/firebase/config';
 import { useUser } from '@/firebase';
 import { useState } from 'react';
@@ -53,6 +53,24 @@ export function NewOrder({ products = [], loading }: { products: any[], loading:
     }
     setIsPlacingOrder(true);
     try {
+      // Check for complete profile before placing order
+      const userDocRef = doc(db, 'users', user.uid);
+      const userDoc = await getDoc(userDocRef);
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        if (!userData.profileName || !userData.phoneNumber || !userData.shopName || !userData.location) {
+          toast({
+            variant: 'destructive',
+            title: 'Incomplete Profile',
+            description: 'Please complete your profile information before placing an order. You can do this in the Profile section.',
+          });
+          setIsPlacingOrder(false);
+          return;
+        }
+      } else {
+        throw new Error('User data not found.');
+      }
+      
       await addDoc(collection(db, 'orders'), {
         shopId: user.uid,
         shopEmail: user.email,
@@ -86,6 +104,7 @@ export function NewOrder({ products = [], loading }: { products: any[], loading:
                   <TableRow>
                     <TableHead>Product</TableHead>
                     <TableHead>Size</TableHead>
+                    <TableHead>Box Quantity</TableHead>
                     <TableHead>Price</TableHead>
                     <TableHead>Stock</TableHead>
                     <TableHead className="text-center">Action</TableHead>
@@ -96,6 +115,7 @@ export function NewOrder({ products = [], loading }: { products: any[], loading:
                     <TableRow key={product.id}>
                       <TableCell>{product.name}</TableCell>
                       <TableCell>{product.size}</TableCell>
+                      <TableCell>{product.boxQuantity || 'N/A'}</TableCell>
                       <TableCell>₹{product.price.toFixed(2)}</TableCell>
                       <TableCell>{product.stock}</TableCell>
                       <TableCell>
