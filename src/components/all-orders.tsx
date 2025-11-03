@@ -8,7 +8,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '@/firebase/config';
 import { useToast } from '@/components/ui/use-toast';
-import { Loader2, MapPin, User, Download } from 'lucide-react';
+import { Loader2, MapPin, User, Download, Printer } from 'lucide-react';
 import { useMemo, useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 
@@ -81,9 +81,11 @@ export function AllOrders({ orders: initialOrders = [], users = [], loading }: {
             shopInfo: shopInfo,
             orders: [],
             aggregatedItems: new Map(),
+            totalAmount: 0
           };
         }
         acc[order.shopId].orders.push(order);
+        acc[order.shopId].totalAmount += order.totalAmount;
         if (order.items && Array.isArray(order.items)) {
           order.items.forEach((item: any) => {
             const compositeKey = `${item.id}-${item.size}`;
@@ -139,16 +141,26 @@ export function AllOrders({ orders: initialOrders = [], users = [], loading }: {
     link.click();
     document.body.removeChild(link);
   };
+  
+  const handlePrint = () => {
+    window.print();
+  }
 
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
+    <Card className='print-only-card'>
+      <CardHeader className="flex flex-row items-center justify-between no-print">
         <CardTitle>All Customer Orders</CardTitle>
-        <Button onClick={handleDownload} variant="outline" size="sm">
-          <Download className="mr-2 h-4 w-4" />
-          Download Report
-        </Button>
+        <div className="flex items-center gap-2">
+            <Button onClick={handleDownload} variant="outline" size="sm">
+              <Download className="mr-2 h-4 w-4" />
+              Download Report
+            </Button>
+            <Button onClick={handlePrint} variant="outline" size="sm">
+                <Printer className="mr-2 h-4 w-4" />
+                Print
+            </Button>
+        </div>
       </CardHeader>
       <CardContent>
         {loading && initialOrders.length === 0 ? (
@@ -157,7 +169,7 @@ export function AllOrders({ orders: initialOrders = [], users = [], loading }: {
           <Accordion type="multiple" className="w-full space-y-4">
             {ordersByLocation.map(({ location, totalOrders, shops }) => (
               <AccordionItem value={location} key={location} className="border rounded-lg">
-                <AccordionTrigger className="p-4 bg-gray-50 rounded-t-lg hover:no-underline">
+                <AccordionTrigger className="p-4 bg-gray-50 rounded-t-lg hover:no-underline no-print">
                   <div className="flex items-center gap-3">
                     <MapPin className="h-5 w-5 text-gray-600" />
                     <span className="text-lg font-semibold">{location}</span>
@@ -166,7 +178,7 @@ export function AllOrders({ orders: initialOrders = [], users = [], loading }: {
                 </AccordionTrigger>
                 <AccordionContent className="p-2">
                   <Accordion type="multiple" className="w-full space-y-2">
-                    {shops.map(({ shopInfo, orders, aggregatedItems }) => (
+                    {shops.map(({ shopInfo, orders, aggregatedItems, totalAmount }) => (
                       <AccordionItem value={shopInfo.id} key={shopInfo.id} className="border rounded-md">
                         <AccordionTrigger className="p-3 bg-white rounded-t-md hover:no-underline">
                             <div className="flex justify-between w-full items-center">
@@ -177,7 +189,10 @@ export function AllOrders({ orders: initialOrders = [], users = [], loading }: {
                                         <div className="text-xs text-gray-500">{shopInfo.phoneNumber}</div>
                                     </div>
                                 </div>
-                                <span className="px-2 py-1 text-xs font-bold text-green-800 bg-green-100 rounded-full">{orders.length} orders</span>
+                                <div className="text-right">
+                                    <div className="font-semibold">₹{totalAmount.toLocaleString()}</div>
+                                    <div className="px-2 py-1 text-xs font-bold text-green-800 bg-green-100 rounded-full inline-block mt-1">{orders.length} orders</div>
+                                </div>
                             </div>
                         </AccordionTrigger>
                         <AccordionContent className="p-2">
@@ -201,7 +216,7 @@ export function AllOrders({ orders: initialOrders = [], users = [], loading }: {
                                         </TableBody>
                                     </Table>
                                 </div>
-                                <div>
+                                <div className='no-print'>
                                     <h4 className="font-semibold mb-2 text-center text-sm">Individual Orders</h4>
                                      <Table>
                                         <TableHeader>
