@@ -23,9 +23,11 @@ export function AdminOverview({ orders = [], products = [], users = [], loading 
       }
 
       // Top Products Data
-      order.items.forEach((item: any) => {
-        productSales[item.name] = (productSales[item.name] || 0) + item.quantity;
-      });
+      if (order.items && Array.isArray(order.items)) {
+        order.items.forEach((item: any) => {
+          productSales[item.name] = (productSales[item.name] || 0) + item.quantity;
+        });
+      }
     });
 
     const salesLabels = Object.keys(monthlySales);
