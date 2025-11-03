@@ -68,6 +68,7 @@ export function ProductManagement({ products = [], loading }: { products: any[],
       try {
         await deleteDoc(doc(db, 'products', productId));
         toast({ title: 'Success', description: 'Product deleted successfully.' });
+        setOpen(false); // Close dialog if deletion is successful from within it
       } catch (error: any) {
         toast({ variant: 'destructive', title: 'Error', description: error.message });
       }
@@ -109,7 +110,12 @@ export function ProductManagement({ products = [], loading }: { products: any[],
                 <Input id="stock" type="number" {...register('stock')} />
                 {errors.stock && <p className="text-sm text-red-500 mt-1">{errors.stock.message}</p>}
               </div>
-              <DialogFooter>
+              <DialogFooter className="sm:justify-between">
+                {editingProduct && (
+                   <Button type="button" variant="destructive" onClick={() => handleDelete(editingProduct.id)}>
+                      <Trash2 className="mr-2 h-4 w-4" /> Delete
+                    </Button>
+                )}
                 <Button type="submit" disabled={isSubmitting}>
                   {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                   {editingProduct ? 'Update' : 'Save'} Product
@@ -143,7 +149,7 @@ export function ProductManagement({ products = [], loading }: { products: any[],
                   <TableCell className="space-x-2">
                     <Button variant="outline" size="sm" onClick={() => handleOpenDialog(product)}>Edit</Button>
                     <Button variant="destructive" size="sm" onClick={() => handleDelete(product.id)}>
-                      <Trash2 className="mr-2 h-4 w-4" /> Delete
+                      <Trash2 className="h-4 w-4" />
                     </Button>
                   </TableCell>
                 </TableRow>
