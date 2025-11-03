@@ -6,7 +6,7 @@ import { Sidebar } from '@/components/sidebar';
 import { Header } from '@/components/header';
 import { NewOrder } from '@/components/new-order';
 import { OrderHistory } from '@/components/order-history';
-import { collection, query, where, orderBy } from 'firebase/firestore';
+import { collection, query, where } from 'firebase/firestore';
 import { db } from '@/firebase/config';
 import { ShopProfile } from '@/components/shop-profile';
 
@@ -16,7 +16,7 @@ export function ShopDashboard() {
 
   const userOrdersQuery = useMemo(() => {
     if (!user) return null;
-    return query(collection(db, 'orders'), where('shopId', '==', user.uid), orderBy('createdAt', 'desc'));
+    return query(collection(db, 'orders'), where('shopId', '==', user.uid));
   }, [user?.uid]);
 
   const { data: orders, loading: ordersLoading } = useCollection(userOrdersQuery);

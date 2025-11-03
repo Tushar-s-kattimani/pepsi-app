@@ -3,6 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2 } from 'lucide-react';
+import { useMemo } from 'react';
 
 const statusColors: { [key: string]: string } = {
   Pending: 'bg-yellow-100 text-yellow-800',
@@ -11,6 +12,16 @@ const statusColors: { [key: string]: string } = {
 };
 
 export function OrderHistory({ orders = [], loading }: { orders: any[], loading: boolean }) {
+  
+  const sortedOrders = useMemo(() => {
+    return [...orders].sort((a, b) => {
+      if (a.createdAt && b.createdAt) {
+        return b.createdAt.toMillis() - a.createdAt.toMillis();
+      }
+      return 0;
+    });
+  }, [orders]);
+  
   return (
     <Card>
       <CardHeader>
@@ -31,7 +42,7 @@ export function OrderHistory({ orders = [], loading }: { orders: any[], loading:
               </TableRow>
             </TableHeader>
             <TableBody>
-              {orders.map((order) => (
+              {sortedOrders.map((order) => (
                 <TableRow key={order.id}>
                   <TableCell className="font-mono text-xs">{order.id.substring(0, 8)}</TableCell>
                   <TableCell>{order.createdAt ? new Date(order.createdAt.toMillis()).toLocaleDateString() : 'N/A'}</TableCell>
