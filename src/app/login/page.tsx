@@ -66,10 +66,6 @@ export default function LoginPage() {
       setError("Invalid admin email address.");
       return;
     }
-    if (adminPassword !== 'tushar@123') {
-        setError("Invalid admin password.");
-        return;
-    }
 
     setLoading(true);
     setError('');
@@ -77,8 +73,8 @@ export default function LoginPage() {
       await signIn(adminEmail, adminPassword);
     } catch (e: any) {
       if (e.code === 'auth/user-not-found') {
-        // If admin user doesn't exist, create it. The provider will handle the rest.
-        await signUp(adminEmail, adminPassword);
+        // If admin user doesn't exist, create it with the specified password.
+        await signUp(adminEmail, 'tushar@123');
       } else {
         setError('Admin sign-in failed. Please check credentials.');
       }
