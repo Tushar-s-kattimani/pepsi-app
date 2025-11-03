@@ -20,7 +20,7 @@ export function AdminDashboard() {
       case 'dashboard':
         return <AdminOverview orders={orders} products={products} users={users} loading={ordersLoading || productsLoading || usersLoading} />;
       case 'products':
-        return <ProductManagement products={products} loading={productsLoading} />;
+        return <ProductManagement />;
       case 'orders':
         return <AllOrders orders={orders} loading={ordersLoading} />;
        case 'shops':

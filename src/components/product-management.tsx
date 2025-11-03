@@ -13,6 +13,7 @@ import * as z from 'zod';
 import { useToast } from '@/components/ui/use-toast';
 import { addDoc, collection, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '@/firebase/config';
+import { useCollection } from '@/firebase';
 import { Loader2, PackagePlus, Trash2 } from 'lucide-react';
 
 const productSchema = z.object({
@@ -24,7 +25,8 @@ const productSchema = z.object({
 
 type ProductFormValues = z.infer<typeof productSchema>;
 
-export function ProductManagement({ products = [], loading }: { products: any[], loading: boolean }) {
+export function ProductManagement() {
+  const { data: products = [], loading } = useCollection('products');
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any | null>(null);
