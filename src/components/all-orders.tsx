@@ -8,7 +8,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '@/firebase/config';
 import { useToast } from '@/components/ui/use-toast';
-import { Loader2, MapPin, ShoppingCart, User } from 'lucide-react';
+import { Loader2, MapPin, User } from 'lucide-react';
 import { useMemo, useState, useEffect } from 'react';
 
 const statusColors: { [key: string]: string } = {
