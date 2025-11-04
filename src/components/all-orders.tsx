@@ -8,7 +8,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/firebase/config';
 import { useToast } from '@/components/ui/use-toast';
-import { Loader2, User, Download, Printer, Calendar, Clock, Info } from 'lucide-react';
+import { Loader2, User, Download, Printer, Calendar, Clock, Info, Filter } from 'lucide-react';
 import { useMemo, useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 
@@ -21,6 +21,8 @@ const statusColors: { [key: string]: string } = {
 export function AllOrders({ orders: initialOrders = [], users = [], loading }: { orders: any[], users: any[], loading: boolean }) {
   const { toast } = useToast();
   const [orders, setOrders] = useState(initialOrders);
+  const [statusFilter, setStatusFilter] = useState<'all' | 'Pending'>('all');
+
 
   useEffect(() => {
     setOrders(initialOrders.sort((a, b) => b.createdAt?.toMillis() - a.createdAt?.toMillis()));
@@ -45,8 +47,12 @@ export function AllOrders({ orders: initialOrders = [], users = [], loading }: {
   }, [users]);
   
   const ordersByDate = useMemo(() => {
+    const filteredOrders = statusFilter === 'all' 
+      ? orders 
+      : orders.filter(order => order.status === 'Pending');
+
     const groupedByDate: { [key: string]: any[] } = {};
-    orders.forEach(order => {
+    filteredOrders.forEach(order => {
         if (!order.createdAt?.toDate) return;
         const dateStr = order.createdAt.toDate().toLocaleDateString('en-CA'); // YYYY-MM-DD
         if (!groupedByDate[dateStr]) {
@@ -82,7 +88,7 @@ export function AllOrders({ orders: initialOrders = [], users = [], loading }: {
     });
 
     return processedData.sort((a, b) => b.date.localeCompare(a.date));
-  }, [orders, usersMap]);
+  }, [orders, usersMap, statusFilter]);
 
   const handleDownload = () => {
     let csvContent = "data:text/csv;charset=utf-8,";
@@ -128,9 +134,24 @@ export function AllOrders({ orders: initialOrders = [], users = [], loading }: {
       <CardHeader className="flex flex-row items-center justify-between no-print">
         <CardTitle>All Customer Orders</CardTitle>
         <div className="flex items-center gap-2">
+            <Button 
+                onClick={() => setStatusFilter('all')} 
+                variant={statusFilter === 'all' ? 'default' : 'outline'} 
+                size="sm"
+            >
+                All Orders
+            </Button>
+            <Button 
+                onClick={() => setStatusFilter('Pending')} 
+                variant={statusFilter === 'Pending' ? 'default' : 'outline'} 
+                size="sm"
+            >
+                <Filter className="mr-2 h-4 w-4" />
+                Pending Orders
+            </Button>
             <Button onClick={handleDownload} variant="outline" size="sm">
               <Download className="mr-2 h-4 w-4" />
-              Download Report
+              Report
             </Button>
             <Button onClick={handlePrint} variant="outline" size="sm">
                 <Printer className="mr-2 h-4 w-4" />
@@ -241,5 +262,3 @@ export function AllOrders({ orders: initialOrders = [], users = [], loading }: {
     </Card>
   );
 }
-
-
