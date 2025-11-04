@@ -69,17 +69,25 @@ export function Sidebar({ role, activeSection, setActiveSection }: SidebarProps)
         <h1 className="text-xl font-bold text-gray-800 text-shadow-md">{role === 'admin' ? 'Gajanan Enterprises' : 'Shop Portal'}</h1>
       </div>
       <nav className="flex-1 space-y-2">
-        {items.map((item) => (
-          <Button
-            key={item.id}
-            variant={activeSection === item.id ? 'secondary' : 'ghost'}
-            className={`w-full justify-start gap-3 text-base h-12 px-4 ${activeSection === item.id ? 'font-bold' : 'font-medium'}`}
-            onClick={() => setActiveSection(item.id)}
-          >
-            <item.icon className="h-5 w-5" />
-            {item.name}
-          </Button>
-        ))}
+        {items.map((item) => {
+          const isActive = activeSection === item.id;
+          return (
+            <Button
+              key={item.id}
+              variant="ghost"
+              className={`w-full justify-start items-center gap-3 text-base h-12 px-4 rounded-lg transition-all duration-300 transform hover:scale-105 hover:shadow-lg
+                ${isActive
+                  ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-md font-bold'
+                  : 'font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                }`
+              }
+              onClick={() => setActiveSection(item.id)}
+            >
+              <item.icon className={`h-5 w-5 transition-colors ${isActive ? 'text-white' : ''}`} />
+              {item.name}
+            </Button>
+          )
+        })}
       </nav>
     </aside>
   );
