@@ -4,8 +4,10 @@ import { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
-import { Loader2, Printer } from 'lucide-react';
+import { Loader2, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
 export function ShopRevenue({ orders = [], users = [], loading }: { orders: any[], users: any[], loading: boolean }) {
   const [selectedDate, setSelectedDate] = useState('');
@@ -41,8 +43,30 @@ export function ShopRevenue({ orders = [], users = [], loading }: { orders: any[
     return shopRevenueData.reduce((sum, order) => sum + order.totalAmount, 0);
   }, [shopRevenueData]);
   
-  const handlePrint = () => {
-    window.print();
+  const handleDownloadPdf = () => {
+    const doc = new jsPDF();
+    
+    const title = selectedDate 
+      ? `Shop Revenue for ${new Date(selectedDate+'T00:00:00').toLocaleDateString('en-GB')}`
+      : 'Shop Revenue from All Delivered Orders';
+      
+    doc.text(title, 14, 15);
+
+    (doc as any).autoTable({
+      startY: 20,
+      head: [['Date & Time', 'Shop Name', 'Location', 'Order ID', 'Amount (₹)']],
+      body: shopRevenueData.map(order => [
+        order.createdAt.toDate().toLocaleString('en-GB'),
+        order.shopInfo.shopName || 'N/A',
+        order.shopInfo.location || 'N/A',
+        order.id.substring(0, 8),
+        order.totalAmount.toLocaleString()
+      ]),
+      foot: [['', '', '', 'Total', totalForDate.toLocaleString()]],
+      footStyles: { fontStyle: 'bold' }
+    });
+
+    doc.save('shop_revenue_report.pdf');
   }
 
   return (
@@ -57,9 +81,9 @@ export function ShopRevenue({ orders = [], users = [], loading }: { orders: any[
             className="w-full md:w-auto"
           />
           <Button variant="outline" onClick={() => setSelectedDate('')} disabled={!selectedDate}>Clear</Button>
-           <Button onClick={handlePrint} disabled={shopRevenueData.length === 0}>
-            <Printer className="mr-2 h-4 w-4" />
-            Print / PDF
+           <Button onClick={handleDownloadPdf} disabled={shopRevenueData.length === 0}>
+            <Download className="mr-2 h-4 w-4" />
+            Download PDF
           </Button>
         </div>
       </CardHeader>
@@ -98,9 +122,9 @@ export function ShopRevenue({ orders = [], users = [], loading }: { orders: any[
                 )}
               </TableBody>
             </Table>
-            {selectedDate && shopRevenueData.length > 0 && (
+            {shopRevenueData.length > 0 && (
               <div className="mt-4 text-right text-lg font-bold pr-4">
-                Total for {new Date(selectedDate+'T00:00:00').toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' })}: ₹{totalForDate.toLocaleString()}
+                Total for {selectedDate ? new Date(selectedDate+'T00:00:00').toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' }) : 'All Time'}: ₹{totalForDate.toLocaleString()}
               </div>
             )}
           </>
