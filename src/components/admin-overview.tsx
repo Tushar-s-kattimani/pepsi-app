@@ -2,7 +2,7 @@
 
 import { Bar, Line } from 'react-chartjs-2';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { IndianRupee, Package, ShoppingCart, Users, Loader2, Clock, CheckCircle, Truck } from 'lucide-react';
+import { IndianRupee, Package, Users, Loader2, Clock, CheckCircle, Truck } from 'lucide-react';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, LineElement, Title, Tooltip, Legend, PointElement } from 'chart.js';
 import { useMemo } from 'react';
 
@@ -82,8 +82,9 @@ export function AdminOverview({ orders = [], products = [], users = [], loading 
   return (
     <div className="space-y-8">
       <h2 className="text-3xl font-bold">Dashboard Overview</h2>
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-        <Card className="lg:col-span-2">
+      
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
             <IndianRupee className="h-4 w-4 text-muted-foreground" />
@@ -94,50 +95,51 @@ export function AdminOverview({ orders = [], products = [], users = [], loading 
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending Orders</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Total Shops</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{pendingOrders}</div>
+            <div className="text-2xl font-bold">{totalShops}</div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Confirmed Orders</CardTitle>
-            <CheckCircle className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{confirmedOrders}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Delivered Orders</CardTitle>
-            <Truck className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{deliveredOrders}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Products</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Products</CardTitle>
             <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{totalProducts}</div>
           </CardContent>
         </Card>
-        {/* This card is removed to make space for the order status breakdown */}
-        {/* <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Shops</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalShops}</div>
-          </CardContent>
-        </Card> */}
+        <Card className="sm:col-span-2 lg:col-span-1">
+             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Orders</CardTitle>
+                <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent className='space-y-2'>
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-sm">
+                        <Clock className="h-4 w-4 text-yellow-500" />
+                        <span>Pending</span>
+                    </div>
+                    <div className="font-bold">{pendingOrders}</div>
+                </div>
+                 <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-sm">
+                        <CheckCircle className="h-4 w-4 text-blue-500" />
+                        <span>Confirmed</span>
+                    </div>
+                    <div className="font-bold">{confirmedOrders}</div>
+                </div>
+                 <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-sm">
+                        <Truck className="h-4 w-4 text-green-500" />
+                        <span>Delivered</span>
+                    </div>
+                    <div className="font-bold">{deliveredOrders}</div>
+                </div>
+            </CardContent>
+        </Card>
       </div>
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
@@ -173,3 +175,4 @@ export function AdminOverview({ orders = [], products = [], users = [], loading 
     </div>
   );
 }
+ 
