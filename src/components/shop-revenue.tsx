@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export function ShopRevenue({ orders = [], users = [], loading }: { orders: any[], users: any[], loading: boolean }) {
@@ -41,6 +41,33 @@ export function ShopRevenue({ orders = [], users = [], loading }: { orders: any[
     return shopRevenueData.reduce((sum, order) => sum + order.totalAmount, 0);
   }, [shopRevenueData]);
 
+  const handleDownload = () => {
+    if (shopRevenueData.length === 0) return;
+
+    const headers = ["Date & Time", "Shop Name", "Location", "Order ID", "Order Amount"];
+    let csvContent = "data:text/csv;charset=utf-8," + headers.join(",") + "\r\n";
+
+    shopRevenueData.forEach(order => {
+      const row = [
+        `"${order.createdAt.toDate().toLocaleString('en-GB')}"`,
+        `"${order.shopInfo.shopName || 'N/A'}"`,
+        `"${order.shopInfo.location || 'N/A'}"`,
+        `"${order.id}"`,
+        order.totalAmount
+      ].join(',');
+      csvContent += row + "\r\n";
+    });
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    const dateSuffix = selectedDate ? `_${selectedDate}` : '';
+    link.setAttribute("download", `shop_revenue_report${dateSuffix}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <Card>
       <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between">
@@ -53,6 +80,10 @@ export function ShopRevenue({ orders = [], users = [], loading }: { orders: any[
             className="w-full md:w-auto"
           />
           <Button variant="outline" onClick={() => setSelectedDate('')} disabled={!selectedDate}>Clear</Button>
+           <Button onClick={handleDownload} disabled={shopRevenueData.length === 0}>
+            <Download className="mr-2 h-4 w-4" />
+            Download
+          </Button>
         </div>
       </CardHeader>
       <CardContent>
@@ -92,7 +123,7 @@ export function ShopRevenue({ orders = [], users = [], loading }: { orders: any[
             </Table>
             {selectedDate && shopRevenueData.length > 0 && (
               <div className="mt-4 text-right text-lg font-bold pr-4">
-                Total for {new Date(selectedDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' })}: ₹{totalForDate.toLocaleString()}
+                Total for {new Date(selectedDate+'T00:00:00').toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' })}: ₹{totalForDate.toLocaleString()}
               </div>
             )}
           </>
