@@ -30,11 +30,9 @@ service cloud.firestore {
       // Allow read if admin or the order belongs to the user
       allow read: if isAdmin() || (request.auth != null && resource.data.shopId == request.auth.uid);
 
-      // Allow create if the user is authenticated and creating their own order
+      // Allow create if the user is authenticated, creating their own order, and the timestamp is valid.
       allow create: if request.auth != null &&
                     request.resource.data.shopId == request.auth.uid &&
-                    request.resource.data.items is list &&
-                    request.resource.data.totalAmount is number &&
                     request.resource.data.status == "Pending" &&
                     request.resource.data.createdAt == request.time;
 
