@@ -1,7 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { BarChart, Package, Users, ShoppingCart, History, Home, User, Banknote } from 'lucide-react';
+import { BarChart, Package, Users, ShoppingCart, History, Home, User, Banknote, Calendar } from 'lucide-react';
 
 interface SidebarProps {
   role: 'admin' | 'shop';
@@ -16,6 +16,8 @@ const navItems = {
     { id: 'orders', name: 'All Orders', icon: ShoppingCart },
     { id: 'shops', name: 'Shops', icon: Users },
     { id: 'shop-revenue', name: 'Shop Revenue', icon: Banknote },
+    { id: 'laborers', name: 'Laborers', icon: Users },
+    { id: 'attendance', name: 'Labor Attendance', icon: Calendar },
   ],
   shop: [
     { id: 'new_order', name: 'New Order', icon: Home },

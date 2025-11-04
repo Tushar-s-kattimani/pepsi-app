@@ -48,5 +48,16 @@ service cloud.firestore {
       // Admins can delete orders
       allow delete: if isAdmin();
     }
+
+    // Rules for 'laborers' and 'attendance' collections
+    match /laborers/{laborerId} {
+      // Only admins can read and write laborer information
+      allow read, write: if isAdmin();
+    }
+    
+    match /attendance/{attendanceId} {
+      // Only admins can read and write attendance records
+      allow read, write: if isAdmin();
+    }
   }
 }

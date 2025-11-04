@@ -116,6 +116,54 @@
         }
       },
       "required": ["shopId", "items", "totalAmount", "status", "createdAt"]
+    },
+    "Laborer": {
+      "title": "Laborer",
+      "description": "Represents a laborer available for work.",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The full name of the laborer."
+        },
+        "trade": {
+          "type": "string",
+          "description": "The trade or skill of the laborer (e.g., 'Electrician', 'Plumber')."
+        }
+      },
+      "required": ["name", "trade"]
+    },
+    "Attendance": {
+      "title": "Attendance",
+      "description": "Represents a daily attendance record for a laborer.",
+      "type": "object",
+      "properties": {
+        "laborerId": {
+          "type": "string",
+          "description": "The ID of the laborer this record belongs to."
+        },
+        "date": {
+          "type": "string",
+          "format": "date",
+          "description": "The specific date of this attendance record (YYYY-MM-DD)."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["Present", "Absent", "Half-day"],
+          "description": "The attendance status for the day."
+        },
+        "checkIn": {
+          "type": "string",
+          "format": "time",
+          "description": "The time the laborer checked in."
+        },
+        "checkOut": {
+          "type": "string",
+          "format": "time",
+          "description": "The time the laborer checked out."
+        }
+      },
+      "required": ["laborerId", "date", "status"]
     }
   },
   "auth": {
@@ -139,6 +187,18 @@
         "$ref": "#/entities/Order"
       },
       "description": "Stores all orders placed by shops."
+    },
+    "/laborers/{laborerId}": {
+      "schema": {
+        "$ref": "#/entities/Laborer"
+      },
+      "description": "Stores information about individual laborers."
+    },
+    "/attendance/{attendanceId}": {
+      "schema": {
+        "$ref": "#/entities/Attendance"
+      },
+      "description": "Stores daily attendance records for all laborers."
     }
   }
 }
