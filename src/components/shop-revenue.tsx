@@ -8,36 +8,24 @@ import { Loader2 } from 'lucide-react';
 export function ShopRevenue({ orders = [], users = [], loading }: { orders: any[], users: any[], loading: boolean }) {
   
   const shopRevenueData = useMemo(() => {
-    if (loading) return [];
+    if (loading || !orders.length || !users.length) return [];
     
     const usersMap = new Map();
     users.forEach(user => usersMap.set(user.id, user));
 
-    const revenueByShopAndDate: { [key: string]: { shopInfo: any, totalAmount: number, date: string } } = {};
+    const deliveredOrders = orders
+      .filter(order => order.status === 'Delivered' && order.createdAt?.toDate)
+      .map(order => {
+        const shopInfo = usersMap.get(order.shopId);
+        return {
+          ...order,
+          shopInfo: shopInfo || null,
+        };
+      })
+      .filter(order => order.shopInfo !== null); // Ensure we have shop info
 
-    orders.forEach(order => {
-      if (order.status === 'Delivered' && order.createdAt?.toDate) {
-        const dateStr = order.createdAt.toDate().toLocaleDateString('en-CA'); // YYYY-MM-DD
-        const key = `${order.shopId}-${dateStr}`;
-
-        if (!revenueByShopAndDate[key]) {
-           const shopInfo = usersMap.get(order.shopId);
-           if (shopInfo) {
-              revenueByShopAndDate[key] = {
-                shopInfo: shopInfo,
-                totalAmount: 0,
-                date: dateStr,
-              };
-           }
-        }
-        
-        if (revenueByShopAndDate[key]) {
-          revenueByShopAndDate[key].totalAmount += order.totalAmount;
-        }
-      }
-    });
-
-    return Object.values(revenueByShopAndDate).sort((a, b) => b.date.localeCompare(a.date));
+    // Sort by most recent first
+    return deliveredOrders.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
   }, [orders, users, loading]);
 
   return (
@@ -52,19 +40,21 @@ export function ShopRevenue({ orders = [], users = [], loading }: { orders: any[
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Date</TableHead>
+                <TableHead>Date & Time</TableHead>
                 <TableHead>Shop Name</TableHead>
                 <TableHead>Location</TableHead>
-                <TableHead className="text-right">Total Revenue</TableHead>
+                <TableHead>Order ID</TableHead>
+                <TableHead className="text-right">Order Amount</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {shopRevenueData.map(({ shopInfo, totalAmount, date }) => (
-                <TableRow key={`${shopInfo.id}-${date}`}>
-                  <TableCell>{new Date(date + 'T00:00:00').toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</TableCell>
-                  <TableCell>{shopInfo.shopName || 'N/A'}</TableCell>
-                  <TableCell>{shopInfo.location || 'N/A'}</TableCell>
-                  <TableCell className="text-right font-medium">₹{totalAmount.toLocaleString()}</TableCell>
+              {shopRevenueData.map((order) => (
+                <TableRow key={order.id}>
+                  <TableCell>{order.createdAt.toDate().toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</TableCell>
+                  <TableCell>{order.shopInfo.shopName || 'N/A'}</TableCell>
+                  <TableCell>{order.shopInfo.location || 'N/A'}</TableCell>
+                  <TableCell className="font-mono text-xs">{order.id.substring(0,8)}</TableCell>
+                  <TableCell className="text-right font-medium">₹{order.totalAmount.toLocaleString()}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
