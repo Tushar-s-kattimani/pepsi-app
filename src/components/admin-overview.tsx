@@ -69,7 +69,7 @@ export function AdminOverview({ orders = [], products = [], users = [], loading 
     );
   }
 
-  const totalRevenue = orders.reduce((sum, order) => sum + order.totalAmount, 0);
+  const totalRevenue = orders.filter(o => o.status === 'Delivered').reduce((sum, order) => sum + order.totalAmount, 0);
   const totalProducts = products.length;
   const totalShops = users.filter(u => u.role === 'shop').length;
   
@@ -90,7 +90,7 @@ export function AdminOverview({ orders = [], products = [], users = [], loading 
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">₹{totalRevenue.toLocaleString()}</div>
-             <p className="text-xs text-muted-foreground">Across all orders</p>
+             <p className="text-xs text-muted-foreground">From delivered orders</p>
           </CardContent>
         </Card>
         <Card>

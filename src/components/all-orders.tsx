@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/firebase/config';
 import { useToast } from '@/components/ui/use-toast';
 import { Loader2, User, Download, Printer, Calendar, Clock, Info } from 'lucide-react';
@@ -29,22 +29,12 @@ export function AllOrders({ orders: initialOrders = [], users = [], loading }: {
 
   const handleStatusChange = async (orderId: string, newStatus: string) => {
     const orderRef = doc(db, 'orders', orderId);
-    if (newStatus === 'Delivered') {
-      try {
-        await deleteDoc(orderRef);
-        setOrders(prevOrders => prevOrders.filter(o => o.id !== orderId));
-        toast({ title: 'Success', description: 'Order marked as delivered and removed.' });
-      } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Error', description: `Failed to delete order: ${error.message}` });
-      }
-    } else {
-      try {
-        await updateDoc(orderRef, { status: newStatus });
-        setOrders(prevOrders => prevOrders.map(o => o.id === orderId ? {...o, status: newStatus} : o));
-        toast({ title: 'Success', description: 'Order status updated.' });
-      } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Error', description: `Failed to update status: ${error.message}` });
-      }
+    try {
+      await updateDoc(orderRef, { status: newStatus });
+      setOrders(prevOrders => prevOrders.map(o => o.id === orderId ? {...o, status: newStatus} : o));
+      toast({ title: 'Success', description: 'Order status updated.' });
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Error', description: `Failed to update status: ${error.message}` });
     }
   };
 
