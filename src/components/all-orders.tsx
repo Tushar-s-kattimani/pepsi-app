@@ -8,7 +8,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '@/firebase/config';
 import { useToast } from '@/components/ui/use-toast';
-import { Loader2, MapPin, User, Download, Printer } from 'lucide-react';
+import { Loader2, User, Download, Printer, Calendar } from 'lucide-react';
 import { useMemo, useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 
@@ -23,7 +23,7 @@ export function AllOrders({ orders: initialOrders = [], users = [], loading }: {
   const [orders, setOrders] = useState(initialOrders);
 
   useEffect(() => {
-    setOrders(initialOrders);
+    setOrders(initialOrders.sort((a, b) => b.createdAt?.toMillis() - a.createdAt?.toMillis()));
   }, [initialOrders]);
 
 
@@ -54,84 +54,69 @@ export function AllOrders({ orders: initialOrders = [], users = [], loading }: {
     return map;
   }, [users]);
   
-  const ordersByLocation = useMemo(() => {
-    const groupedByLocation: { [key: string]: any[] } = {};
+  const ordersByDate = useMemo(() => {
+    const groupedByDate: { [key: string]: any[] } = {};
     orders.forEach(order => {
-      const shopUser = usersMap.get(order.shopId);
-      // Skip orders from users who are not found (e.g., old data)
-      if (!shopUser) return;
-      
-      const location = shopUser?.location || 'Unknown Location';
-      if (!groupedByLocation[location]) {
-        groupedByLocation[location] = [];
-      }
-      groupedByLocation[location].push(order);
+        if (!order.createdAt?.toDate) return;
+        const dateStr = order.createdAt.toDate().toLocaleDateString('en-CA'); // YYYY-MM-DD
+        if (!groupedByDate[dateStr]) {
+            groupedByDate[dateStr] = [];
+        }
+        groupedByDate[dateStr].push(order);
     });
 
-    const processedData = Object.entries(groupedByLocation).map(([location, locationOrders]) => {
-      const ordersByShop = locationOrders.reduce((acc, order) => {
+    const processedData = Object.entries(groupedByDate).map(([date, dateOrders]) => {
+      const ordersByShop = dateOrders.reduce((acc, order) => {
         const shopInfo = usersMap.get(order.shopId);
-        // This check is redundant due to the check above but good for safety
         if (!shopInfo) {
           return acc;
         }
-
         if (!acc[order.shopId]) {
           acc[order.shopId] = {
             shopInfo: shopInfo,
             orders: [],
-            aggregatedItems: new Map(),
-            totalAmount: 0
           };
         }
         acc[order.shopId].orders.push(order);
-        acc[order.shopId].totalAmount += order.totalAmount;
-        if (order.items && Array.isArray(order.items)) {
-          order.items.forEach((item: any) => {
-            const compositeKey = `${item.id}-${item.size}`;
-            const existingItem = acc[order.shopId].aggregatedItems.get(compositeKey);
-            if (existingItem) {
-              existingItem.quantity += item.quantity;
-            } else {
-              acc[order.shopId].aggregatedItems.set(compositeKey, { ...item });
-            }
-          });
-        }
         return acc;
       }, {} as any);
 
       return {
-        location,
-        totalOrders: locationOrders.length,
+        date,
+        totalOrders: dateOrders.length,
         shops: Object.values(ordersByShop).map((shopData: any) => ({
             ...shopData,
             orders: shopData.orders.sort((a: any, b: any) => b.createdAt?.toMillis() - a.createdAt?.toMillis()),
-            aggregatedItems: Array.from(shopData.aggregatedItems.values()),
         })),
       };
     });
 
-    return processedData.sort((a, b) => a.location.localeCompare(b.location));
+    return processedData.sort((a, b) => b.date.localeCompare(a.date));
   }, [orders, usersMap]);
 
   const handleDownload = () => {
     let csvContent = "data:text/csv;charset=utf-8,";
-    csvContent += "Shop Name,Phone Number,Location,Product Name,Product Size,Total Quantity\r\n";
+    csvContent += "Date,Order ID,Shop Name,Phone Number,Location,Product Name,Size,Quantity,Price,Total Amount,Status\r\n";
 
-    ordersByLocation.forEach(({ location, shops }) => {
-      shops.forEach(({ shopInfo, aggregatedItems }) => {
-        aggregatedItems.forEach((item: any) => {
-          const row = [
-            `"${shopInfo.shopName || ''}"`,
-            `"${shopInfo.phoneNumber || ''}"`,
-            `"${location}"`,
-            `"${item.name}"`,
-            `"${item.size}"`,
-            item.quantity,
-          ].join(',');
-          csvContent += row + "\r\n";
+    orders.forEach((order) => {
+        const shopInfo = usersMap.get(order.shopId);
+        if(!shopInfo) return;
+        order.items.forEach((item: any) => {
+             const row = [
+                `"${order.createdAt?.toDate().toLocaleDateString()}"`,
+                `"${order.id}"`,
+                `"${shopInfo.shopName || ''}"`,
+                `"${shopInfo.phoneNumber || ''}"`,
+                `"${shopInfo.location || ''}"`,
+                `"${item.name}"`,
+                `"${item.size}"`,
+                item.quantity,
+                item.price,
+                order.totalAmount,
+                order.status,
+            ].join(',');
+            csvContent += row + "\r\n";
         });
-      });
     });
 
     const encodedUri = encodeURI(csvContent);
@@ -168,94 +153,82 @@ export function AllOrders({ orders: initialOrders = [], users = [], loading }: {
             <div className="flex justify-center py-10"><Loader2 className="h-8 w-8 animate-spin" /></div>
         ) : (
           <Accordion type="multiple" className="w-full space-y-4">
-            {ordersByLocation.map(({ location, totalOrders, shops }) => (
-              <AccordionItem value={location} key={location} className="border rounded-lg">
+            {ordersByDate.map(({ date, totalOrders, shops }) => (
+              <AccordionItem value={date} key={date} className="border rounded-lg">
                 <AccordionTrigger className="p-4 bg-gray-50 rounded-t-lg hover:no-underline no-print">
                   <div className="flex items-center gap-3">
-                    <MapPin className="h-5 w-5 text-gray-600" />
-                    <span className="text-lg font-semibold">{location}</span>
+                    <Calendar className="h-5 w-5 text-gray-600" />
+                    <span className="text-lg font-semibold">{new Date(date).toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
                     <span className="px-2 py-1 text-xs font-bold text-blue-800 bg-blue-100 rounded-full">{totalOrders} orders</span>
                   </div>
                 </AccordionTrigger>
                 <AccordionContent className="p-2">
                   <Accordion type="multiple" className="w-full space-y-2">
-                    {shops.map(({ shopInfo, orders, aggregatedItems, totalAmount }) => (
+                    {shops.map(({ shopInfo, orders }) => (
                       <AccordionItem value={shopInfo.id} key={shopInfo.id} className="border rounded-md">
                         <AccordionTrigger className="p-3 bg-white rounded-t-md hover:no-underline">
                             <div className="flex justify-between w-full items-center">
                                 <div className='flex items-center gap-3'>
                                     <User className="h-5 w-5 text-gray-500" />
                                     <div className="text-left">
-                                        <div className="font-semibold">{shopInfo.shopName}</div>
+                                        <div className="font-semibold">{shopInfo.shopName} ({shopInfo.location})</div>
                                         <div className="text-xs text-gray-500">{shopInfo.phoneNumber}</div>
                                     </div>
                                 </div>
-                                <div className="text-right">
-                                    <div className="font-semibold">₹{totalAmount.toLocaleString()}</div>
-                                    <div className="px-2 py-1 text-xs font-bold text-green-800 bg-green-100 rounded-full inline-block mt-1">{orders.length} orders</div>
-                                </div>
+                                <div className="px-2 py-1 text-xs font-bold text-green-800 bg-green-100 rounded-full inline-block mt-1">{orders.length} order(s) on this day</div>
                             </div>
                         </AccordionTrigger>
                         <AccordionContent className="p-2">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <h4 className="font-semibold mb-2 text-center text-sm">Aggregated Products</h4>
+                            {orders.map((order: any) => (
+                                <div key={order.id} className="mb-4 border rounded-lg p-3">
+                                    <div className="flex justify-between items-center mb-2">
+                                        <div>
+                                            <span className="font-bold text-sm">Order ID:</span>
+                                            <span className="font-mono text-xs ml-2">{order.id.substring(0,8)}</span>
+                                        </div>
+                                         <span className={`px-2 py-1 text-xs font-semibold rounded-full ${statusColors[order.status]}`}>
+                                            {order.status}
+                                        </span>
+                                    </div>
                                     <Table>
                                         <TableHeader>
                                             <TableRow>
                                                 <TableHead>Product</TableHead>
-                                                <TableHead>Total Qty</TableHead>
+                                                <TableHead>Qty</TableHead>
+                                                <TableHead>Price</TableHead>
+                                                <TableHead>Subtotal</TableHead>
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
-                                            {aggregatedItems.map((item: any) => (
+                                            {order.items.map((item: any) => (
                                             <TableRow key={`${item.id}-${item.size}`}>
                                                 <TableCell>{item.name} ({item.size})</TableCell>
                                                 <TableCell>{item.quantity}</TableCell>
+                                                <TableCell>₹{item.price.toFixed(2)}</TableCell>
+                                                <TableCell>₹{(item.price * item.quantity).toFixed(2)}</TableCell>
                                             </TableRow>
                                             ))}
                                         </TableBody>
                                     </Table>
+                                    <div className="flex justify-between items-center mt-3">
+                                        <div className="font-bold text-lg">
+                                            Total: ₹{order.totalAmount.toLocaleString()}
+                                        </div>
+                                        <div className="no-print">
+                                            <Select onValueChange={(value) => handleStatusChange(order.id, value)} defaultValue={order.status}>
+                                                <SelectTrigger className="w-[120px] h-8">
+                                                <SelectValue placeholder="Status" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                <SelectItem value="Pending">Pending</SelectItem>
+                                                <SelectItem value="Confirmed">Confirmed</SelectItem>
+                                                <SelectItem value="Delivered">Delivered</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div className='no-print'>
-                                    <h4 className="font-semibold mb-2 text-center text-sm">Individual Orders</h4>
-                                     <Table>
-                                        <TableHeader>
-                                            <TableRow>
-                                                <TableHead>Date</TableHead>
-                                                <TableHead>Status</TableHead>
-                                                <TableHead>Action</TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            {orders.map((order: any) => (
-                                            <TableRow key={order.id}>
-                                                <TableCell className="text-xs">
-                                                  {order.createdAt?.toDate ? order.createdAt.toDate().toLocaleDateString() : 'N/A'}
-                                                </TableCell>
-                                                <TableCell>
-                                                    <span className={`px-2 py-1 text-xs font-semibold rounded-full ${statusColors[order.status]}`}>
-                                                        {order.status}
-                                                    </span>
-                                                </TableCell>
-                                                <TableCell>
-                                                <Select onValueChange={(value) => handleStatusChange(order.id, value)} defaultValue={order.status}>
-                                                    <SelectTrigger className="w-[120px] h-8">
-                                                    <SelectValue placeholder="Status" />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                    <SelectItem value="Pending">Pending</SelectItem>
-                                                    <SelectItem value="Confirmed">Confirmed</SelectItem>
-                                                    <SelectItem value="Delivered">Delivered</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                                </TableCell>
-                                            </TableRow>
-                                            ))}
-                                        </TableBody>
-                                    </Table>
-                                </div>
-                            </div>
+                            ))}
                         </AccordionContent>
                       </AccordionItem>
                     ))}
@@ -269,3 +242,4 @@ export function AllOrders({ orders: initialOrders = [], users = [], loading }: {
     </Card>
   );
 }
+
