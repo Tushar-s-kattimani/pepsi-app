@@ -8,7 +8,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '@/firebase/config';
 import { useToast } from '@/components/ui/use-toast';
-import { Loader2, User, Download, Printer, Calendar } from 'lucide-react';
+import { Loader2, User, Download, Printer, Calendar, Clock, Info } from 'lucide-react';
 import { useMemo, useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 
@@ -154,37 +154,46 @@ export function AllOrders({ orders: initialOrders = [], users = [], loading }: {
         ) : (
           <Accordion type="multiple" className="w-full space-y-4">
             {ordersByDate.map(({ date, totalOrders, shops }) => (
-              <AccordionItem value={date} key={date} className="border rounded-lg">
-                <AccordionTrigger className="p-4 bg-gray-50 rounded-t-lg hover:no-underline no-print">
-                  <div className="flex items-center gap-3">
-                    <Calendar className="h-5 w-5 text-gray-600" />
-                    <span className="text-lg font-semibold">{new Date(date).toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
-                    <span className="px-2 py-1 text-xs font-bold text-blue-800 bg-blue-100 rounded-full">{totalOrders} orders</span>
+              <AccordionItem value={date} key={date} className="border-0 rounded-lg bg-white shadow-sm">
+                <AccordionTrigger className="p-4 hover:no-underline no-print rounded-t-lg border-b">
+                  <div className="flex w-full items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <Calendar className="h-5 w-5 text-gray-600" />
+                        <span className="text-lg font-semibold">{new Date(date + 'T00:00:00').toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                    </div>
+                    <span className="px-3 py-1 text-sm font-bold text-primary bg-primary/10 rounded-full">{totalOrders} orders</span>
                   </div>
                 </AccordionTrigger>
-                <AccordionContent className="p-2">
-                  <Accordion type="multiple" className="w-full space-y-2">
+                <AccordionContent className="p-0">
+                  <Accordion type="multiple" className="w-full">
                     {shops.map(({ shopInfo, orders }) => (
-                      <AccordionItem value={shopInfo.id} key={shopInfo.id} className="border rounded-md">
-                        <AccordionTrigger className="p-3 bg-white rounded-t-md hover:no-underline">
-                            <div className="flex justify-between w-full items-center">
+                      <AccordionItem value={shopInfo.id} key={shopInfo.id} className="border-t">
+                        <AccordionTrigger className="p-4 hover:no-underline">
+                            <div className="flex justify-between w-full items-center pr-4">
                                 <div className='flex items-center gap-3'>
                                     <User className="h-5 w-5 text-gray-500" />
                                     <div className="text-left">
-                                        <div className="font-semibold">{shopInfo.shopName} ({shopInfo.location})</div>
-                                        <div className="text-xs text-gray-500">{shopInfo.phoneNumber}</div>
+                                        <div className="font-semibold text-base">{shopInfo.shopName}</div>
+                                        <div className="text-sm text-muted-foreground">{shopInfo.location} &bull; {shopInfo.phoneNumber}</div>
                                     </div>
                                 </div>
-                                <div className="px-2 py-1 text-xs font-bold text-green-800 bg-green-100 rounded-full inline-block mt-1">{orders.length} order(s) on this day</div>
+                                <div className="px-2 py-1 text-xs font-bold text-green-800 bg-green-100 rounded-full inline-block">{orders.length} order(s) on this day</div>
                             </div>
                         </AccordionTrigger>
-                        <AccordionContent className="p-2">
+                        <AccordionContent className="pb-2 px-4 bg-gray-50/50">
                             {orders.map((order: any) => (
-                                <div key={order.id} className="mb-4 border rounded-lg p-3">
-                                    <div className="flex justify-between items-center mb-2">
+                                <div key={order.id} className="mb-4 border rounded-lg p-4 bg-white mt-2">
+                                    <div className="flex justify-between items-start mb-3">
                                         <div>
-                                            <span className="font-bold text-sm">Order ID:</span>
-                                            <span className="font-mono text-xs ml-2">{order.id.substring(0,8)}</span>
+                                            <div className='flex items-center gap-2'>
+                                                <Info className="h-4 w-4" />
+                                                <span className="font-bold text-sm">Order ID:</span>
+                                                <span className="font-mono text-xs">{order.id.substring(0,8)}</span>
+                                            </div>
+                                             <div className='flex items-center gap-2 mt-1 text-xs text-muted-foreground'>
+                                                <Clock className="h-3 w-3" />
+                                                <span>{order.createdAt?.toDate().toLocaleTimeString()}</span>
+                                            </div>
                                         </div>
                                          <span className={`px-2 py-1 text-xs font-semibold rounded-full ${statusColors[order.status]}`}>
                                             {order.status}
@@ -194,29 +203,29 @@ export function AllOrders({ orders: initialOrders = [], users = [], loading }: {
                                         <TableHeader>
                                             <TableRow>
                                                 <TableHead>Product</TableHead>
-                                                <TableHead>Qty</TableHead>
-                                                <TableHead>Price</TableHead>
-                                                <TableHead>Subtotal</TableHead>
+                                                <TableHead className='text-center'>Qty</TableHead>
+                                                <TableHead className='text-right'>Price</TableHead>
+                                                <TableHead className='text-right'>Subtotal</TableHead>
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
                                             {order.items.map((item: any) => (
                                             <TableRow key={`${item.id}-${item.size}`}>
-                                                <TableCell>{item.name} ({item.size})</TableCell>
-                                                <TableCell>{item.quantity}</TableCell>
-                                                <TableCell>₹{item.price.toFixed(2)}</TableCell>
-                                                <TableCell>₹{(item.price * item.quantity).toFixed(2)}</TableCell>
+                                                <TableCell>{item.name} <span className="text-muted-foreground">({item.size})</span></TableCell>
+                                                <TableCell className='text-center'>{item.quantity}</TableCell>
+                                                <TableCell className='text-right'>₹{item.price.toFixed(2)}</TableCell>
+                                                <TableCell className='text-right font-medium'>₹{(item.price * item.quantity).toFixed(2)}</TableCell>
                                             </TableRow>
                                             ))}
                                         </TableBody>
                                     </Table>
-                                    <div className="flex justify-between items-center mt-3">
+                                    <div className="flex justify-between items-center mt-4 border-t pt-3">
                                         <div className="font-bold text-lg">
                                             Total: ₹{order.totalAmount.toLocaleString()}
                                         </div>
                                         <div className="no-print">
                                             <Select onValueChange={(value) => handleStatusChange(order.id, value)} defaultValue={order.status}>
-                                                <SelectTrigger className="w-[120px] h-8">
+                                                <SelectTrigger className="w-[120px] h-9">
                                                 <SelectValue placeholder="Status" />
                                                 </SelectTrigger>
                                                 <SelectContent>
@@ -242,4 +251,5 @@ export function AllOrders({ orders: initialOrders = [], users = [], loading }: {
     </Card>
   );
 }
+
 

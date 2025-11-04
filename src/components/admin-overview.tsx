@@ -2,7 +2,7 @@
 
 import { Bar, Line } from 'react-chartjs-2';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { IndianRupee, Package, Users, Loader2, Clock, CheckCircle, Truck } from 'lucide-react';
+import { IndianRupee, Package, Users, Loader2, Clock, CheckCircle, Truck, ShoppingCart } from 'lucide-react';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, LineElement, Title, Tooltip, Legend, PointElement } from 'chart.js';
 import { useMemo } from 'react';
 
@@ -15,14 +15,12 @@ export function AdminOverview({ orders = [], products = [], users = [], loading 
     const productSales: { [key: string]: number } = {};
     
     orders.forEach(order => {
-      // Sales Trend Data
       if (order.createdAt?.toDate) {
         const date = order.createdAt.toDate();
-        const month = date.toLocaleString('default', { month: 'long' });
+        const month = date.toLocaleString('default', { month: 'long', year: 'numeric' });
         monthlySales[month] = (monthlySales[month] || 0) + order.totalAmount;
       }
 
-      // Top Products Data
       if (order.items && Array.isArray(order.items)) {
         order.items.forEach((item: any) => {
           productSales[item.name] = (productSales[item.name] || 0) + item.quantity;
@@ -30,8 +28,8 @@ export function AdminOverview({ orders = [], products = [], users = [], loading 
       }
     });
 
-    const salesLabels = Object.keys(monthlySales);
-    const salesValues = Object.values(monthlySales);
+    const salesLabels = Object.keys(monthlySales).sort((a,b) => new Date(a).getTime() - new Date(b).getTime());
+    const salesValues = salesLabels.map(label => monthlySales[label]);
 
     const sortedProducts = Object.entries(productSales).sort(([, a], [, b]) => b - a).slice(0, 5);
     const topProductLabels = sortedProducts.map(([name]) => name);
@@ -46,6 +44,7 @@ export function AdminOverview({ orders = [], products = [], users = [], loading 
           backgroundColor: 'rgba(59, 130, 246, 0.5)',
           borderColor: 'rgba(59, 130, 246, 1)',
           borderWidth: 1,
+          tension: 0.4,
         }],
       },
       productSalesData: {
@@ -81,92 +80,100 @@ export function AdminOverview({ orders = [], products = [], users = [], loading 
 
   return (
     <div className="space-y-8">
-      <h2 className="text-3xl font-bold">Dashboard Overview</h2>
+      <h2 className="text-3xl font-bold tracking-tight">Dashboard Overview</h2>
       
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-            <IndianRupee className="h-4 w-4 text-muted-foreground" />
+            <IndianRupee className="h-5 w-5 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">₹{totalRevenue.toLocaleString()}</div>
+            <div className="text-3xl font-bold">₹{totalRevenue.toLocaleString()}</div>
+             <p className="text-xs text-muted-foreground">Across all orders</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Shops</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+            <Users className="h-5 w-5 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalShops}</div>
+            <div className="text-3xl font-bold">{totalShops}</div>
+            <p className="text-xs text-muted-foreground">Registered and active</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Products</CardTitle>
-            <Package className="h-4 w-4 text-muted-foreground" />
+            <Package className="h-5 w-5 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalProducts}</div>
+            <div className="text-3xl font-bold">{totalProducts}</div>
+             <p className="text-xs text-muted-foreground">In current inventory</p>
           </CardContent>
         </Card>
-        <Card className="sm:col-span-2 lg:col-span-1">
+        <Card>
              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Orders</CardTitle>
-                <Users className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
+                <ShoppingCart className="h-5 w-5 text-muted-foreground" />
             </CardHeader>
-            <CardContent className='space-y-2'>
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-sm">
-                        <Clock className="h-4 w-4 text-yellow-500" />
-                        <span>Pending</span>
-                    </div>
-                    <div className="font-bold">{pendingOrders}</div>
-                </div>
-                 <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-sm">
-                        <CheckCircle className="h-4 w-4 text-blue-500" />
-                        <span>Confirmed</span>
-                    </div>
-                    <div className="font-bold">{confirmedOrders}</div>
-                </div>
-                 <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-sm">
-                        <Truck className="h-4 w-4 text-green-500" />
-                        <span>Delivered</span>
-                    </div>
-                    <div className="font-bold">{deliveredOrders}</div>
-                </div>
+            <CardContent>
+                <div className="text-3xl font-bold">{orders.length}</div>
+                <p className="text-xs text-muted-foreground">Pending, confirmed, and delivered</p>
             </CardContent>
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-        <Card>
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-5">
+        <div className="lg:col-span-3 grid grid-cols-1 gap-6">
+            <Card className="col-span-1">
+                <CardHeader>
+                    <CardTitle>Order Status Breakdown</CardTitle>
+                </CardHeader>
+                <CardContent className='grid grid-cols-3 gap-4'>
+                    <div className="flex flex-col items-center space-y-2 rounded-lg bg-yellow-50 p-4">
+                        <Clock className="h-8 w-8 text-yellow-500" />
+                        <span className="text-2xl font-bold">{pendingOrders}</span>
+                        <span className="text-sm font-medium">Pending</span>
+                    </div>
+                    <div className="flex flex-col items-center space-y-2 rounded-lg bg-blue-50 p-4">
+                        <CheckCircle className="h-8 w-8 text-blue-500" />
+                         <span className="text-2xl font-bold">{confirmedOrders}</span>
+                        <span className="text-sm font-medium">Confirmed</span>
+                    </div>
+                    <div className="flex flex-col items-center space-y-2 rounded-lg bg-green-50 p-4">
+                        <Truck className="h-8 w-8 text-green-500" />
+                        <span className="text-2xl font-bold">{deliveredOrders}</span>
+                        <span className="text-sm font-medium">Delivered</span>
+                    </div>
+                </CardContent>
+            </Card>
+            <Card className="col-span-1">
+              <CardHeader>
+                <CardTitle>Top Products by Units Sold</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-64">
+                   {chartData.productSalesData.labels.length > 0 ? (
+                    <Bar data={chartData.productSalesData} options={{ responsive: true, maintainAspectRatio: false, indexAxis: 'y' }} />
+                  ) : (
+                     <div className="flex h-full items-center justify-center text-gray-500">No product sales data available.</div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+        </div>
+        <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle>Sales Trend</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-80">
+            <div className="h-[28.5rem]">
               {chartData.salesData.labels.length > 0 ? (
                 <Line data={chartData.salesData} options={{ responsive: true, maintainAspectRatio: false }} />
               ) : (
                 <div className="flex h-full items-center justify-center text-gray-500">No sales data available.</div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Top Products by Units Sold</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-80">
-               {chartData.productSalesData.labels.length > 0 ? (
-                <Bar data={chartData.productSalesData} options={{ responsive: true, maintainAspectRatio: false }} />
-              ) : (
-                 <div className="flex h-full items-center justify-center text-gray-500">No product sales data available.</div>
               )}
             </div>
           </CardContent>

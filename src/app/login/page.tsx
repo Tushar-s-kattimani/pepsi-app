@@ -108,16 +108,16 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen w-full items-center justify-center bg-gray-100 dark:bg-gray-900 p-4">
       <Card className="w-full max-w-md shadow-2xl">
-        <CardHeader className="text-center space-y-4">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                <Package className="h-8 w-8" />
+        <CardHeader className="text-center space-y-4 pt-8">
+            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg">
+                <Package className="h-10 w-10" />
             </div>
-          <CardTitle className="text-3xl font-bold">Distribution Hub</CardTitle>
-          <CardDescription className="text-base">
-            Select your role to sign in or create an account.
+          <CardTitle className="text-3xl font-bold tracking-tight">Distribution Hub</CardTitle>
+          <CardDescription className="text-base text-muted-foreground">
+            Select your role to sign in or create an account
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pb-8 px-8">
           <Tabs defaultValue="shop" className="w-full" onValueChange={() => setError('')}>
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="shop"><UserIcon className="mr-2 h-4 w-4" /> Shop</TabsTrigger>
@@ -145,8 +145,8 @@ export default function LoginPage() {
                     className="py-6 text-base"
                     />
                 </div>
-                {error && <p className="text-sm text-center text-red-500 font-medium">{error}</p>}
-                <div className="space-y-3">
+                {error && <p className="text-sm text-center font-medium text-red-500">{error}</p>}
+                <div className="space-y-3 pt-2">
                     <Button
                     onClick={() => handleShopAuth(signIn)}
                     disabled={loading}
@@ -186,8 +186,8 @@ export default function LoginPage() {
                     className="py-6 text-base"
                     />
                 </div>
-                {error && <p className="text-sm text-center text-red-500 font-medium">{error}</p>}
-                 <div className="space-y-3">
+                {error && <p className="text-sm text-center font-medium text-red-500">{error}</p>}
+                 <div className="space-y-3 pt-2">
                     <Button
                         onClick={handleAdminSignIn}
                         disabled={loading}
@@ -196,8 +196,8 @@ export default function LoginPage() {
                         {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : 'Sign In as Admin'}
                     </Button>
                 </div>
-                <p className="text-xs text-center text-gray-500">
-                    Use an email ending in @admin.com to create an admin account. If it doesn't exist, it will be created.
+                <p className="text-xs text-center text-muted-foreground pt-2">
+                    Use an email ending in @admin.com to create or access an admin account.
                 </p>
             </TabsContent>
 
