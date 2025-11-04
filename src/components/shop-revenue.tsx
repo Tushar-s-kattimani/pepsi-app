@@ -13,26 +13,31 @@ export function ShopRevenue({ orders = [], users = [], loading }: { orders: any[
     const usersMap = new Map();
     users.forEach(user => usersMap.set(user.id, user));
 
-    const revenueByShop: { [key: string]: { shopInfo: any, totalAmount: number } } = {};
+    const revenueByShopAndDate: { [key: string]: { shopInfo: any, totalAmount: number, date: string } } = {};
 
     orders.forEach(order => {
-      if (order.status === 'Delivered') {
-        if (!revenueByShop[order.shopId]) {
-          const shopInfo = users.find(u => u.id === order.shopId);
-          if (shopInfo) {
-            revenueByShop[order.shopId] = {
-              shopInfo: shopInfo,
-              totalAmount: 0,
-            };
-          }
+      if (order.status === 'Delivered' && order.createdAt?.toDate) {
+        const dateStr = order.createdAt.toDate().toLocaleDateString('en-CA'); // YYYY-MM-DD
+        const key = `${order.shopId}-${dateStr}`;
+
+        if (!revenueByShopAndDate[key]) {
+           const shopInfo = usersMap.get(order.shopId);
+           if (shopInfo) {
+              revenueByShopAndDate[key] = {
+                shopInfo: shopInfo,
+                totalAmount: 0,
+                date: dateStr,
+              };
+           }
         }
-        if (revenueByShop[order.shopId]) {
-          revenueByShop[order.shopId].totalAmount += order.totalAmount;
+        
+        if (revenueByShopAndDate[key]) {
+          revenueByShopAndDate[key].totalAmount += order.totalAmount;
         }
       }
     });
 
-    return Object.values(revenueByShop).sort((a, b) => b.totalAmount - a.totalAmount);
+    return Object.values(revenueByShopAndDate).sort((a, b) => b.date.localeCompare(a.date));
   }, [orders, users, loading]);
 
   return (
@@ -47,14 +52,16 @@ export function ShopRevenue({ orders = [], users = [], loading }: { orders: any[
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>Date</TableHead>
                 <TableHead>Shop Name</TableHead>
                 <TableHead>Location</TableHead>
                 <TableHead className="text-right">Total Revenue</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {shopRevenueData.map(({ shopInfo, totalAmount }) => (
-                <TableRow key={shopInfo.id}>
+              {shopRevenueData.map(({ shopInfo, totalAmount, date }) => (
+                <TableRow key={`${shopInfo.id}-${date}`}>
+                  <TableCell>{new Date(date + 'T00:00:00').toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</TableCell>
                   <TableCell>{shopInfo.shopName || 'N/A'}</TableCell>
                   <TableCell>{shopInfo.location || 'N/A'}</TableCell>
                   <TableCell className="text-right font-medium">₹{totalAmount.toLocaleString()}</TableCell>
