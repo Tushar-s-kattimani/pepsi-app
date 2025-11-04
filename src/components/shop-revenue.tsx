@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
-import { Loader2, Download } from 'lucide-react';
+import { Loader2, Download, Banknote } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
@@ -71,27 +71,30 @@ export function ShopRevenue({ orders = [], users = [], loading }: { orders: any[
 
   return (
     <Card className="printable-area">
-      <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between no-print">
-        <CardTitle>Shop Revenue from Delivered Orders</CardTitle>
-        <div className="flex items-center gap-2 mt-4 md:mt-0">
+      <CardHeader className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between no-print rounded-t-lg bg-gray-50/50 border-b">
+        <div className="flex items-center gap-3">
+          <Banknote className="w-8 h-8 text-gray-600" />
+          <CardTitle className='text-2xl font-bold tracking-tight'>Shop Revenue</CardTitle>
+        </div>
+        <div className="flex items-center gap-2">
           <Input
             type="date"
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
-            className="w-full md:w-auto"
+            className="w-full md:w-auto bg-white"
           />
-          <Button variant="outline" onClick={() => setSelectedDate('')} disabled={!selectedDate}>Clear</Button>
+          <Button variant="outline" onClick={() => setSelectedDate('')} disabled={!selectedDate} className='bg-white'>Clear</Button>
            <Button onClick={handleDownloadPdf} disabled={shopRevenueData.length === 0}>
             <Download className="mr-2 h-4 w-4" />
             Download PDF
           </Button>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className='p-0'>
         {loading ? (
           <div className="flex justify-center py-10"><Loader2 className="h-8 w-8 animate-spin" /></div>
         ) : (
-          <div className="overflow-hidden border rounded-lg">
+          <div className="overflow-x-auto">
             <Table>
               <TableHeader className='bg-gray-50'>
                 <TableRow>
@@ -104,8 +107,8 @@ export function ShopRevenue({ orders = [], users = [], loading }: { orders: any[
               </TableHeader>
               <TableBody>
                 {shopRevenueData.length > 0 ? (
-                  shopRevenueData.map((order, index) => (
-                    <TableRow key={order.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}>
+                  shopRevenueData.map((order) => (
+                    <TableRow key={order.id}>
                       <TableCell>{order.createdAt.toDate().toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</TableCell>
                       <TableCell>{order.shopInfo.shopName || 'N/A'}</TableCell>
                       <TableCell>{order.shopInfo.location || 'N/A'}</TableCell>
@@ -122,7 +125,7 @@ export function ShopRevenue({ orders = [], users = [], loading }: { orders: any[
                 )}
               </TableBody>
               {shopRevenueData.length > 0 && (
-                  <TableFooter className="bg-gray-100">
+                  <TableFooter className="bg-gray-100 border-t">
                       <TableRow>
                           <TableCell colSpan={4} className="text-right text-base font-bold">Total</TableCell>
                           <TableCell className="text-right text-base font-bold">₹{totalForDate.toLocaleString()}</TableCell>
