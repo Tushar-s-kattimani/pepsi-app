@@ -15,10 +15,10 @@ export function Header() {
     <header className="flex h-20 shrink-0 items-center justify-between border-b bg-white px-6 md:px-10">
       <div className="flex items-center gap-4">
          <div className="hidden md:block">
-            <h1 className="text-2xl font-bold text-gray-800">
+             <h1 className="text-3xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-700 text-shadow-md">
                 {role === 'admin' ? 'Admin Console' : 'Shop Order Portal'}
             </h1>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-gray-500 mt-1">
                 Welcome, <span className="font-semibold">{user?.email}</span>
             </p>
         </div>
