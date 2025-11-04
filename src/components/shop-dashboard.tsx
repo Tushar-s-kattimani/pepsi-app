@@ -9,9 +9,11 @@ import { OrderHistory } from '@/components/order-history';
 import { collection, query, where } from 'firebase/firestore';
 import { db } from '@/firebase/config';
 import { ShopProfile } from '@/components/shop-profile';
+import { MobileSidebar } from './mobile-sidebar';
 
 export function ShopDashboard() {
   const [activeSection, setActiveSection] = useState('new_order');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { user } = useUser();
 
   const userOrdersQuery = useMemo(() => {
@@ -39,8 +41,15 @@ export function ShopDashboard() {
   return (
     <div className="flex h-screen bg-gray-50">
       <Sidebar role="shop" activeSection={activeSection} setActiveSection={setActiveSection} />
+       <MobileSidebar
+        role="shop"
+        activeSection={activeSection}
+        setActiveSection={setActiveSection}
+        isOpen={mobileMenuOpen}
+        setIsOpen={setMobileMenuOpen}
+      />
       <div className="flex flex-1 flex-col overflow-hidden">
-        <Header />
+        <Header onMenuClick={() => setMobileMenuOpen(true)} />
         <main className="flex-1 overflow-y-auto p-6 md:p-10">
           {renderContent()}
         </main>

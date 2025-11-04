@@ -14,9 +14,11 @@ import { LaborAttendance } from '@/components/labor-attendance';
 import { StockReport } from '@/components/stock-report';
 import { query, collection, orderBy } from 'firebase/firestore';
 import { db } from '@/firebase/config';
+import { MobileSidebar } from './mobile-sidebar';
 
 export function AdminDashboard() {
   const [activeSection, setActiveSection] = useState('dashboard');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const ordersQuery = useMemo(() => query(collection(db, 'orders'), orderBy('createdAt', 'desc')), []);
   
@@ -50,8 +52,15 @@ export function AdminDashboard() {
   return (
     <div className="flex h-screen bg-gray-50">
       <Sidebar role="admin" activeSection={activeSection} setActiveSection={setActiveSection} />
+       <MobileSidebar
+        role="admin"
+        activeSection={activeSection}
+        setActiveSection={setActiveSection}
+        isOpen={mobileMenuOpen}
+        setIsOpen={setMobileMenuOpen}
+      />
       <div className="flex flex-1 flex-col overflow-hidden">
-        <Header />
+        <Header onMenuClick={() => setMobileMenuOpen(true)} />
         <main className="flex-1 overflow-y-auto p-6 md:p-10 printable-area">
           {renderContent()}
         </main>

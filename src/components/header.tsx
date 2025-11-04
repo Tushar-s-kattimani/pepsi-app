@@ -2,18 +2,27 @@
 
 import { useUser } from '@/firebase';
 import { Button } from '@/components/ui/button';
-import { ShoppingCart, LogOut, Search } from 'lucide-react';
+import { ShoppingCart, LogOut, Search, Menu } from 'lucide-react';
 import { useCart } from '@/context/cart-context';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetFooter } from '@/components/ui/sheet';
 import { Input } from '@/components/ui/input';
 
-export function Header() {
+export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
   const { user, signOut, role } = useUser();
   const { cart, updateQuantity, clearCart, subtotal, total } = useCart();
 
   return (
     <header className="flex h-20 shrink-0 items-center justify-between border-b bg-white px-6 md:px-10">
       <div className="flex items-center gap-4">
+        <Button
+          variant="outline"
+          size="icon"
+          className="md:hidden"
+          onClick={onMenuClick}
+        >
+          <Menu className="h-6 w-6" />
+          <span className="sr-only">Toggle navigation menu</span>
+        </Button>
          <div className="hidden md:block">
              <h1 className="text-3xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-700 text-shadow-md">
                 {role === 'admin' ? 'Admin Console' : 'Shop Order Portal'}
