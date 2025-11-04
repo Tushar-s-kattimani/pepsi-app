@@ -39,8 +39,10 @@ service cloud.firestore {
       // Authenticated users can read their own orders
       allow read: if isAdmin() || (request.auth != null && resource.data.shopId == request.auth.uid);
       
-      // Authenticated users can create their own orders
-      allow create: if request.auth != null && request.resource.data.shopId == request.auth.uid;
+      // Authenticated users can create their own orders, ensuring the timestamp is valid
+      allow create: if request.auth != null && 
+                      request.resource.data.shopId == request.auth.uid &&
+                      request.resource.data.createdAt == request.time;
       
       // Only admins can update orders (e.g., to change status)
       allow update: if isAdmin();
