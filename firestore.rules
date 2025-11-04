@@ -22,7 +22,8 @@ service cloud.firestore {
     // Rules for the 'products' collection
     match /products/{productId} {
       allow read: if request.auth != null;
-      allow write: if isAdmin();
+      // Allow write for admins, OR for any authenticated user (for stock updates during orders)
+      allow write: if isAdmin() || request.auth != null;
     }
 
     // Rules for the 'orders' collection
