@@ -6,6 +6,7 @@ import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { auth, db } from './';
 import { AuthContext } from './auth/use-user';
 import { assignUserRole } from '@/lib/auth';
+import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 
 export function FirebaseProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -61,6 +62,7 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
   return (
     <AuthContext.Provider value={{ user, loading, role, signUp, signIn, signOut }}>
       {children}
+      <FirebaseErrorListener />
     </AuthContext.Provider>
   );
 }

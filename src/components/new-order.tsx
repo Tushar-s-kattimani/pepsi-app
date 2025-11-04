@@ -6,11 +6,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/components/ui/use-toast';
 import { Loader2, PlusCircle, Trash2, Box } from 'lucide-react';
-import { collection, serverTimestamp, doc, getDoc, runTransaction } from 'firebase/firestore';
+import { collection, serverTimestamp, doc, getDoc, runTransaction, writeBatch } from 'firebase/firestore';
 import { db } from '@/firebase/config';
 import { useUser } from '@/firebase';
 import { useState } from 'react';
 import { Input } from '@/components/ui/input';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError, SecurityRuleContext } from '@/firebase/errors';
+
 
 export function NewOrder({ products = [], loading }: { products: any[], loading: boolean }) {
   const { cart, addToCart, updateQuantity, clearCart, subtotal, total, tax } = useCart();
@@ -85,62 +88,69 @@ export function NewOrder({ products = [], loading }: { products: any[], loading:
 
 
     // 2. Run the transaction to place order and update stock
-    try {
-        await runTransaction(db, async (transaction) => {
-            const productRefs = new Map<string, any>();
-            const productSnapshots = new Map<string, any>();
+    const newOrderRef = doc(collection(db, 'orders'));
+    const orderPayload = {
+        shopId: user.uid,
+        shopEmail: user.email,
+        items: cart.map(({ boxQuantity, stock, ...item }) => item), // Remove internal fields
+        totalAmount: total,
+        status: 'Pending',
+        createdAt: serverTimestamp(),
+    };
 
-            // First, read all product documents and check stock
-            for (const item of cart) {
-                const productRef = doc(db, 'products', item.id);
-                productRefs.set(item.id, productRef);
-                const productSnap = await transaction.get(productRef);
-                if (!productSnap.exists()) {
-                    throw new Error(`Product "${item.name}" not found.`);
-                }
-                const currentStock = productSnap.data().stock;
-                if (currentStock < item.quantity) {
-                    throw new Error(`Insufficient stock for ${item.name}. Only ${currentStock} left.`);
-                }
-                productSnapshots.set(item.id, productSnap);
-            }
+    runTransaction(db, async (transaction) => {
+      const productRefs = new Map<string, any>();
+      const productSnapshots = new Map<string, any>();
 
-            // If all stock checks passed, proceed to write
-            
-            // Create the order
-            const newOrderRef = doc(collection(db, 'orders'));
-            transaction.set(newOrderRef, {
-                shopId: user.uid,
-                shopEmail: user.email,
-                items: cart,
-                totalAmount: total,
-                status: 'Pending',
-                createdAt: serverTimestamp(),
-            });
+      // First, read all product documents and check stock
+      for (const item of cart) {
+        const productRef = doc(db, 'products', item.id);
+        productRefs.set(item.id, productRef);
+        const productSnap = await transaction.get(productRef);
+        if (!productSnap.exists()) {
+          throw new Error(`Product "${item.name}" not found.`);
+        }
+        const currentStock = productSnap.data().stock;
+        if (currentStock < item.quantity) {
+          throw new Error(`Insufficient stock for ${item.name}. Only ${currentStock} left.`);
+        }
+        productSnapshots.set(item.id, productSnap);
+      }
 
-            // Update product stock
-            for (const item of cart) {
-                const productRef = productRefs.get(item.id);
-                const productSnap = productSnapshots.get(item.id);
-                const newStock = productSnap.data().stock - item.quantity;
-                transaction.update(productRef, { stock: newStock });
-            }
-        });
+      // If all stock checks passed, proceed to write
+      transaction.set(newOrderRef, orderPayload);
 
+      // Update product stock
+      for (const item of cart) {
+        const productRef = productRefs.get(item.id);
+        const productSnap = productSnapshots.get(item.id);
+        const newStock = productSnap.data().stock - item.quantity;
+        transaction.update(productRef, { stock: newStock });
+      }
+    }).then(() => {
         toast({ title: 'Success', description: 'Order placed successfully!' });
         clearCart();
+    }).catch((error: any) => {
+        // This is where permission errors from the transaction will be caught.
+        const permissionError = new FirestorePermissionError({
+            path: newOrderRef.path,
+            operation: 'create',
+            requestResourceData: orderPayload,
+        } satisfies SecurityRuleContext);
+        
+        errorEmitter.emit(permissionError);
 
-    } catch (error: any) {
-        console.error("Transaction failed: ", error);
+        // Also show a generic toast to the user
         toast({
             variant: 'destructive',
             title: 'Order Failed',
-            description: error.message || 'Could not place order due to an unexpected error.',
+            description: 'Could not place order due to a permissions issue.',
             duration: 5000,
         });
-    } finally {
+        console.error("Transaction failed: ", error); // Log original error for good measure
+    }).finally(() => {
         setIsPlacingOrder(false);
-    }
+    });
   };
 
 
