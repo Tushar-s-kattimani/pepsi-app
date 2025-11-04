@@ -11,7 +11,7 @@ export function ShopRevenue({ orders = [], users = [], loading }: { orders: any[
     if (loading) return [];
     
     const usersMap = new Map();
-    users.forEach(user => map.set(user.id, user));
+    users.forEach(user => usersMap.set(user.id, user));
 
     const revenueByShop: { [key: string]: { shopInfo: any, totalAmount: number } } = {};
 
