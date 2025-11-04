@@ -12,7 +12,7 @@ export function Header() {
   const { cart, updateQuantity, clearCart, subtotal, total } = useCart();
 
   return (
-    <header className="flex h-20 shrink-0 items-center justify-between border-b bg-gray-50/50 px-6 md:px-10">
+    <header className="flex h-20 shrink-0 items-center justify-between border-b bg-white px-6 md:px-10">
       <div className="flex items-center gap-4">
          <div className="hidden md:block">
             <h1 className="text-2xl font-bold text-gray-800">
