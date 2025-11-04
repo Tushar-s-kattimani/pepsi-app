@@ -1,8 +1,8 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Loader2, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -63,7 +63,7 @@ export function ShopRevenue({ orders = [], users = [], loading }: { orders: any[
         order.totalAmount.toLocaleString()
       ]),
       foot: [['', '', '', 'Total', totalForDate.toLocaleString()]],
-      footStyles: { fontStyle: 'bold' }
+      footStyles: { fontStyle: 'bold', fillColor: [230, 230, 230], textColor: 0 }
     });
 
     doc.save('shop_revenue_report.pdf');
@@ -91,43 +91,44 @@ export function ShopRevenue({ orders = [], users = [], loading }: { orders: any[
         {loading ? (
           <div className="flex justify-center py-10"><Loader2 className="h-8 w-8 animate-spin" /></div>
         ) : (
-          <>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Date & Time</TableHead>
-                  <TableHead>Shop Name</TableHead>
-                  <TableHead>Location</TableHead>
-                  <TableHead>Order ID</TableHead>
-                  <TableHead className="text-right">Order Amount</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {shopRevenueData.length > 0 ? (
-                  shopRevenueData.map((order) => (
-                    <TableRow key={order.id}>
-                      <TableCell>{order.createdAt.toDate().toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</TableCell>
-                      <TableCell>{order.shopInfo.shopName || 'N/A'}</TableCell>
-                      <TableCell>{order.shopInfo.location || 'N/A'}</TableCell>
-                      <TableCell className="font-mono text-xs">{order.id.substring(0,8)}</TableCell>
-                      <TableCell className="text-right font-medium">₹{order.totalAmount.toLocaleString()}</TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={5} className="text-center py-10">
-                      {selectedDate ? 'No delivered orders on this date.' : 'No delivered orders yet.'}
-                    </TableCell>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Date & Time</TableHead>
+                <TableHead>Shop Name</TableHead>
+                <TableHead>Location</TableHead>
+                <TableHead>Order ID</TableHead>
+                <TableHead className="text-right">Order Amount</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {shopRevenueData.length > 0 ? (
+                shopRevenueData.map((order) => (
+                  <TableRow key={order.id}>
+                    <TableCell>{order.createdAt.toDate().toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</TableCell>
+                    <TableCell>{order.shopInfo.shopName || 'N/A'}</TableCell>
+                    <TableCell>{order.shopInfo.location || 'N/A'}</TableCell>
+                    <TableCell className="font-mono text-xs">{order.id.substring(0,8)}</TableCell>
+                    <TableCell className="text-right font-medium">₹{order.totalAmount.toLocaleString()}</TableCell>
                   </TableRow>
-                )}
-              </TableBody>
-            </Table>
-            {shopRevenueData.length > 0 && (
-              <div className="mt-4 text-right text-lg font-bold pr-4">
-                Total for {selectedDate ? new Date(selectedDate+'T00:00:00').toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' }) : 'All Time'}: ₹{totalForDate.toLocaleString()}
-              </div>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center py-10">
+                    {selectedDate ? 'No delivered orders on this date.' : 'No delivered orders yet.'}
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+             {shopRevenueData.length > 0 && (
+                <TableFooter>
+                    <TableRow>
+                        <TableCell colSpan={4} className="text-right text-base font-bold">Total</TableCell>
+                        <TableCell className="text-right text-base font-bold">₹{totalForDate.toLocaleString()}</TableCell>
+                    </TableRow>
+                </TableFooter>
             )}
-          </>
+          </Table>
         )}
       </CardContent>
     </Card>
