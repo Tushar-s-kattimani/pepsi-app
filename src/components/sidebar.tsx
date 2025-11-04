@@ -73,7 +73,7 @@ export function Sidebar({ role, activeSection, setActiveSection }: SidebarProps)
           <Button
             key={item.id}
             variant={activeSection === item.id ? 'secondary' : 'ghost'}
-            className="w-full justify-start gap-3 text-base"
+            className={`w-full justify-start gap-3 text-base h-12 px-4 ${activeSection === item.id ? 'font-bold' : 'font-medium'}`}
             onClick={() => setActiveSection(item.id)}
           >
             <item.icon className="h-5 w-5" />
