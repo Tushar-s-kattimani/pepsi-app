@@ -11,6 +11,7 @@ import { ShopManagement } from '@/components/shop-management';
 import { ShopRevenue } from '@/components/shop-revenue';
 import { LaborerManagement } from '@/components/laborer-management';
 import { LaborAttendance } from '@/components/labor-attendance';
+import { StockReport } from '@/components/stock-report';
 import { query, collection, orderBy } from 'firebase/firestore';
 import { db } from '@/firebase/config';
 
@@ -35,6 +36,8 @@ export function AdminDashboard() {
         return <ShopManagement users={users} loading={usersLoading} />;
       case 'shop-revenue':
         return <ShopRevenue orders={orders} users={users} loading={ordersLoading || usersLoading} />;
+      case 'stock-report':
+        return <StockReport products={products} loading={productsLoading} />;
       case 'laborers':
         return <LaborerManagement />;
       case 'attendance':

@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/components/ui/use-toast';
 import { Loader2, PlusCircle, Trash2, Box } from 'lucide-react';
-import { addDoc, collection, serverTimestamp, doc, getDoc } from 'firebase/firestore';
+import { collection, serverTimestamp, doc, getDoc, runTransaction } from 'firebase/firestore';
 import { db } from '@/firebase/config';
 import { useUser } from '@/firebase';
 import { useState } from 'react';
@@ -51,10 +51,16 @@ export function NewOrder({ products = [], loading }: { products: any[], loading:
       toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to place an order.' });
       return;
     }
+    if (cart.length === 0) {
+      toast({ variant: 'destructive', title: 'Empty Cart', description: 'Please add items to your cart before placing an order.' });
+      return;
+    }
+
     setIsPlacingOrder(true);
+    
+    // 1. Check for complete profile before starting the transaction
+    const userDocRef = doc(db, 'users', user.uid);
     try {
-      // Check for complete profile before placing order
-      const userDocRef = doc(db, 'users', user.uid);
       const userDoc = await getDoc(userDocRef);
       if (userDoc.exists()) {
         const userData = userDoc.data();
@@ -62,7 +68,8 @@ export function NewOrder({ products = [], loading }: { products: any[], loading:
           toast({
             variant: 'destructive',
             title: 'Incomplete Profile',
-            description: 'Please complete your profile information before placing an order. You can do this in the Profile section.',
+            description: 'Please complete your profile information in the Profile section before placing an order.',
+            duration: 5000,
           });
           setIsPlacingOrder(false);
           return;
@@ -70,23 +77,72 @@ export function NewOrder({ products = [], loading }: { products: any[], loading:
       } else {
         throw new Error('User data not found.');
       }
-      
-      await addDoc(collection(db, 'orders'), {
-        shopId: user.uid,
-        shopEmail: user.email,
-        items: cart,
-        totalAmount: total,
-        status: 'Pending',
-        createdAt: serverTimestamp(),
-      });
-      toast({ title: 'Success', description: 'Order placed successfully!' });
-      clearCart();
     } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Error', description: `Failed to place order: ${error.message}` });
+        toast({ variant: 'destructive', title: 'Error', description: `Could not verify user profile: ${error.message}` });
+        setIsPlacingOrder(false);
+        return;
+    }
+
+
+    // 2. Run the transaction to place order and update stock
+    try {
+        await runTransaction(db, async (transaction) => {
+            const productRefs = new Map<string, any>();
+            const productSnapshots = new Map<string, any>();
+
+            // First, read all product documents and check stock
+            for (const item of cart) {
+                const productRef = doc(db, 'products', item.id);
+                productRefs.set(item.id, productRef);
+                const productSnap = await transaction.get(productRef);
+                if (!productSnap.exists()) {
+                    throw new Error(`Product "${item.name}" not found.`);
+                }
+                const currentStock = productSnap.data().stock;
+                if (currentStock < item.quantity) {
+                    throw new Error(`Insufficient stock for ${item.name}. Only ${currentStock} left.`);
+                }
+                productSnapshots.set(item.id, productSnap);
+            }
+
+            // If all stock checks passed, proceed to write
+            
+            // Create the order
+            const newOrderRef = doc(collection(db, 'orders'));
+            transaction.set(newOrderRef, {
+                shopId: user.uid,
+                shopEmail: user.email,
+                items: cart,
+                totalAmount: total,
+                status: 'Pending',
+                createdAt: serverTimestamp(),
+            });
+
+            // Update product stock
+            for (const item of cart) {
+                const productRef = productRefs.get(item.id);
+                const productSnap = productSnapshots.get(item.id);
+                const newStock = productSnap.data().stock - item.quantity;
+                transaction.update(productRef, { stock: newStock });
+            }
+        });
+
+        toast({ title: 'Success', description: 'Order placed successfully!' });
+        clearCart();
+
+    } catch (error: any) {
+        console.error("Transaction failed: ", error);
+        toast({
+            variant: 'destructive',
+            title: 'Order Failed',
+            description: error.message || 'Could not place order due to an unexpected error.',
+            duration: 5000,
+        });
     } finally {
-      setIsPlacingOrder(false);
+        setIsPlacingOrder(false);
     }
   };
+
 
   return (
     <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
