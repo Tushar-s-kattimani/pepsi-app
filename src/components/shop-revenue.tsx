@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
-import { Loader2, Download } from 'lucide-react';
+import { Loader2, Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export function ShopRevenue({ orders = [], users = [], loading }: { orders: any[], users: any[], loading: boolean }) {
@@ -40,37 +40,14 @@ export function ShopRevenue({ orders = [], users = [], loading }: { orders: any[
   const totalForDate = useMemo(() => {
     return shopRevenueData.reduce((sum, order) => sum + order.totalAmount, 0);
   }, [shopRevenueData]);
-
-  const handleDownload = () => {
-    if (shopRevenueData.length === 0) return;
-
-    const headers = ["Date & Time", "Shop Name", "Location", "Order ID", "Order Amount"];
-    let csvContent = "data:text/csv;charset=utf-8," + headers.join(",") + "\r\n";
-
-    shopRevenueData.forEach(order => {
-      const row = [
-        `"${order.createdAt.toDate().toLocaleString('en-GB')}"`,
-        `"${order.shopInfo.shopName || 'N/A'}"`,
-        `"${order.shopInfo.location || 'N/A'}"`,
-        `"${order.id}"`,
-        order.totalAmount
-      ].join(',');
-      csvContent += row + "\r\n";
-    });
-
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    const dateSuffix = selectedDate ? `_${selectedDate}` : '';
-    link.setAttribute("download", `shop_revenue_report${dateSuffix}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
+  
+  const handlePrint = () => {
+    window.print();
+  }
 
   return (
-    <Card>
-      <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between">
+    <Card className="printable-area">
+      <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between no-print">
         <CardTitle>Shop Revenue from Delivered Orders</CardTitle>
         <div className="flex items-center gap-2 mt-4 md:mt-0">
           <Input
@@ -80,9 +57,9 @@ export function ShopRevenue({ orders = [], users = [], loading }: { orders: any[
             className="w-full md:w-auto"
           />
           <Button variant="outline" onClick={() => setSelectedDate('')} disabled={!selectedDate}>Clear</Button>
-           <Button onClick={handleDownload} disabled={shopRevenueData.length === 0}>
-            <Download className="mr-2 h-4 w-4" />
-            Download
+           <Button onClick={handlePrint} disabled={shopRevenueData.length === 0}>
+            <Printer className="mr-2 h-4 w-4" />
+            Print / PDF
           </Button>
         </div>
       </CardHeader>
