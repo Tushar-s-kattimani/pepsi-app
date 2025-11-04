@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Loader2, Download } from 'lucide-react';
@@ -91,44 +91,46 @@ export function ShopRevenue({ orders = [], users = [], loading }: { orders: any[
         {loading ? (
           <div className="flex justify-center py-10"><Loader2 className="h-8 w-8 animate-spin" /></div>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Date & Time</TableHead>
-                <TableHead>Shop Name</TableHead>
-                <TableHead>Location</TableHead>
-                <TableHead>Order ID</TableHead>
-                <TableHead className="text-right">Order Amount</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {shopRevenueData.length > 0 ? (
-                shopRevenueData.map((order) => (
-                  <TableRow key={order.id}>
-                    <TableCell>{order.createdAt.toDate().toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</TableCell>
-                    <TableCell>{order.shopInfo.shopName || 'N/A'}</TableCell>
-                    <TableCell>{order.shopInfo.location || 'N/A'}</TableCell>
-                    <TableCell className="font-mono text-xs">{order.id.substring(0,8)}</TableCell>
-                    <TableCell className="text-right font-medium">₹{order.totalAmount.toLocaleString()}</TableCell>
-                  </TableRow>
-                ))
-              ) : (
+          <div className="overflow-hidden border rounded-lg">
+            <Table>
+              <TableHeader className='bg-gray-50'>
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-10">
-                    {selectedDate ? 'No delivered orders on this date.' : 'No delivered orders yet.'}
-                  </TableCell>
+                  <TableHead>Date & Time</TableHead>
+                  <TableHead>Shop Name</TableHead>
+                  <TableHead>Location</TableHead>
+                  <TableHead>Order ID</TableHead>
+                  <TableHead className="text-right">Order Amount</TableHead>
                 </TableRow>
-              )}
-            </TableBody>
-             {shopRevenueData.length > 0 && (
-                <TableFooter>
-                    <TableRow>
-                        <TableCell colSpan={4} className="text-right text-base font-bold">Total</TableCell>
-                        <TableCell className="text-right text-base font-bold">₹{totalForDate.toLocaleString()}</TableCell>
+              </TableHeader>
+              <TableBody>
+                {shopRevenueData.length > 0 ? (
+                  shopRevenueData.map((order, index) => (
+                    <TableRow key={order.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}>
+                      <TableCell>{order.createdAt.toDate().toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</TableCell>
+                      <TableCell>{order.shopInfo.shopName || 'N/A'}</TableCell>
+                      <TableCell>{order.shopInfo.location || 'N/A'}</TableCell>
+                      <TableCell className="font-mono text-xs">{order.id.substring(0,8)}</TableCell>
+                      <TableCell className="text-right font-medium">₹{order.totalAmount.toLocaleString()}</TableCell>
                     </TableRow>
-                </TableFooter>
-            )}
-          </Table>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center py-10">
+                      {selectedDate ? 'No delivered orders on this date.' : 'No delivered orders yet.'}
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+              {shopRevenueData.length > 0 && (
+                  <TableFooter className="bg-gray-100">
+                      <TableRow>
+                          <TableCell colSpan={4} className="text-right text-base font-bold">Total</TableCell>
+                          <TableCell className="text-right text-base font-bold">₹{totalForDate.toLocaleString()}</TableCell>
+                      </TableRow>
+                  </TableFooter>
+              )}
+            </Table>
+          </div>
         )}
       </CardContent>
     </Card>
