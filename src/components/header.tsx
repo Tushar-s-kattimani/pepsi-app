@@ -2,24 +2,28 @@
 
 import { useUser } from '@/firebase';
 import { Button } from '@/components/ui/button';
-import { ShoppingCart, LogOut } from 'lucide-react';
+import { ShoppingCart, LogOut, Search } from 'lucide-react';
 import { useCart } from '@/context/cart-context';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetFooter } from '@/components/ui/sheet';
+import { Input } from '@/components/ui/input';
 
 export function Header() {
   const { user, signOut, role } = useUser();
   const { cart, updateQuantity, clearCart, subtotal, total } = useCart();
 
   return (
-    <header className="flex h-20 items-center justify-between border-b bg-white px-6 md:px-10">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-800">
-          {role === 'admin' ? 'Admin Console' : 'Shop Order Portal'}
-        </h1>
-        <p className="text-sm text-gray-500">
-          Welcome, <span className="font-semibold">{user?.email}</span>
-        </p>
+    <header className="flex h-20 shrink-0 items-center justify-between border-b bg-gray-50/50 px-6 md:px-10">
+      <div className="flex items-center gap-4">
+         <div className="hidden md:block">
+            <h1 className="text-2xl font-bold text-gray-800">
+                {role === 'admin' ? 'Admin Console' : 'Shop Order Portal'}
+            </h1>
+            <p className="text-sm text-gray-500">
+                Welcome, <span className="font-semibold">{user?.email}</span>
+            </p>
+        </div>
       </div>
+
       <div className="flex items-center gap-4">
         {role === 'shop' && (
           <Sheet>
@@ -82,8 +86,9 @@ export function Header() {
             </SheetContent>
           </Sheet>
         )}
-        <Button onClick={signOut} variant="outline" size="icon">
+        <Button onClick={signOut} variant="outline" className="h-10 w-10 p-0">
           <LogOut className="h-5 w-5" />
+          <span className="sr-only">Sign out</span>
         </Button>
       </div>
     </header>
