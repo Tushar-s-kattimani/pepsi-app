@@ -177,14 +177,19 @@ export function AllOrders({ orders: initialOrders = [], users = [], loading }: {
                 </AccordionTrigger>
                 <AccordionContent className="p-0">
                   <Accordion type="multiple" className="w-full">
-                    {shops.map(({ shopInfo, orders }) => (
+                    {shops.map(({ shopInfo, orders }) => {
+                      const hasPending = orders.some((order: any) => order.status === 'Pending');
+                      return (
                       <AccordionItem value={shopInfo.id} key={shopInfo.id} className="border-t">
                         <AccordionTrigger className="p-4 hover:no-underline">
                             <div className="flex justify-between w-full items-center pr-4">
                                 <div className='flex items-center gap-3'>
                                     <User className="h-5 w-5 text-gray-500" />
                                     <div className="text-left">
-                                        <div className="font-semibold text-base">{shopInfo.shopName}</div>
+                                        <div className="font-semibold text-base">
+                                          {shopInfo.shopName}
+                                          {hasPending && <span className="ml-2 font-normal text-yellow-600">(pending)</span>}
+                                        </div>
                                         <div className="text-sm text-muted-foreground">{shopInfo.location} &bull; {shopInfo.phoneNumber}</div>
                                     </div>
                                 </div>
@@ -251,7 +256,7 @@ export function AllOrders({ orders: initialOrders = [], users = [], loading }: {
                             ))}
                         </AccordionContent>
                       </AccordionItem>
-                    ))}
+                    )})}
                   </Accordion>
                 </AccordionContent>
               </AccordionItem>
@@ -262,3 +267,5 @@ export function AllOrders({ orders: initialOrders = [], users = [], loading }: {
     </Card>
   );
 }
+
+    
