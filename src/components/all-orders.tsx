@@ -105,6 +105,7 @@ export function AllOrders({ orders: initialOrders = [], users = [], loading }: {
         totalOrders: locationOrders.length,
         shops: Object.values(ordersByShop).map((shopData: any) => ({
             ...shopData,
+            orders: shopData.orders.sort((a: any, b: any) => b.createdAt?.toMillis() - a.createdAt?.toMillis()),
             aggregatedItems: Array.from(shopData.aggregatedItems.values()),
         })),
       };
@@ -221,7 +222,7 @@ export function AllOrders({ orders: initialOrders = [], users = [], loading }: {
                                      <Table>
                                         <TableHeader>
                                             <TableRow>
-                                                <TableHead>Order ID</TableHead>
+                                                <TableHead>Date</TableHead>
                                                 <TableHead>Status</TableHead>
                                                 <TableHead>Action</TableHead>
                                             </TableRow>
@@ -229,7 +230,9 @@ export function AllOrders({ orders: initialOrders = [], users = [], loading }: {
                                         <TableBody>
                                             {orders.map((order: any) => (
                                             <TableRow key={order.id}>
-                                                <TableCell className="font-mono text-xs">{order.id.substring(0,8)}</TableCell>
+                                                <TableCell className="text-xs">
+                                                  {order.createdAt?.toDate ? order.createdAt.toDate().toLocaleDateString() : 'N/A'}
+                                                </TableCell>
                                                 <TableCell>
                                                     <span className={`px-2 py-1 text-xs font-semibold rounded-full ${statusColors[order.status]}`}>
                                                         {order.status}
