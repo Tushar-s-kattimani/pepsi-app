@@ -2,7 +2,7 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    
+
     // Helper function to check if the user has the 'admin' role
     function isAdmin() {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
@@ -15,50 +15,39 @@ service cloud.firestore {
 
     // Rules for the 'users' collection
     match /users/{userId} {
-      // Admins can read any user profile
-      // Users can read their own profile
       allow read: if isAdmin() || isOwner(userId);
-      
-      // Users can create their own profile document (on signup)
-      // Admins can write to any user document (e.g., to change roles)
       allow write: if isAdmin() || isOwner(userId);
     }
 
     // Rules for the 'products' collection
     match /products/{productId} {
-      // Any authenticated user can read the product list
       allow read: if request.auth != null;
-      
-      // Only admins can create, update, or delete products
       allow write: if isAdmin();
     }
 
     // Rules for the 'orders' collection
     match /orders/{orderId} {
-      // Admins can read all orders
-      // Authenticated users can read their own orders
+      // Allow read if admin or the order belongs to the user
       allow read: if isAdmin() || (request.auth != null && resource.data.shopId == request.auth.uid);
-      
-      // Authenticated users can create their own orders, ensuring the timestamp is valid
-      allow create: if request.auth != null && 
-                      request.resource.data.shopId == request.auth.uid &&
-                      request.resource.data.createdAt == request.time;
-      
-      // Only admins can update orders (e.g., to change status)
-      allow update: if isAdmin();
-      
-      // Admins can delete orders
-      allow delete: if isAdmin();
+
+      // Allow create if the user is authenticated and creating their own order
+      allow create: if request.auth != null &&
+                    request.resource.data.shopId == request.auth.uid &&
+                    request.resource.data.items is list &&
+                    request.resource.data.totalAmount is number &&
+                    request.resource.data.status == "Pending" &&
+                    request.resource.data.createdAt == request.time;
+
+      // Only admins can update or delete orders
+      allow update, delete: if isAdmin();
     }
 
     // Rules for 'laborers' and 'attendance' collections
     match /laborers/{laborerId} {
-      // Only admins can read and write laborer information
       allow read, write: if isAdmin();
     }
-    
+
     match /attendance/{attendanceId} {
-      // Only admins can read and write attendance records
       allow read, write: if isAdmin();
     }
   }
