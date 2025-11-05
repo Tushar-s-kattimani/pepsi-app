@@ -1,9 +1,11 @@
+
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2 } from 'lucide-react';
 import { useMemo } from 'react';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 const statusColors: { [key: string]: string } = {
   Pending: 'bg-yellow-100 text-yellow-800',
@@ -30,33 +32,66 @@ export function OrderHistory({ orders = [], loading }: { orders: any[], loading:
       <CardContent>
          {loading ? (
             <div className="flex justify-center py-10"><Loader2 className="h-8 w-8 animate-spin" /></div>
+        ) : sortedOrders.length > 0 ? (
+          <Accordion type="single" collapsible className="w-full space-y-4">
+            {sortedOrders.map((order) => (
+              <AccordionItem value={order.id} key={order.id} className="border-0 rounded-lg bg-white shadow-sm">
+                <AccordionTrigger className="p-4 hover:no-underline rounded-lg border">
+                   <div className="flex w-full items-center justify-between pr-4">
+                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-left w-full">
+                        <div>
+                            <div className="font-semibold text-gray-500">Order ID</div>
+                            <div className="font-mono text-xs">{order.id.substring(0, 8)}</div>
+                        </div>
+                        <div>
+                            <div className="font-semibold text-gray-500">Date</div>
+                            <div>{order.createdAt ? new Date(order.createdAt.toMillis()).toLocaleDateString() : 'N/A'}</div>
+                        </div>
+                        <div>
+                            <div className="font-semibold text-gray-500">Total Amount</div>
+                            <div className="font-bold">₹{order.totalAmount.toFixed(2)}</div>
+                        </div>
+                         <div>
+                            <div className="font-semibold text-gray-500">Status</div>
+                            <div>
+                                <span className={`px-2 py-1 text-xs font-semibold rounded-full ${statusColors[order.status]}`}>
+                                {order.status}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="p-4 border border-t-0 rounded-b-lg bg-gray-50/50">
+                  <h4 className="font-semibold mb-2">Order Items</h4>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Product</TableHead>
+                        <TableHead>Size</TableHead>
+                        <TableHead className="text-center">Quantity</TableHead>
+                        <TableHead className="text-right">Price</TableHead>
+                        <TableHead className="text-right">Subtotal</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {order.items.map((item: any, index: number) => (
+                        <TableRow key={`${item.id}-${index}`}>
+                          <TableCell>{item.name}</TableCell>
+                          <TableCell>{item.size}</TableCell>
+                          <TableCell className="text-center">{item.quantity}</TableCell>
+                          <TableCell className="text-right">₹{item.price.toFixed(2)}</TableCell>
+                          <TableCell className="text-right">₹{(item.price * item.quantity).toFixed(2)}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Order ID</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Total</TableHead>
-                <TableHead>Items</TableHead>
-                <TableHead>Status</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {sortedOrders.map((order) => (
-                <TableRow key={order.id}>
-                  <TableCell className="font-mono text-xs">{order.id.substring(0, 8)}</TableCell>
-                  <TableCell>{order.createdAt ? new Date(order.createdAt.toMillis()).toLocaleDateString() : 'N/A'}</TableCell>
-                  <TableCell>₹{order.totalAmount.toFixed(2)}</TableCell>
-                  <TableCell>{order.items.reduce((acc: number, item: any) => acc + item.quantity, 0)}</TableCell>
-                  <TableCell>
-                    <span className={`px-2 py-1 text-xs font-semibold rounded-full ${statusColors[order.status]}`}>
-                      {order.status}
-                    </span>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+            <p className='text-center text-muted-foreground py-10'>You have no orders yet.</p>
         )}
       </CardContent>
     </Card>
