@@ -113,8 +113,8 @@ export function AdminOverview({ orders = [], products = [], users = [], loading 
     <div className="space-y-8">
       <h2 className="text-3xl font-bold tracking-tight">Dashboard Overview</h2>
       
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-8">
-        <Card className="col-span-1 sm:col-span-2 lg:col-span-2">
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <Card className="col-span-1 sm:col-span-2 lg:col-span-1">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
             <IndianRupee className="h-5 w-5 text-muted-foreground" />
@@ -124,7 +124,7 @@ export function AdminOverview({ orders = [], products = [], users = [], loading 
              <p className="text-xs text-muted-foreground">From all delivered orders</p>
           </CardContent>
         </Card>
-         <Card className="col-span-1 sm:col-span-1 lg:col-span-1">
+         <Card className="col-span-1">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">This Month's Revenue</CardTitle>
             <Calendar className="h-5 w-5 text-muted-foreground" />
@@ -134,7 +134,7 @@ export function AdminOverview({ orders = [], products = [], users = [], loading 
              <p className="text-xs text-muted-foreground">Revenue for the current month</p>
           </CardContent>
         </Card>
-        <Card className="col-span-1 sm:col-span-1 lg:col-span-1">
+        <Card className="col-span-1">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Today's Revenue</CardTitle>
             <Sun className="h-5 w-5 text-muted-foreground" />
@@ -174,7 +174,7 @@ export function AdminOverview({ orders = [], products = [], users = [], loading 
                 <p className="text-xs text-yellow-700">Items (≤100)</p>
             </CardContent>
         </Card>
-        <Card className="col-span-1">
+        <Card className="col-span-1 sm:col-span-2 lg:col-span-2">
              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
                 <ShoppingCart className="h-5 w-5 text-muted-foreground" />
