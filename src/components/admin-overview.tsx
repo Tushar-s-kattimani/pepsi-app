@@ -11,14 +11,14 @@ ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, Title, Too
 export function AdminOverview({ orders = [], products = [], users = [], loading }: { orders: any[], products: any[], users: any[], loading: boolean }) {
 
   const chartData = useMemo(() => {
-    const monthlySales: { [key: string]: number } = {};
+    const dailySales: { [key: string]: number } = {};
     const productSales: { [key: string]: number } = {};
     
     orders.forEach(order => {
       if (order.createdAt?.toDate) {
         const date = order.createdAt.toDate();
-        const month = date.toLocaleString('default', { month: 'long', year: 'numeric' });
-        monthlySales[month] = (monthlySales[month] || 0) + order.totalAmount;
+        const day = date.toLocaleDateString('en-CA'); // YYYY-MM-DD format
+        dailySales[day] = (dailySales[day] || 0) + order.totalAmount;
       }
 
       if (order.items && Array.isArray(order.items)) {
@@ -28,8 +28,8 @@ export function AdminOverview({ orders = [], products = [], users = [], loading 
       }
     });
 
-    const salesLabels = Object.keys(monthlySales).sort((a,b) => new Date(a).getTime() - new Date(b).getTime());
-    const salesValues = salesLabels.map(label => monthlySales[label]);
+    const salesLabels = Object.keys(dailySales).sort((a,b) => new Date(a).getTime() - new Date(b).getTime());
+    const salesValues = salesLabels.map(label => dailySales[label]);
 
     const sortedProducts = Object.entries(productSales).sort(([, a], [, b]) => b - a).slice(0, 5);
     const topProductLabels = sortedProducts.map(([name]) => name);
@@ -37,9 +37,9 @@ export function AdminOverview({ orders = [], products = [], users = [], loading 
 
     return {
       salesData: {
-        labels: salesLabels,
+        labels: salesLabels.map(d => new Date(d+'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })),
         datasets: [{
-          label: 'Monthly Sales',
+          label: 'Daily Sales',
           data: salesValues,
           backgroundColor: 'rgba(59, 130, 246, 0.5)',
           borderColor: 'rgba(59, 130, 246, 1)',
