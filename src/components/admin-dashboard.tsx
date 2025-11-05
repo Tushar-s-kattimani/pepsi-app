@@ -29,23 +29,23 @@ export function AdminDashboard() {
   const renderContent = () => {
     switch (activeSection) {
       case 'dashboard':
-        return <AdminOverview orders={orders} products={products} users={users} loading={ordersLoading || productsLoading || usersLoading} />;
+        return <AdminOverview orders={orders || []} products={products || []} users={users || []} loading={ordersLoading || productsLoading || usersLoading} />;
       case 'products':
         return <ProductManagement />;
       case 'orders':
-        return <AllOrders orders={orders} users={users} loading={ordersLoading || usersLoading} />;
+        return <AllOrders orders={orders || []} users={users || []} loading={ordersLoading || usersLoading} />;
        case 'shops':
-        return <ShopManagement users={users} loading={usersLoading} />;
+        return <ShopManagement users={users || []} loading={usersLoading} />;
       case 'shop-revenue':
-        return <ShopRevenue orders={orders} users={users} loading={ordersLoading || usersLoading} />;
+        return <ShopRevenue orders={orders || []} users={users || []} loading={ordersLoading || usersLoading} />;
       case 'stock-report':
-        return <StockReport products={products} loading={productsLoading} />;
+        return <StockReport products={products || []} loading={productsLoading} />;
       case 'laborers':
         return <LaborerManagement />;
       case 'attendance':
         return <LaborAttendance />;
       default:
-        return <AdminOverview orders={orders} products={products} users={users} loading={ordersLoading || productsLoading || usersLoading} />;
+        return <AdminOverview orders={orders || []} products={products || []} users={users || []} loading={ordersLoading || productsLoading || usersLoading} />;
     }
   };
 
