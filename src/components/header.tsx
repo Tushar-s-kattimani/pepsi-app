@@ -25,7 +25,7 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
         </Button>
          <div className="hidden md:block">
              <h1 className="text-3xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-700 text-shadow-md">
-                {role === 'admin' ? 'Admin Console' : 'Shop Order Portal'}
+                {role === 'admin' ? 'Admin Console' : 'Gajanan Enterprise Shop Portal'}
             </h1>
             <p className="text-sm text-gray-500 mt-1">
                 Welcome, <span className="font-semibold">{user?.email}</span>
