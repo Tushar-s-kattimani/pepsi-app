@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/components/ui/use-toast';
-import { Loader2, PlusCircle, Trash2, Box } from 'lucide-react';
+import { Loader2, PlusCircle, Trash2, Box, Plus, Minus } from 'lucide-react';
 import { collection, serverTimestamp, doc, getDoc, runTransaction, writeBatch } from 'firebase/firestore';
 import { db } from '@/firebase/config';
 import { useUser } from '@/firebase';
@@ -20,21 +20,26 @@ export function NewOrder({ products = [], loading }: { products: any[], loading:
   const { toast } = useToast();
   const { user } = useUser();
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
-  const [quantities, setQuantities] = useState<{ [key: string]: string }>({});
+  const [quantities, setQuantities] = useState<{ [key: string]: number }>({});
 
-  const handleQuantityChange = (productId: string, value: string) => {
-    setQuantities(prev => ({ ...prev, [productId]: value }));
+  const handleQuantityChange = (productId: string, value: string | number) => {
+    const newQuantity = Math.max(1, Number(value));
+    setQuantities(prev => ({ ...prev, [productId]: newQuantity }));
   };
   
   const handleAddToCart = (product: any) => {
-    const quantityToAdd = parseInt(quantities[product.id] || '1', 10);
+    const quantityToAdd = quantities[product.id] || 1;
      if (isNaN(quantityToAdd) || quantityToAdd < 1) {
         toast({ variant: 'destructive', title: 'Invalid Quantity', description: 'Please enter a valid quantity.' });
         return;
     }
+    if (quantityToAdd > product.stock) {
+        toast({ variant: 'destructive', title: 'Insufficient Stock', description: `Only ${product.stock} units available.` });
+        return;
+    }
     addToCart(product, quantityToAdd);
     // Reset quantity to 1 after adding
-    handleQuantityChange(product.id, '1');
+    setQuantities(prev => ({ ...prev, [product.id]: 1 }));
   };
   
   const handlePlaceOrder = async () => {
@@ -173,13 +178,21 @@ export function NewOrder({ products = [], loading }: { products: any[], loading:
                       <TableCell>
                         {product.stock > 0 ? (
                           <div className="flex items-center justify-center gap-2">
-                            <Input
-                              type="number"
-                              min="1"
-                              value={quantities[product.id] || '1'}
-                              onChange={(e) => handleQuantityChange(product.id, e.target.value)}
-                              className="w-20 h-9"
-                            />
+                            <div className="flex items-center gap-1">
+                               <Button variant="outline" size="icon" className="h-9 w-9" onClick={() => handleQuantityChange(product.id, (quantities[product.id] || 1) - 1)}>
+                                <Minus className="h-4 w-4" />
+                              </Button>
+                              <Input
+                                type="number"
+                                min="1"
+                                value={quantities[product.id] || 1}
+                                onChange={(e) => handleQuantityChange(product.id, e.target.value)}
+                                className="w-16 h-9 text-center"
+                              />
+                               <Button variant="outline" size="icon" className="h-9 w-9" onClick={() => handleQuantityChange(product.id, (quantities[product.id] || 1) + 1)}>
+                                <Plus className="h-4 w-4" />
+                              </Button>
+                            </div>
                             <Button size="sm" onClick={() => handleAddToCart(product)} className="h-9">
                               <PlusCircle className="mr-2 h-4 w-4" /> Add
                             </Button>
