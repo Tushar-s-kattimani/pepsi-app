@@ -37,18 +37,6 @@ export function NewOrder({ products = [], loading }: { products: any[], loading:
     handleQuantityChange(product.id, '1');
   };
   
-  const handleAddBox = (product: any) => {
-    if (product.boxQuantity > 0) {
-      addToCart(product, product.boxQuantity);
-    } else {
-      toast({
-        variant: 'destructive',
-        title: 'No Box Quantity Set',
-        description: `A standard box quantity hasn't been set for ${product.name}.`,
-      });
-    }
-  };
-
   const handlePlaceOrder = async () => {
     if (!user) {
       toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to place an order.' });
@@ -92,7 +80,7 @@ export function NewOrder({ products = [], loading }: { products: any[], loading:
     const orderPayload = {
         shopId: user.uid,
         shopEmail: user.email,
-        items: cart.map(({ boxQuantity, stock, ...item }) => item), // Remove internal fields
+        items: cart.map(({ stock, ...item }) => item), // Remove internal fields
         totalAmount: total,
         status: 'Pending',
         createdAt: serverTimestamp(),
@@ -170,7 +158,6 @@ export function NewOrder({ products = [], loading }: { products: any[], loading:
                   <TableRow>
                     <TableHead>Product</TableHead>
                     <TableHead>Size</TableHead>
-                    <TableHead>Box Quantity</TableHead>
                     <TableHead>Price</TableHead>
                     <TableHead>Stock</TableHead>
                     <TableHead className="text-center">Action</TableHead>
@@ -181,7 +168,6 @@ export function NewOrder({ products = [], loading }: { products: any[], loading:
                     <TableRow key={product.id}>
                       <TableCell>{product.name}</TableCell>
                       <TableCell>{product.size}</TableCell>
-                      <TableCell>{product.boxQuantity || 'N/A'}</TableCell>
                       <TableCell>₹{product.price.toFixed(2)}</TableCell>
                       <TableCell>{product.stock}</TableCell>
                       <TableCell>
@@ -197,11 +183,6 @@ export function NewOrder({ products = [], loading }: { products: any[], loading:
                             <Button size="sm" onClick={() => handleAddToCart(product)} className="h-9">
                               <PlusCircle className="mr-2 h-4 w-4" /> Add
                             </Button>
-                             {product.boxQuantity > 0 && (
-                                <Button size="sm" variant="outline" onClick={() => handleAddBox(product)} className="h-9">
-                                  <Box className="mr-2 h-4 w-4" /> Add Box
-                                </Button>
-                             )}
                           </div>
                         ) : (
                            <Button size="sm" disabled variant="outline">

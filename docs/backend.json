@@ -63,10 +63,6 @@
         "stock": {
           "type": "number",
           "description": "The current stock level of the product."
-        },
-        "boxQuantity": {
-            "type": "number",
-            "description": "Number of items in a standard box."
         }
       },
       "required": ["name", "size", "price", "stock"]
