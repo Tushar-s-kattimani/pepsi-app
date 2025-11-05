@@ -2,7 +2,7 @@
 
 import { Bar, Line } from 'react-chartjs-2';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { IndianRupee, Package, Users, Loader2, Clock, CheckCircle, Truck, ShoppingCart, Calendar, Sun } from 'lucide-react';
+import { IndianRupee, Package, Users, Loader2, Clock, CheckCircle, Truck, ShoppingCart, Calendar, Sun, AlertCircle, PackageX } from 'lucide-react';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, LineElement, Title, Tooltip, Legend, PointElement } from 'chart.js';
 import { useMemo } from 'react';
 
@@ -106,13 +106,15 @@ export function AdminOverview({ orders = [], products = [], users = [], loading 
   const confirmedOrders = orders.filter(o => o.status === 'Confirmed').length;
   const deliveredOrdersCount = orders.filter(o => o.status === 'Delivered').length;
 
+  const outOfStockItems = products.filter(p => p.stock === 0).length;
+  const lowStockItems = products.filter(p => p.stock > 0 && p.stock <= 100).length;
 
   return (
     <div className="space-y-8">
       <h2 className="text-3xl font-bold tracking-tight">Dashboard Overview</h2>
       
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-        <Card className="col-span-1 sm:col-span-2 lg:col-span-1">
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-8">
+        <Card className="col-span-1 sm:col-span-2 lg:col-span-2">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
             <IndianRupee className="h-5 w-5 text-muted-foreground" />
@@ -149,18 +151,28 @@ export function AdminOverview({ orders = [], products = [], users = [], loading 
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">{totalShops}</div>
-            <p className="text-xs text-muted-foreground">Registered and active</p>
+            <p className="text-xs text-muted-foreground">Registered</p>
           </CardContent>
         </Card>
+         <Card className="col-span-1">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Out of Stock</CardTitle>
+                <PackageX className="h-5 w-5 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+                <div className="text-3xl font-bold">{outOfStockItems}</div>
+                <p className="text-xs text-muted-foreground">Items</p>
+            </CardContent>
+        </Card>
         <Card className="col-span-1">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Products</CardTitle>
-            <Package className="h-5 w-5 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{totalProducts}</div>
-             <p className="text-xs text-muted-foreground">In current inventory</p>
-          </CardContent>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Low Stock</CardTitle>
+                <AlertCircle className="h-5 w-5 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+                <div className="text-3xl font-bold">{lowStockItems}</div>
+                <p className="text-xs text-muted-foreground">Items (≤100)</p>
+            </CardContent>
         </Card>
         <Card className="col-span-1">
              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
