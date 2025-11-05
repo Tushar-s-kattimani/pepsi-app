@@ -154,24 +154,24 @@ export function AdminOverview({ orders = [], products = [], users = [], loading 
             <p className="text-xs text-muted-foreground">Registered</p>
           </CardContent>
         </Card>
-         <Card className="col-span-1">
+         <Card className="col-span-1 bg-red-50 border-red-200">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Out of Stock</CardTitle>
-                <PackageX className="h-5 w-5 text-muted-foreground" />
+                <CardTitle className="text-sm font-medium text-red-800">Out of Stock</CardTitle>
+                <PackageX className="h-5 w-5 text-red-600" />
             </CardHeader>
             <CardContent>
-                <div className="text-3xl font-bold">{outOfStockItems}</div>
-                <p className="text-xs text-muted-foreground">Items</p>
+                <div className="text-3xl font-bold text-red-800">{outOfStockItems}</div>
+                <p className="text-xs text-red-700">Items</p>
             </CardContent>
         </Card>
-        <Card className="col-span-1">
+        <Card className="col-span-1 bg-yellow-50 border-yellow-200">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Low Stock</CardTitle>
-                <AlertCircle className="h-5 w-5 text-muted-foreground" />
+                <CardTitle className="text-sm font-medium text-yellow-800">Low Stock</CardTitle>
+                <AlertCircle className="h-5 w-5 text-yellow-600" />
             </CardHeader>
             <CardContent>
-                <div className="text-3xl font-bold">{lowStockItems}</div>
-                <p className="text-xs text-muted-foreground">Items (≤100)</p>
+                <div className="text-3xl font-bold text-yellow-800">{lowStockItems}</div>
+                <p className="text-xs text-yellow-700">Items (≤100)</p>
             </CardContent>
         </Card>
         <Card className="col-span-1">
