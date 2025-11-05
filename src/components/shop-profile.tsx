@@ -16,7 +16,7 @@ import { Loader2 } from 'lucide-react';
 
 const profileSchema = z.object({
   profileName: z.string().min(1, 'Profile name is required'),
-  phoneNumber: z.string().min(1, 'Phone number is required'),
+  phoneNumber: z.string().min(1, 'Phone number is required').max(10, 'Phone number cannot exceed 10 digits'),
   shopName: z.string().min(1, 'Shop name is required'),
   location: z.string().min(1, 'Location is required'),
 });
