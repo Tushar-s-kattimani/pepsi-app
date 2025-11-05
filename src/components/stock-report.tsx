@@ -18,8 +18,8 @@ export function StockReport({ products = [], loading }: { products: any[], loadi
         const nameMatch = p.name.toLowerCase().includes(searchTerm.toLowerCase());
         const statusMatch =
           statusFilter === 'all' ||
-          (statusFilter === 'in_stock' && p.stock > 10) ||
-          (statusFilter === 'low_stock' && p.stock > 0 && p.stock <= 10) ||
+          (statusFilter === 'in_stock' && p.stock > 100) ||
+          (statusFilter === 'low_stock' && p.stock > 0 && p.stock <= 100) ||
           (statusFilter === 'out_of_stock' && p.stock === 0);
         return nameMatch && statusMatch;
       })
@@ -28,7 +28,7 @@ export function StockReport({ products = [], loading }: { products: any[], loadi
 
   const getStatus = (stock: number) => {
     if (stock === 0) return { text: 'Out of Stock', color: 'text-red-600', icon: <AlertCircle className="h-4 w-4" /> };
-    if (stock <= 10) return { text: 'Low Stock', color: 'text-yellow-600', icon: <AlertCircle className="h-4 w-4" /> };
+    if (stock <= 100) return { text: 'Low Stock', color: 'text-yellow-600', icon: <AlertCircle className="h-4 w-4" /> };
     return { text: 'In Stock', color: 'text-green-600', icon: <CheckCircle className="h-4 w-4" /> };
   };
 
