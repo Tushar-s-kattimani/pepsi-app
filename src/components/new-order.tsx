@@ -170,7 +170,7 @@ export function NewOrder({ products = [], loading }: { products: any[], loading:
                 </TableHeader>
                 <TableBody>
                   {products.map((product) => (
-                    <TableRow key={product.id} className={product.stock === 0 ? 'bg-muted/50 text-muted-foreground' : ''}>
+                    <TableRow key={product.id} className={product.stock === 0 ? 'bg-red-50 text-red-900' : ''}>
                       <TableCell>{product.name}</TableCell>
                       <TableCell>{product.size}</TableCell>
                       <TableCell>₹{product.price.toFixed(2)}</TableCell>
@@ -198,7 +198,7 @@ export function NewOrder({ products = [], loading }: { products: any[], loading:
                             </Button>
                           </div>
                         ) : (
-                           <Button size="sm" disabled variant="outline">
+                           <Button size="sm" disabled variant="destructive">
                             Out of stock
                           </Button>
                         )}
