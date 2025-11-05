@@ -30,9 +30,14 @@ export function ShopRevenue({ orders = [], users = [], loading }: { orders: any[
       .filter(order => order.shopInfo !== null);
 
     if (selectedDate) {
+      // Timezone-aware filtering
+      // selectedDate is 'YYYY-MM-DD'
+      const startOfDay = new Date(selectedDate + 'T00:00:00'); // Local time start
+      const endOfDay = new Date(selectedDate + 'T23:59:59.999'); // Local time end
+      
       deliveredOrders = deliveredOrders.filter(order => {
-        const orderDate = order.createdAt.toDate().toISOString().split('T')[0]; // YYYY-MM-DD
-        return orderDate === selectedDate;
+        const orderDate = order.createdAt.toDate(); // JS Date in local timezone
+        return orderDate >= startOfDay && orderDate <= endOfDay;
       });
     }
 
