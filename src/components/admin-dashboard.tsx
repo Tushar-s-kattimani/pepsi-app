@@ -50,7 +50,7 @@ export function AdminDashboard() {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-gray-50 overflow-hidden">
       <Sidebar role="admin" activeSection={activeSection} setActiveSection={setActiveSection} />
        <MobileSidebar
         role="admin"
@@ -61,7 +61,7 @@ export function AdminDashboard() {
       />
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header onMenuClick={() => setMobileMenuOpen(true)} />
-        <main className="flex-1 overflow-y-auto p-6 md:p-10 printable-area">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-10 printable-area">
           {renderContent()}
         </main>
       </div>

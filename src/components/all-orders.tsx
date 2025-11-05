@@ -131,9 +131,9 @@ export function AllOrders({ orders: initialOrders = [], users = [], loading }: {
 
   return (
     <Card className='print-only-card'>
-      <CardHeader className="flex flex-row items-center justify-between no-print">
+      <CardHeader className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 no-print">
         <CardTitle>All Customer Orders</CardTitle>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
             <Button 
                 onClick={() => setStatusFilter('all')} 
                 variant={statusFilter === 'all' ? 'default' : 'outline'} 
@@ -147,7 +147,7 @@ export function AllOrders({ orders: initialOrders = [], users = [], loading }: {
                 size="sm"
             >
                 <Filter className="mr-2 h-4 w-4" />
-                Pending Orders
+                Pending
             </Button>
             <Button onClick={handleDownload} variant="outline" size="sm">
               <Download className="mr-2 h-4 w-4" />
@@ -170,9 +170,9 @@ export function AllOrders({ orders: initialOrders = [], users = [], loading }: {
                   <div className="flex w-full items-center justify-between">
                     <div className="flex items-center gap-3">
                         <Calendar className="h-5 w-5 text-gray-600" />
-                        <span className="text-lg font-semibold">{new Date(date + 'T00:00:00').toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                        <span className="text-lg font-semibold text-left">{new Date(date + 'T00:00:00').toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
                     </div>
-                    <span className="px-3 py-1 text-sm font-bold text-primary bg-primary/10 rounded-full">{totalOrders} orders</span>
+                    <span className="px-3 py-1 text-sm font-bold text-primary bg-primary/10 rounded-full hidden sm:inline-block">{totalOrders} orders</span>
                   </div>
                 </AccordionTrigger>
                 <AccordionContent className="p-0">
@@ -188,12 +188,12 @@ export function AllOrders({ orders: initialOrders = [], users = [], loading }: {
                                     <div className="text-left">
                                         <div className="font-semibold text-base">
                                           {shopInfo.shopName}
-                                          {hasPending && <span className="ml-2 font-normal text-yellow-600">(pending)</span>}
+                                          {hasPending && <span className="ml-2 font-normal text-yellow-600 hidden sm:inline">(pending)</span>}
                                         </div>
-                                        <div className="text-sm text-muted-foreground">{shopInfo.location} &bull; {shopInfo.phoneNumber}</div>
+                                        <div className="text-sm text-muted-foreground hidden md:block">{shopInfo.location} &bull; {shopInfo.phoneNumber}</div>
                                     </div>
                                 </div>
-                                <div className="px-2 py-1 text-xs font-bold text-green-800 bg-green-100 rounded-full inline-block">{orders.length} order(s) on this day</div>
+                                <div className="px-2 py-1 text-xs font-bold text-green-800 bg-green-100 rounded-full inline-block">{orders.length} order(s)</div>
                             </div>
                         </AccordionTrigger>
                         <AccordionContent className="pb-2 px-4 bg-gray-50/50">

@@ -12,32 +12,32 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
   const { cart, updateQuantity, clearCart, subtotal, total } = useCart();
 
   return (
-    <header className="flex h-20 shrink-0 items-center justify-between border-b bg-white px-6 md:px-10">
-      <div className="flex items-center gap-4">
+    <header className="flex h-20 shrink-0 items-center justify-between border-b bg-white px-4 sm:px-6 md:px-10">
+      <div className="flex items-center gap-4 overflow-hidden">
         <Button
           variant="outline"
           size="icon"
-          className="md:hidden"
+          className="md:hidden flex-shrink-0"
           onClick={onMenuClick}
         >
           <Menu className="h-6 w-6" />
           <span className="sr-only">Toggle navigation menu</span>
         </Button>
-         <div className="hidden md:block">
-             <h1 className="text-3xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-700 text-shadow-md">
+         <div className="overflow-hidden">
+             <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-700 text-shadow-md truncate">
                 {role === 'admin' ? 'Admin Console' : 'Gajanan Enterprise Shop Portal'}
             </h1>
-            <p className="text-sm text-gray-500 mt-1">
+            <p className="text-sm text-gray-500 mt-1 truncate hidden sm:block">
                 Welcome, <span className="font-semibold">{user?.email}</span>
             </p>
         </div>
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 sm:gap-4">
         {role === 'shop' && (
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="outline" size="icon" className="relative">
+              <Button variant="outline" size="icon" className="relative flex-shrink-0">
                 <ShoppingCart className="h-5 w-5" />
                 {cart.length > 0 && (
                   <span className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-xs text-white">
@@ -95,7 +95,7 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
             </SheetContent>
           </Sheet>
         )}
-        <Button onClick={signOut} variant="outline" className="h-10 w-10 p-0">
+        <Button onClick={signOut} variant="outline" className="h-10 w-10 p-0 flex-shrink-0">
           <LogOut className="h-5 w-5" />
           <span className="sr-only">Sign out</span>
         </Button>

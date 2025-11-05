@@ -76,20 +76,20 @@ export function ShopRevenue({ orders = [], users = [], loading }: { orders: any[
 
   return (
     <Card className="printable-area">
-      <CardHeader className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between no-print rounded-t-lg bg-gray-50/50 border-b">
+      <CardHeader className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between no-print rounded-t-lg bg-gray-50/50 border-b p-4">
         <div className="flex items-center gap-3">
           <Banknote className="w-8 h-8 text-gray-600" />
-          <CardTitle className='text-2xl font-bold tracking-tight'>Shop Revenue</CardTitle>
+          <CardTitle className='text-xl md:text-2xl font-bold tracking-tight'>Shop Revenue</CardTitle>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-col sm:flex-row items-center gap-2 w-full md:w-auto">
           <Input
             type="date"
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
             className="w-full md:w-auto bg-white"
           />
-          <Button variant="outline" onClick={() => setSelectedDate('')} disabled={!selectedDate} className='bg-white'>Clear</Button>
-           <Button onClick={handleDownloadPdf} disabled={shopRevenueData.length === 0}>
+          <Button variant="outline" onClick={() => setSelectedDate('')} disabled={!selectedDate} className='bg-white w-full sm:w-auto'>Clear</Button>
+           <Button onClick={handleDownloadPdf} disabled={shopRevenueData.length === 0} className='w-full sm:w-auto'>
             <Download className="mr-2 h-4 w-4" />
             Download PDF
           </Button>
@@ -105,7 +105,7 @@ export function ShopRevenue({ orders = [], users = [], loading }: { orders: any[
                 <TableRow>
                   <TableHead>Date & Time</TableHead>
                   <TableHead>Shop Name</TableHead>
-                  <TableHead>Location</TableHead>
+                  <TableHead className='hidden md:table-cell'>Location</TableHead>
                   <TableHead>Order ID</TableHead>
                   <TableHead className="text-right">Order Amount</TableHead>
                 </TableRow>
@@ -116,7 +116,7 @@ export function ShopRevenue({ orders = [], users = [], loading }: { orders: any[
                     <TableRow key={order.id}>
                       <TableCell>{order.createdAt.toDate().toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</TableCell>
                       <TableCell>{order.shopInfo.shopName || 'N/A'}</TableCell>
-                      <TableCell>{order.shopInfo.location || 'N/A'}</TableCell>
+                      <TableCell className='hidden md:table-cell'>{order.shopInfo.location || 'N/A'}</TableCell>
                       <TableCell className="font-mono text-xs">{order.id.substring(0,8)}</TableCell>
                       <TableCell className="text-right font-medium">₹{order.totalAmount.toLocaleString()}</TableCell>
                     </TableRow>
@@ -132,7 +132,8 @@ export function ShopRevenue({ orders = [], users = [], loading }: { orders: any[
               {shopRevenueData.length > 0 && (
                   <TableFooter className="bg-gray-100 border-t">
                       <TableRow>
-                          <TableCell colSpan={4} className="text-right text-base font-bold">Total</TableCell>
+                          <TableCell colSpan={4} className="text-right text-base font-bold hidden md:table-cell">Total</TableCell>
+                          <TableCell className="text-right text-base font-bold md:hidden" colSpan={3}>Total</TableCell>
                           <TableCell className="text-right text-base font-bold">₹{totalForDate.toLocaleString()}</TableCell>
                       </TableRow>
                   </TableFooter>
