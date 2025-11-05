@@ -18,7 +18,8 @@ export function AdminOverview({ orders = [], products = [], users = [], loading 
     let monthlyRevenue = 0;
 
     const now = new Date();
-    const todayStr = now.toISOString().split('T')[0];
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0); // Start of today in local time
+    const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59); // End of today in local time
     const currentMonth = now.getMonth();
     const currentYear = now.getFullYear();
 
@@ -26,13 +27,12 @@ export function AdminOverview({ orders = [], products = [], users = [], loading 
     
     deliveredOrders.forEach(order => {
       const orderDate = order.createdAt.toDate();
-      const orderDayStr = orderDate.toISOString().split('T')[0];
       
       // Total Revenue
       totalRevenue += order.totalAmount;
 
-      // Daily Revenue (Today)
-      if (orderDayStr === todayStr) {
+      // Daily Revenue (Today) - Comparing with local timezone range
+      if (orderDate >= todayStart && orderDate <= todayEnd) {
         dailyRevenue += order.totalAmount;
       }
 
@@ -231,5 +231,3 @@ export function AdminOverview({ orders = [], products = [], users = [], loading 
     </div>
   );
 }
-
-    
