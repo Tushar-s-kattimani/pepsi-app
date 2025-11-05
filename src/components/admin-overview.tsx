@@ -15,12 +15,14 @@ export function AdminOverview({ orders = [], products = [], users = [], loading 
     const productSales: { [key: string]: number } = {};
     
     orders.forEach(order => {
-      if (order.createdAt?.toDate) {
+      // For Daily Sales, only count delivered orders
+      if (order.status === 'Delivered' && order.createdAt?.toDate) {
         const date = order.createdAt.toDate();
         const day = date.toLocaleDateString('en-CA'); // YYYY-MM-DD format
         dailySales[day] = (dailySales[day] || 0) + order.totalAmount;
       }
 
+      // For product sales, count items from all orders
       if (order.items && Array.isArray(order.items)) {
         order.items.forEach((item: any) => {
           productSales[item.name] = (productSales[item.name] || 0) + item.quantity;
@@ -39,7 +41,7 @@ export function AdminOverview({ orders = [], products = [], users = [], loading 
       salesData: {
         labels: salesLabels.map(d => new Date(d+'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })),
         datasets: [{
-          label: 'Daily Sales',
+          label: 'Daily Revenue (Delivered)',
           data: salesValues,
           backgroundColor: 'rgba(59, 130, 246, 0.5)',
           borderColor: 'rgba(59, 130, 246, 1)',
