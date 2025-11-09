@@ -48,7 +48,6 @@ export function LaborAttendance() {
                 date: selectedDate,
                 status: 'Absent',
                 checkIn: '',
-                checkOut: ''
             }
         });
 
@@ -81,11 +80,18 @@ export function LaborAttendance() {
     try {
       for (const laborerId in attendance) {
         const record = attendance[laborerId];
-        if (record.docId) { // Existing record
-          const docRef = doc(db, 'attendance', record.docId);
-          await updateDoc(docRef, record);
+        const { docId, ...dataToSave } = record;
+
+        // Ensure checkIn is only saved if status is Present or Half-day
+        if (dataToSave.status === 'Absent') {
+            dataToSave.checkIn = '';
+        }
+
+        if (docId) { // Existing record
+          const docRef = doc(db, 'attendance', docId);
+          await updateDoc(docRef, dataToSave);
         } else { // New record
-          await addDoc(collection(db, 'attendance'), record);
+          await addDoc(collection(db, 'attendance'), dataToSave);
         }
       }
       toast({ title: 'Success', description: 'Attendance saved successfully.' });
@@ -128,7 +134,6 @@ export function LaborAttendance() {
                 <TableHead>Trade</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Check-in Time</TableHead>
-                <TableHead>Check-out Time</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -159,15 +164,6 @@ export function LaborAttendance() {
                             type="time"
                             value={currentRecord?.checkIn || ''}
                             onChange={(e) => handleAttendanceChange(laborer.id, 'checkIn', e.target.value)}
-                            disabled={!isPresent}
-                            className="w-[120px]"
-                        />
-                        </TableCell>
-                        <TableCell>
-                        <Input
-                            type="time"
-                            value={currentRecord?.checkOut || ''}
-                            onChange={(e) => handleAttendanceChange(laborer.id, 'checkOut', e.target.value)}
                             disabled={!isPresent}
                             className="w-[120px]"
                         />

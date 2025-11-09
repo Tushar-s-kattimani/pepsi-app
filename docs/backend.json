@@ -152,11 +152,6 @@
           "type": "string",
           "format": "time",
           "description": "The time the laborer checked in."
-        },
-        "checkOut": {
-          "type": "string",
-          "format": "time",
-          "description": "The time the laborer checked out."
         }
       },
       "required": ["laborerId", "date", "status"]
