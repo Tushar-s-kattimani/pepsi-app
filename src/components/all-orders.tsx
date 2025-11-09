@@ -62,6 +62,8 @@ export function AllOrders({ orders: initialOrders = [], users = [], loading }: {
     });
 
     const processedData = Object.entries(groupedByDate).map(([date, dateOrders]) => {
+      const hasPendingOrdersOnDate = dateOrders.some(order => order.status === 'Pending');
+
       const ordersByShop = dateOrders.reduce((acc, order) => {
         const shopInfo = usersMap.get(order.shopId);
         if (!shopInfo) {
@@ -80,6 +82,7 @@ export function AllOrders({ orders: initialOrders = [], users = [], loading }: {
       return {
         date,
         totalOrders: dateOrders.length,
+        hasPending: hasPendingOrdersOnDate,
         shops: Object.values(ordersByShop).map((shopData: any) => ({
             ...shopData,
             orders: shopData.orders.sort((a: any, b: any) => b.createdAt?.toMillis() - a.createdAt?.toMillis()),
@@ -164,13 +167,19 @@ export function AllOrders({ orders: initialOrders = [], users = [], loading }: {
             <div className="flex justify-center py-10"><Loader2 className="h-8 w-8 animate-spin" /></div>
         ) : (
           <Accordion type="multiple" className="w-full space-y-4">
-            {ordersByDate.map(({ date, totalOrders, shops }) => (
+            {ordersByDate.map(({ date, totalOrders, shops, hasPending }) => (
               <AccordionItem value={date} key={date} className="border-0 rounded-lg bg-white shadow-sm">
                 <AccordionTrigger className="p-4 hover:no-underline no-print rounded-t-lg border-b">
                   <div className="flex w-full items-center justify-between">
                     <div className="flex items-center gap-3">
                         <Calendar className="h-5 w-5 text-gray-600" />
                         <span className="text-lg font-semibold text-left">{new Date(date + 'T00:00:00').toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                         {hasPending && (
+                            <span className="ml-2 inline-flex items-center gap-1.5 animate-blink text-red-600 font-bold">
+                                <Clock className="h-4 w-4" />
+                                Pending
+                            </span>
+                          )}
                     </div>
                     <span className="px-3 py-1 text-sm font-bold text-primary bg-primary/10 rounded-full hidden sm:inline-block">{totalOrders} orders</span>
                   </div>
@@ -272,5 +281,7 @@ export function AllOrders({ orders: initialOrders = [], users = [], loading }: {
     </Card>
   );
 }
+
+    
 
     
