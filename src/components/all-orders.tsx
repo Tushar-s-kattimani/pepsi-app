@@ -188,7 +188,7 @@ export function AllOrders({ orders: initialOrders = [], users = [], loading }: {
                                     <div className="text-left">
                                         <div className="font-semibold text-base">
                                           {shopInfo.shopName}
-                                          {hasPending && <span className="ml-2 font-normal text-yellow-600 hidden sm:inline">(pending)</span>}
+                                          {hasPending && <span className="ml-2 font-bold text-yellow-600 animate-blink">(pending)</span>}
                                         </div>
                                         <div className="text-sm text-muted-foreground hidden md:block">{shopInfo.location} &bull; {shopInfo.phoneNumber}</div>
                                     </div>
@@ -213,7 +213,7 @@ export function AllOrders({ orders: initialOrders = [], users = [], loading }: {
                                         </div>
                                          <span className={`px-2 py-1 text-xs font-semibold rounded-full ${statusColors[order.status]}`}>
                                             {order.status}
-                                        </span>
+                                         </span>
                                     </div>
                                     <Table>
                                         <TableHeader>
