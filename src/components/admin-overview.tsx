@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { IndianRupee, Package, Users, Loader2, Clock, CheckCircle, Truck, ShoppingCart, Calendar, Sun, AlertCircle, PackageX } from 'lucide-react';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, LineElement, Title, Tooltip, Legend, PointElement } from 'chart.js';
 import { useMemo } from 'react';
+import { PendingOrders } from './pending-orders';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, Title, Tooltip, Legend, PointElement);
 
@@ -18,8 +19,8 @@ export function AdminOverview({ orders = [], products = [], users = [], loading 
     let monthlyRevenue = 0;
 
     const now = new Date();
-    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0); // Start of today in local time
-    const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59); // End of today in local time
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+    const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
     const currentMonth = now.getMonth();
     const currentYear = now.getFullYear();
 
@@ -28,24 +29,19 @@ export function AdminOverview({ orders = [], products = [], users = [], loading 
     deliveredOrders.forEach(order => {
       const orderDate = order.createdAt.toDate();
       
-      // Total Revenue
       totalRevenue += order.totalAmount;
 
-      // Daily Revenue (Today) - Comparing with local timezone range
       if (orderDate >= todayStart && orderDate <= todayEnd) {
         dailyRevenue += order.totalAmount;
       }
 
-      // Monthly Revenue (Current Month)
       if (orderDate.getMonth() === currentMonth && orderDate.getFullYear() === currentYear) {
         monthlyRevenue += order.totalAmount;
       }
 
-      // Daily Sales for Chart
-      const day = orderDate.toLocaleDateString('en-CA'); // YYYY-MM-DD format
+      const day = orderDate.toLocaleDateString('en-CA');
       dailySales[day] = (dailySales[day] || 0) + order.totalAmount;
 
-      // Product Sales
       if (order.items && Array.isArray(order.items)) {
         order.items.forEach((item: any) => {
           productSales[item.name] = (productSales[item.name] || 0) + item.quantity;
@@ -102,7 +98,7 @@ export function AdminOverview({ orders = [], products = [], users = [], loading 
   const totalProducts = products.length;
   const totalShops = users.filter(u => u.role === 'shop').length;
   
-  const pendingOrders = orders.filter(o => o.status === 'Pending').length;
+  const pendingOrdersCount = orders.filter(o => o.status === 'Pending').length;
   const confirmedOrders = orders.filter(o => o.status === 'Confirmed').length;
   const deliveredOrdersCount = orders.filter(o => o.status === 'Delivered').length;
 
@@ -114,7 +110,7 @@ export function AdminOverview({ orders = [], products = [], users = [], loading 
       <h2 className="text-3xl font-bold tracking-tight">Dashboard Overview</h2>
       
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="col-span-1 sm:col-span-2 lg:col-span-1">
+        <Card className="col-span-1">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
             <IndianRupee className="h-5 w-5 text-muted-foreground" />
@@ -195,7 +191,7 @@ export function AdminOverview({ orders = [], products = [], users = [], loading 
                 <CardContent className='grid grid-cols-3 gap-4'>
                     <div className="flex flex-col items-center space-y-2 rounded-lg bg-yellow-50 p-4">
                         <Clock className="h-8 w-8 text-yellow-500" />
-                        <span className="text-2xl font-bold">{pendingOrders}</span>
+                        <span className="text-2xl font-bold">{pendingOrdersCount}</span>
                         <span className="text-sm font-medium">Pending</span>
                     </div>
                     <div className="flex flex-col items-center space-y-2 rounded-lg bg-blue-50 p-4">
@@ -210,27 +206,31 @@ export function AdminOverview({ orders = [], products = [], users = [], loading 
                     </div>
                 </CardContent>
             </Card>
-            <Card className="col-span-1">
-              <CardHeader>
-                <CardTitle>Top Products by Units Sold</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="h-64">
-                   {chartData.productSalesData.labels.length > 0 ? (
-                    <Bar data={chartData.productSalesData} options={{ responsive: true, maintainAspectRatio: false, indexAxis: 'y' }} />
-                  ) : (
-                     <div className="flex h-full items-center justify-center text-gray-500">No product sales data available.</div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+             <PendingOrders orders={orders} users={users} />
         </div>
         <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle>Top Products by Units Sold</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[28.5rem]">
+              {chartData.productSalesData.labels.length > 0 ? (
+                <Bar data={chartData.productSalesData} options={{ responsive: true, maintainAspectRatio: false, indexAxis: 'y' }} />
+              ) : (
+                <div className="flex h-full items-center justify-center text-gray-500">No product sales data available.</div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+       <div className="grid grid-cols-1 gap-8">
+        <Card>
           <CardHeader>
             <CardTitle>Sales Trend</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-[28.5rem]">
+            <div className="h-96">
               {chartData.salesData.labels.length > 0 ? (
                 <Line data={chartData.salesData} options={{ responsive: true, maintainAspectRatio: false }} />
               ) : (
