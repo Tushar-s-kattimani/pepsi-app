@@ -188,7 +188,12 @@ export function AllOrders({ orders: initialOrders = [], users = [], loading }: {
                                     <div className="text-left">
                                         <div className="font-semibold text-base">
                                           {shopInfo.shopName}
-                                          {hasPending && <span className="ml-2 font-bold text-yellow-600 animate-blink">(pending)</span>}
+                                           {hasPending && (
+                                            <span className="ml-2 inline-flex items-center gap-1.5 animate-blink text-red-600 font-bold">
+                                                <Clock className="h-4 w-4" />
+                                                Pending
+                                            </span>
+                                          )}
                                         </div>
                                         <div className="text-sm text-muted-foreground hidden md:block">{shopInfo.location} &bull; {shopInfo.phoneNumber}</div>
                                     </div>
