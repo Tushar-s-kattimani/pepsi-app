@@ -9,10 +9,10 @@ import { Input } from '@/components/ui/input';
 
 export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
   const { user, signOut, role } = useUser();
-  const { cart, updateQuantity, clearCart, subtotal, total } = useCart();
+  const { cart, updateQuantity, clearCart, total } = useCart();
 
   return (
-    <header className="flex h-20 shrink-0 items-center justify-between border-b bg-white px-4 sm:px-6 md:px-10">
+    <header className="flex h-20 shrink-0 items-center justify-between border-b bg-white px-4 sm:px-6 md:px-10 no-print">
       <div className="flex items-center gap-4 overflow-hidden">
         <Button
           variant="outline"
@@ -75,14 +75,6 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
               {cart.length > 0 && (
                 <SheetFooter className="mt-auto border-t pt-4">
                   <div className="w-full space-y-3">
-                    <div className="flex justify-between font-medium">
-                      <span>Subtotal</span>
-                      <span>₹{subtotal.toFixed(2)}</span>
-                    </div>
-                     <div className="flex justify-between font-medium text-gray-500">
-                      <span>Tax (5%)</span>
-                      <span>₹{(total - subtotal).toFixed(2)}</span>
-                    </div>
                     <div className="flex justify-between text-xl font-bold">
                       <span>Total</span>
                       <span>₹{total.toFixed(2)}</span>

@@ -16,7 +16,7 @@ import { FirestorePermissionError, SecurityRuleContext } from '@/firebase/errors
 
 
 export function NewOrder({ products = [], loading }: { products: any[], loading: boolean }) {
-  const { cart, addToCart, updateQuantity, clearCart, subtotal, total, tax } = useCart();
+  const { cart, addToCart, updateQuantity, clearCart, total } = useCart();
   const { toast } = useToast();
   const { user } = useUser();
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
@@ -85,7 +85,7 @@ export function NewOrder({ products = [], loading }: { products: any[], loading:
     const orderPayload = {
         shopId: user.uid,
         shopEmail: user.email,
-        items: cart.map(({ stock, ...item }) => item), // Remove internal fields
+        items: cart.map(({ stock, ...item }: any) => item), // Remove internal fields
         totalAmount: total,
         status: 'Pending',
         createdAt: serverTimestamp(),
@@ -131,7 +131,7 @@ export function NewOrder({ products = [], loading }: { products: any[], loading:
             requestResourceData: orderPayload,
         } satisfies SecurityRuleContext);
         
-        errorEmitter.emit(permissionError);
+        errorEmitter.emit('permission-error', permissionError);
 
         // Also show a generic toast to the user
         toast({
@@ -236,8 +236,6 @@ export function NewOrder({ products = [], loading }: { products: any[], loading:
                   ))}
                 </div>
                 <div className="space-y-2 border-t pt-4">
-                  <div className="flex justify-between"><span>Subtotal</span><span>₹{subtotal.toFixed(2)}</span></div>
-                  <div className="flex justify-between"><span>Tax (5%)</span><span>₹{tax.toFixed(2)}</span></div>
                   <div className="flex justify-between text-lg font-bold"><span>Total</span><span>₹{total.toFixed(2)}</span></div>
                 </div>
                 <Button className="w-full" onClick={handlePlaceOrder} disabled={isPlacingOrder}>

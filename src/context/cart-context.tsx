@@ -19,8 +19,6 @@ interface CartContextType {
   addToCart: (product: Product, quantity: number) => void;
   updateQuantity: (productId: string, quantity: number) => void;
   clearCart: () => void;
-  subtotal: number;
-  tax: number;
   total: number;
 }
 
@@ -29,7 +27,6 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 export function CartProvider({ children }: { children: ReactNode }) {
   const [cart, setCart] = useState<CartItem[]>([]);
   const { toast } = useToast();
-  const taxRate = 0.05;
 
   const addToCart = (product: Product, quantity: number = 1) => {
     setCart((prevCart) => {
@@ -62,12 +59,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setCart([]);
   };
 
-  const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const tax = subtotal * taxRate;
-  const total = subtotal + tax;
+  const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
   return (
-    <CartContext.Provider value={{ cart, addToCart, updateQuantity, clearCart, subtotal, tax, total }}>
+    <CartContext.Provider value={{ cart, addToCart, updateQuantity, clearCart, total }}>
       {children}
     </CartContext.Provider>
   );
