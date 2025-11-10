@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
-import { Loader2, Download, Banknote, ChevronDown, ShoppingBag } from 'lucide-react';
+import { Loader2, Download, Banknote, ChevronDown, ShoppingBag, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
@@ -13,6 +13,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 
 export function ShopRevenue({ orders = [], users = [], loading }: { orders: any[], users: any[], loading: boolean }) {
   const [selectedDate, setSelectedDate] = useState('');
+  const [showSummary, setShowSummary] = useState(false);
 
   const shopRevenueData = useMemo(() => {
     if (loading || !orders.length || !users.length) return [];
@@ -122,6 +123,10 @@ export function ShopRevenue({ orders = [], users = [], loading }: { orders: any[
             className="w-full md:w-auto bg-white"
           />
           <Button variant="outline" onClick={() => setSelectedDate('')} disabled={!selectedDate} className='bg-white w-full sm:w-auto'>Clear</Button>
+          <Button onClick={() => setShowSummary(!showSummary)} variant="outline" className='bg-white w-full sm:w-auto'>
+              <Eye className="mr-2 h-4 w-4" />
+              {showSummary ? 'Hide' : 'View'} Summary
+          </Button>
            <Button onClick={handleDownloadPdf} disabled={shopRevenueData.length === 0} className='w-full sm:w-auto'>
             <Download className="mr-2 h-4 w-4" />
             Download PDF
@@ -173,7 +178,7 @@ export function ShopRevenue({ orders = [], users = [], loading }: { orders: any[
             </div>
         )}
       </CardContent>
-       {shopRevenueData.length > 0 && (
+       {showSummary && shopRevenueData.length > 0 && (
          <CardFooter className="flex-col items-start gap-4 p-4 border-t bg-gray-50">
            <div className='w-full'>
               <h3 className="text-lg font-bold flex items-center gap-2 mb-3">
