@@ -1,12 +1,13 @@
 'use client';
 
-import { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useState, ReactNode, useMemo } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 
 interface Product {
   id: string;
   name: string;
   size: string;
+  price: number;
 }
 
 interface CartItem extends Product {
@@ -15,6 +16,7 @@ interface CartItem extends Product {
 
 interface CartContextType {
   cart: CartItem[];
+  total: number;
   addToCart: (product: Product, quantity: number) => void;
   updateQuantity: (productId: string, quantity: number) => void;
   clearCart: () => void;
@@ -25,6 +27,10 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 export function CartProvider({ children }: { children: ReactNode }) {
   const [cart, setCart] = useState<CartItem[]>([]);
   const { toast } = useToast();
+
+  const total = useMemo(() => {
+    return cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  }, [cart]);
 
   const addToCart = (product: Product, quantity: number = 1) => {
     setCart((prevCart) => {
@@ -58,7 +64,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <CartContext.Provider value={{ cart, addToCart, updateQuantity, clearCart }}>
+    <CartContext.Provider value={{ cart, total, addToCart, updateQuantity, clearCart }}>
       {children}
     </CartContext.Provider>
   );
