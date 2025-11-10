@@ -59,16 +59,15 @@ export function ShopRevenue({ orders = [], users = [], loading }: { orders: any[
 
     (doc as any).autoTable({
       startY: 20,
-      head: [['Date & Time', 'Shop Name', 'Location', 'Order ID', 'Total Items']],
+      head: [['Date & Time', 'Shop Name', 'Location', 'Total Items']],
       body: shopRevenueData.map(order => [
         order.createdAt.toDate().toLocaleString('en-GB'),
         order.shopInfo.shopName || 'N/A',
         order.shopInfo.location || 'N/A',
-        order.id.substring(0, 8),
         order.items.reduce((itemSum: any, item: any) => itemSum + item.quantity, 0)
       ]),
-      foot: [['', '', '', 'Total Items', totalItemsForDate.toLocaleString()]],
-      footStyles: { fontStyle: 'bold', fillColor: [230, 230, 230], textColor: 0 }
+      foot: [['', '', 'Total Items', totalItemsForDate.toLocaleString()]],
+      footStyles: { fontStyle: 'bold', fillColor: [230, 230, 230], textColor: 0, halign: 'right' }
     });
 
     doc.save('shop_revenue_report.pdf');
@@ -106,7 +105,6 @@ export function ShopRevenue({ orders = [], users = [], loading }: { orders: any[
                   <TableHead>Date & Time</TableHead>
                   <TableHead>Shop Name</TableHead>
                   <TableHead className='hidden md:table-cell'>Location</TableHead>
-                  <TableHead>Order ID</TableHead>
                   <TableHead className="text-right">Total Items</TableHead>
                 </TableRow>
               </TableHeader>
@@ -117,13 +115,12 @@ export function ShopRevenue({ orders = [], users = [], loading }: { orders: any[
                       <TableCell>{order.createdAt.toDate().toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</TableCell>
                       <TableCell>{order.shopInfo.shopName || 'N/A'}</TableCell>
                       <TableCell className='hidden md:table-cell'>{order.shopInfo.location || 'N/A'}</TableCell>
-                      <TableCell className="font-mono text-xs">{order.id.substring(0,8)}</TableCell>
                       <TableCell className="text-right font-medium">{order.items.reduce((itemSum: any, item: any) => itemSum + item.quantity, 0)}</TableCell>
                     </TableRow>
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center py-10">
+                    <TableCell colSpan={4} className="text-center py-10">
                       {selectedDate ? 'No delivered orders on this date.' : 'No delivered orders yet.'}
                     </TableCell>
                   </TableRow>
@@ -132,7 +129,7 @@ export function ShopRevenue({ orders = [], users = [], loading }: { orders: any[
               {shopRevenueData.length > 0 && (
                   <TableFooter className="bg-gray-100 border-t">
                       <TableRow>
-                          <TableCell colSpan={4} className="text-right text-base font-bold">Total Items</TableCell>
+                          <TableCell colSpan={3} className="text-right text-base font-bold">Total Items</TableCell>
                           <TableCell className="text-right text-base font-bold">{totalItemsForDate.toLocaleString()}</TableCell>
                       </TableRow>
                   </TableFooter>
