@@ -2,12 +2,14 @@
 
 import { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
-import { Loader2, Download, Banknote } from 'lucide-react';
+import { Loader2, Download, Banknote, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+
 
 export function ShopRevenue({ orders = [], users = [], loading }: { orders: any[], users: any[], loading: boolean }) {
   const [selectedDate, setSelectedDate] = useState('');
@@ -30,13 +32,11 @@ export function ShopRevenue({ orders = [], users = [], loading }: { orders: any[
       .filter(order => order.shopInfo !== null);
 
     if (selectedDate) {
-      // Timezone-aware filtering
-      // selectedDate is 'YYYY-MM-DD'
-      const startOfDay = new Date(selectedDate + 'T00:00:00'); // Local time start
-      const endOfDay = new Date(selectedDate + 'T23:59:59.999'); // Local time end
+      const startOfDay = new Date(selectedDate + 'T00:00:00');
+      const endOfDay = new Date(selectedDate + 'T23:59:59.999');
       
       deliveredOrders = deliveredOrders.filter(order => {
-        const orderDate = order.createdAt.toDate(); // JS Date in local timezone
+        const orderDate = order.createdAt.toDate();
         return orderDate >= startOfDay && orderDate <= endOfDay;
       });
     }
@@ -57,15 +57,27 @@ export function ShopRevenue({ orders = [], users = [], loading }: { orders: any[
       
     doc.text(title, 14, 15);
 
-    (doc as any).autoTable({
-      startY: 20,
-      head: [['Date & Time', 'Shop Name', 'Location', 'Total Items']],
-      body: shopRevenueData.map(order => [
+    const tableBody = shopRevenueData.flatMap(order => {
+      const mainRow = [
         order.createdAt.toDate().toLocaleString('en-GB'),
         order.shopInfo.shopName || 'N/A',
         order.shopInfo.location || 'N/A',
         order.items.reduce((itemSum: any, item: any) => itemSum + item.quantity, 0)
-      ]),
+      ];
+      const itemRows = order.items.map((item: any) => [
+          '',
+          `  - ${item.name} (${item.size})`,
+          `Qty: ${item.quantity}`,
+          ''
+      ]);
+      return [mainRow, ...itemRows];
+    });
+
+
+    (doc as any).autoTable({
+      startY: 20,
+      head: [['Date & Time', 'Shop Name', 'Location / Item Details', 'Total Items']],
+      body: tableBody,
       foot: [['', '', 'Total Items', totalItemsForDate.toLocaleString()]],
       footStyles: { fontStyle: 'bold', fillColor: [230, 230, 230], textColor: 0, halign: 'right' }
     });
@@ -97,45 +109,50 @@ export function ShopRevenue({ orders = [], users = [], loading }: { orders: any[
       <CardContent className='p-0'>
         {loading ? (
           <div className="flex justify-center py-10"><Loader2 className="h-8 w-8 animate-spin" /></div>
+        ) : shopRevenueData.length > 0 ? (
+          <Accordion type="single" collapsible className="w-full">
+            {shopRevenueData.map((order) => (
+               <AccordionItem value={order.id} key={order.id} className="border-b">
+                 <AccordionTrigger className="p-4 hover:no-underline [&[data-state=open]>svg]:text-primary">
+                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-left w-full items-center">
+                     <div className="font-medium">{order.createdAt.toDate().toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>
+                     <div className="font-medium">{order.shopInfo.shopName || 'N/A'}</div>
+                     <div className="text-muted-foreground hidden md:block">{order.shopInfo.location || 'N/A'}</div>
+                     <div className="font-bold text-right pr-4">{order.items.reduce((itemSum: any, item: any) => itemSum + item.quantity, 0)} items</div>
+                   </div>
+                 </AccordionTrigger>
+                 <AccordionContent className="p-4 bg-gray-50">
+                    <h4 className="font-semibold mb-2 text-sm">Order Details</h4>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Product</TableHead>
+                                <TableHead>Size</TableHead>
+                                <TableHead className="text-right">Quantity</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {order.items.map((item: any, index: number) => (
+                                <TableRow key={index}>
+                                    <TableCell>{item.name}</TableCell>
+                                    <TableCell>{item.size}</TableCell>
+                                    <TableCell className="text-right">{item.quantity}</TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                 </AccordionContent>
+               </AccordionItem>
+            ))}
+             <div className="flex justify-end items-center p-4 bg-gray-100 font-bold text-base border-t">
+                  <div className='mr-4'>Total Items for Selected Period:</div>
+                  <div>{totalItemsForDate.toLocaleString()}</div>
+              </div>
+          </Accordion>
         ) : (
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader className='bg-gray-50'>
-                <TableRow>
-                  <TableHead>Date & Time</TableHead>
-                  <TableHead>Shop Name</TableHead>
-                  <TableHead className='hidden md:table-cell'>Location</TableHead>
-                  <TableHead className="text-right">Total Items</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {shopRevenueData.length > 0 ? (
-                  shopRevenueData.map((order) => (
-                    <TableRow key={order.id}>
-                      <TableCell>{order.createdAt.toDate().toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</TableCell>
-                      <TableCell>{order.shopInfo.shopName || 'N/A'}</TableCell>
-                      <TableCell className='hidden md:table-cell'>{order.shopInfo.location || 'N/A'}</TableCell>
-                      <TableCell className="text-right font-medium">{order.items.reduce((itemSum: any, item: any) => itemSum + item.quantity, 0)}</TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={4} className="text-center py-10">
-                      {selectedDate ? 'No delivered orders on this date.' : 'No delivered orders yet.'}
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-              {shopRevenueData.length > 0 && (
-                  <TableFooter className="bg-gray-100 border-t">
-                      <TableRow>
-                          <TableCell colSpan={3} className="text-right text-base font-bold">Total Items</TableCell>
-                          <TableCell className="text-right text-base font-bold">{totalItemsForDate.toLocaleString()}</TableCell>
-                      </TableRow>
-                  </TableFooter>
-              )}
-            </Table>
-          </div>
+            <div className="text-center py-16 text-muted-foreground">
+              {selectedDate ? 'No delivered orders on this date.' : 'No delivered orders yet.'}
+            </div>
         )}
       </CardContent>
     </Card>
