@@ -95,7 +95,7 @@ export function AllOrders({ orders: initialOrders = [], users = [], loading }: {
 
   const handleDownload = () => {
     let csvContent = "data:text/csv;charset=utf-8,";
-    csvContent += "Date,Order ID,Shop Name,Phone Number,Location,Product Name,Size,Quantity,Price,Total Amount,Status\r\n";
+    csvContent += "Date,Order ID,Shop Name,Phone Number,Location,Product Name,Size,Quantity,Status\r\n";
 
     orders.forEach((order) => {
         const shopInfo = usersMap.get(order.shopId);
@@ -110,8 +110,6 @@ export function AllOrders({ orders: initialOrders = [], users = [], loading }: {
                 `"${item.name}"`,
                 `"${item.size}"`,
                 item.quantity,
-                item.price,
-                order.totalAmount,
                 order.status,
             ].join(',');
             csvContent += row + "\r\n";
@@ -233,25 +231,23 @@ export function AllOrders({ orders: initialOrders = [], users = [], loading }: {
                                         <TableHeader>
                                             <TableRow>
                                                 <TableHead>Product</TableHead>
+                                                <TableHead>Size</TableHead>
                                                 <TableHead className='text-center'>Qty</TableHead>
-                                                <TableHead className='text-right'>Price</TableHead>
-                                                <TableHead className='text-right'>Subtotal</TableHead>
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
                                             {order.items.map((item: any) => (
                                             <TableRow key={`${item.id}-${item.size}`}>
                                                 <TableCell>{item.name} <span className="text-muted-foreground">({item.size})</span></TableCell>
+                                                <TableCell>{item.size}</TableCell>
                                                 <TableCell className='text-center'>{item.quantity}</TableCell>
-                                                <TableCell className='text-right'>₹{item.price.toFixed(2)}</TableCell>
-                                                <TableCell className='text-right font-medium'>₹{(item.price * item.quantity).toFixed(2)}</TableCell>
                                             </TableRow>
                                             ))}
                                         </TableBody>
                                     </Table>
                                     <div className="flex justify-between items-center mt-4 border-t pt-3">
                                         <div className="font-bold text-lg">
-                                            Total: ₹{order.totalAmount.toLocaleString()}
+                                            Total Items: {order.items.reduce((acc: number, item: any) => acc + item.quantity, 0)}
                                         </div>
                                         <div className="no-print">
                                             <Select onValueChange={(value) => handleStatusChange(order.id, value)} defaultValue={order.status}>

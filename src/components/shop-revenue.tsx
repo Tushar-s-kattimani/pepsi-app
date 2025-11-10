@@ -44,8 +44,8 @@ export function ShopRevenue({ orders = [], users = [], loading }: { orders: any[
     return deliveredOrders.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
   }, [orders, users, loading, selectedDate]);
 
-  const totalForDate = useMemo(() => {
-    return shopRevenueData.reduce((sum, order) => sum + order.totalAmount, 0);
+  const totalItemsForDate = useMemo(() => {
+    return shopRevenueData.reduce((sum, order) => sum + order.items.reduce((itemSum: any, item: any) => itemSum + item.quantity, 0), 0);
   }, [shopRevenueData]);
   
   const handleDownloadPdf = () => {
@@ -59,15 +59,15 @@ export function ShopRevenue({ orders = [], users = [], loading }: { orders: any[
 
     (doc as any).autoTable({
       startY: 20,
-      head: [['Date & Time', 'Shop Name', 'Location', 'Order ID', 'Amount (₹)']],
+      head: [['Date & Time', 'Shop Name', 'Location', 'Order ID', 'Total Items']],
       body: shopRevenueData.map(order => [
         order.createdAt.toDate().toLocaleString('en-GB'),
         order.shopInfo.shopName || 'N/A',
         order.shopInfo.location || 'N/A',
         order.id.substring(0, 8),
-        order.totalAmount.toLocaleString()
+        order.items.reduce((itemSum: any, item: any) => itemSum + item.quantity, 0)
       ]),
-      foot: [['', '', '', 'Total', totalForDate.toLocaleString()]],
+      foot: [['', '', '', 'Total Items', totalItemsForDate.toLocaleString()]],
       footStyles: { fontStyle: 'bold', fillColor: [230, 230, 230], textColor: 0 }
     });
 
@@ -107,7 +107,7 @@ export function ShopRevenue({ orders = [], users = [], loading }: { orders: any[
                   <TableHead>Shop Name</TableHead>
                   <TableHead className='hidden md:table-cell'>Location</TableHead>
                   <TableHead>Order ID</TableHead>
-                  <TableHead className="text-right">Order Amount</TableHead>
+                  <TableHead className="text-right">Total Items</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -118,7 +118,7 @@ export function ShopRevenue({ orders = [], users = [], loading }: { orders: any[
                       <TableCell>{order.shopInfo.shopName || 'N/A'}</TableCell>
                       <TableCell className='hidden md:table-cell'>{order.shopInfo.location || 'N/A'}</TableCell>
                       <TableCell className="font-mono text-xs">{order.id.substring(0,8)}</TableCell>
-                      <TableCell className="text-right font-medium">₹{order.totalAmount.toLocaleString()}</TableCell>
+                      <TableCell className="text-right font-medium">{order.items.reduce((itemSum: any, item: any) => itemSum + item.quantity, 0)}</TableCell>
                     </TableRow>
                   ))
                 ) : (
@@ -132,9 +132,8 @@ export function ShopRevenue({ orders = [], users = [], loading }: { orders: any[
               {shopRevenueData.length > 0 && (
                   <TableFooter className="bg-gray-100 border-t">
                       <TableRow>
-                          <TableCell colSpan={4} className="text-right text-base font-bold hidden md:table-cell">Total</TableCell>
-                          <TableCell className="text-right text-base font-bold md:hidden" colSpan={3}>Total</TableCell>
-                          <TableCell className="text-right text-base font-bold">₹{totalForDate.toLocaleString()}</TableCell>
+                          <TableCell colSpan={4} className="text-right text-base font-bold">Total Items</TableCell>
+                          <TableCell className="text-right text-base font-bold">{totalItemsForDate.toLocaleString()}</TableCell>
                       </TableRow>
                   </TableFooter>
               )}

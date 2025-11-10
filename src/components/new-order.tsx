@@ -16,7 +16,7 @@ import { FirestorePermissionError, SecurityRuleContext } from '@/firebase/errors
 
 
 export function NewOrder({ products = [], loading }: { products: any[], loading: boolean }) {
-  const { cart, addToCart, updateQuantity, clearCart, total } = useCart();
+  const { cart, addToCart, updateQuantity, clearCart } = useCart();
   const { toast } = useToast();
   const { user } = useUser();
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
@@ -86,7 +86,6 @@ export function NewOrder({ products = [], loading }: { products: any[], loading:
         shopId: user.uid,
         shopEmail: user.email,
         items: cart.map(({ stock, ...item }: any) => item), // Remove internal fields
-        totalAmount: total,
         status: 'Pending',
         createdAt: serverTimestamp(),
     };
@@ -163,7 +162,6 @@ export function NewOrder({ products = [], loading }: { products: any[], loading:
                   <TableRow>
                     <TableHead>Product</TableHead>
                     <TableHead>Size</TableHead>
-                    <TableHead>Price</TableHead>
                     <TableHead>Stock</TableHead>
                     <TableHead className="text-center">Action</TableHead>
                   </TableRow>
@@ -173,7 +171,6 @@ export function NewOrder({ products = [], loading }: { products: any[], loading:
                     <TableRow key={product.id} className={product.stock === 0 ? 'bg-red-50 text-red-900' : ''}>
                       <TableCell>{product.name}</TableCell>
                       <TableCell>{product.size}</TableCell>
-                      <TableCell>₹{product.price.toFixed(2)}</TableCell>
                       <TableCell>{product.stock}</TableCell>
                       <TableCell>
                         {product.stock > 0 ? (
@@ -226,7 +223,7 @@ export function NewOrder({ products = [], loading }: { products: any[], loading:
                       <div>
                         <p className="font-medium">{item.name} ({item.size})</p>
                         <p className="text-sm text-gray-600">
-                          {item.quantity} x ₹{item.price.toFixed(2)}
+                          {item.quantity} units
                         </p>
                       </div>
                        <Button size="icon" variant="ghost" onClick={() => updateQuantity(item.id, 0)}>
@@ -234,9 +231,6 @@ export function NewOrder({ products = [], loading }: { products: any[], loading:
                       </Button>
                     </div>
                   ))}
-                </div>
-                <div className="space-y-2 border-t pt-4">
-                  <div className="flex justify-between text-lg font-bold"><span>Total</span><span>₹{total.toFixed(2)}</span></div>
                 </div>
                 <Button className="w-full" onClick={handlePlaceOrder} disabled={isPlacingOrder}>
                    {isPlacingOrder ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}

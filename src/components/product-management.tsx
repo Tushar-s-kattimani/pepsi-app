@@ -19,7 +19,6 @@ import { Loader2, PackagePlus } from 'lucide-react';
 const productSchema = z.object({
   name: z.string().min(1, 'Product name is required'),
   size: z.string().min(1, 'Product size is required'),
-  price: z.coerce.number().min(0.01, 'Price must be greater than 0'),
   stock: z.coerce.number().int().min(0, 'Stock cannot be negative'),
 });
 
@@ -39,9 +38,9 @@ export function ProductManagement() {
   const handleOpenDialog = (product: any | null = null) => {
     setEditingProduct(product);
     if (product) {
-      reset({ name: product.name, size: product.size, price: product.price, stock: product.stock });
+      reset({ name: product.name, size: product.size, stock: product.stock });
     } else {
-      reset({ name: '', size: '', price: 0, stock: 0 });
+      reset({ name: '', size: '', stock: 0 });
     }
     setOpen(true);
   };
@@ -109,11 +108,6 @@ export function ProductManagement() {
                 {errors.size && <p className="text-sm text-red-500 mt-1">{errors.size.message}</p>}
               </div>
               <div>
-                <Label htmlFor="price">Price (₹)</Label>
-                <Input id="price" type="number" step="0.01" {...register('price')} />
-                {errors.price && <p className="text-sm text-red-500 mt-1">{errors.price.message}</p>}
-              </div>
-              <div>
                 <Label htmlFor="stock">Stock</Label>
                 <Input id="stock" type="number" {...register('stock')} />
                 {errors.stock && <p className="text-sm text-red-500 mt-1">{errors.stock.message}</p>}
@@ -147,7 +141,6 @@ export function ProductManagement() {
               <TableRow>
                 <TableHead>Product</TableHead>
                 <TableHead>Size</TableHead>
-                <TableHead>Price</TableHead>
                 <TableHead>Stock</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
@@ -157,7 +150,6 @@ export function ProductManagement() {
                 <TableRow key={product.id}>
                   <TableCell>{product.name}</TableCell>
                   <TableCell>{product.size}</TableCell>
-                  <TableCell>₹{product.price.toFixed(2)}</TableCell>
                   <TableCell>{product.stock}</TableCell>
                   <TableCell>
                     <Button variant="outline" size="sm" onClick={() => handleOpenDialog(product)}>Edit</Button>

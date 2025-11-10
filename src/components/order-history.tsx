@@ -48,8 +48,8 @@ export function OrderHistory({ orders = [], loading }: { orders: any[], loading:
                             <div>{order.createdAt ? new Date(order.createdAt.toMillis()).toLocaleDateString() : 'N/A'}</div>
                         </div>
                         <div>
-                            <div className="font-semibold text-gray-500">Total Amount</div>
-                            <div className="font-bold">₹{order.totalAmount.toFixed(2)}</div>
+                            <div className="font-semibold text-gray-500">Total Items</div>
+                            <div className="font-bold">{order.items.reduce((acc: any, item: any) => acc + item.quantity, 0)}</div>
                         </div>
                          <div>
                             <div className="font-semibold text-gray-500">Status</div>
@@ -70,8 +70,6 @@ export function OrderHistory({ orders = [], loading }: { orders: any[], loading:
                         <TableHead>Product</TableHead>
                         <TableHead>Size</TableHead>
                         <TableHead className="text-center">Quantity</TableHead>
-                        <TableHead className="text-right">Price</TableHead>
-                        <TableHead className="text-right">Subtotal</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -80,8 +78,6 @@ export function OrderHistory({ orders = [], loading }: { orders: any[], loading:
                           <TableCell>{item.name}</TableCell>
                           <TableCell>{item.size}</TableCell>
                           <TableCell className="text-center">{item.quantity}</TableCell>
-                          <TableCell className="text-right">₹{item.price.toFixed(2)}</TableCell>
-                          <TableCell className="text-right">₹{(item.price * item.quantity).toFixed(2)}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>

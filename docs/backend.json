@@ -56,16 +56,12 @@
           "type": "string",
           "description": "The size of the product (e.g., '250ml', '1L')."
         },
-        "price": {
-          "type": "number",
-          "description": "The price of the product."
-        },
         "stock": {
           "type": "number",
           "description": "The current stock level of the product."
         }
       },
-      "required": ["name", "size", "price", "stock"]
+      "required": ["name", "size", "stock"]
     },
     "Order": {
       "title": "Order",
@@ -90,15 +86,10 @@
               "id": { "type": "string" },
               "name": { "type": "string" },
               "size": { "type": "string" },
-              "price": { "type": "number" },
               "quantity": { "type": "number" }
             },
-            "required": ["id", "name", "price", "quantity"]
+            "required": ["id", "name", "quantity"]
           }
-        },
-        "totalAmount": {
-          "type": "number",
-          "description": "The total amount of the order."
         },
         "status": {
           "type": "string",
@@ -111,7 +102,7 @@
           "description": "The timestamp when the order was placed."
         }
       },
-      "required": ["shopId", "items", "totalAmount", "status", "createdAt"]
+      "required": ["shopId", "items", "status", "createdAt"]
     },
     "Laborer": {
       "title": "Laborer",

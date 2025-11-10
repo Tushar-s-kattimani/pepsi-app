@@ -11,12 +11,12 @@ ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, Title, Too
 
 export function AdminOverview({ orders = [], products = [], users = [], loading }: { orders: any[], products: any[], users: any[], loading: boolean }) {
 
-  const { chartData, dailyRevenue, monthlyRevenue, totalRevenue } = useMemo(() => {
+  const { chartData, totalItemsSold, dailyItemsSold, monthlyItemsSold } = useMemo(() => {
     const dailySales: { [key: string]: number } = {};
     const productSales: { [key: string]: number } = {};
-    let totalRevenue = 0;
-    let dailyRevenue = 0;
-    let monthlyRevenue = 0;
+    let totalItemsSold = 0;
+    let dailyItemsSold = 0;
+    let monthlyItemsSold = 0;
 
     const now = new Date();
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
@@ -28,19 +28,20 @@ export function AdminOverview({ orders = [], products = [], users = [], loading 
     
     deliveredOrders.forEach(order => {
       const orderDate = order.createdAt.toDate();
+      const itemsInOrder = order.items.reduce((acc: number, item: any) => acc + item.quantity, 0);
       
-      totalRevenue += order.totalAmount;
+      totalItemsSold += itemsInOrder;
 
       if (orderDate >= todayStart && orderDate <= todayEnd) {
-        dailyRevenue += order.totalAmount;
+        dailyItemsSold += itemsInOrder;
       }
 
       if (orderDate.getMonth() === currentMonth && orderDate.getFullYear() === currentYear) {
-        monthlyRevenue += order.totalAmount;
+        monthlyItemsSold += itemsInOrder;
       }
 
       const day = orderDate.toLocaleDateString('en-CA');
-      dailySales[day] = (dailySales[day] || 0) + order.totalAmount;
+      dailySales[day] = (dailySales[day] || 0) + itemsInOrder;
 
       if (order.items && Array.isArray(order.items)) {
         order.items.forEach((item: any) => {
@@ -61,7 +62,7 @@ export function AdminOverview({ orders = [], products = [], users = [], loading 
         salesData: {
           labels: salesLabels.map(d => new Date(d+'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })),
           datasets: [{
-            label: 'Daily Revenue (Delivered)',
+            label: 'Daily Items Sold (Delivered)',
             data: salesValues,
             backgroundColor: 'rgba(59, 130, 246, 0.5)',
             borderColor: 'rgba(59, 130, 246, 1)',
@@ -80,9 +81,9 @@ export function AdminOverview({ orders = [], products = [], users = [], loading 
           }],
         },
       },
-      dailyRevenue,
-      monthlyRevenue,
-      totalRevenue,
+      totalItemsSold,
+      dailyItemsSold,
+      monthlyItemsSold
     };
   }, [orders]);
 
@@ -112,32 +113,32 @@ export function AdminOverview({ orders = [], products = [], users = [], loading 
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
         <Card className="col-span-1">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-            <IndianRupee className="h-5 w-5 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Total Items Sold</CardTitle>
+            <Package className="h-5 w-5 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">₹{totalRevenue.toLocaleString()}</div>
+            <div className="text-3xl font-bold">{totalItemsSold.toLocaleString()}</div>
              <p className="text-xs text-muted-foreground">From all delivered orders</p>
           </CardContent>
         </Card>
          <Card className="col-span-1">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">This Month's Revenue</CardTitle>
+            <CardTitle className="text-sm font-medium">This Month's Items Sold</CardTitle>
             <Calendar className="h-5 w-5 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">₹{monthlyRevenue.toLocaleString()}</div>
-             <p className="text-xs text-muted-foreground">Revenue for the current month</p>
+            <div className="text-3xl font-bold">{monthlyItemsSold.toLocaleString()}</div>
+             <p className="text-xs text-muted-foreground">Items for the current month</p>
           </CardContent>
         </Card>
         <Card className="col-span-1">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Today's Revenue</CardTitle>
+            <CardTitle className="text-sm font-medium">Today's Items Sold</CardTitle>
             <Sun className="h-5 w-5 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">₹{dailyRevenue.toLocaleString()}</div>
-             <p className="text-xs text-muted-foreground">Revenue for today</p>
+            <div className="text-3xl font-bold">{dailyItemsSold.toLocaleString()}</div>
+             <p className="text-xs text-muted-foreground">Items for today</p>
           </CardContent>
         </Card>
         <Card className="col-span-1">
