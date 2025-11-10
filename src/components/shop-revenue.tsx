@@ -1,10 +1,10 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
-import { Loader2, Download, Banknote, ChevronDown } from 'lucide-react';
+import { Loader2, Download, Banknote, ChevronDown, ShoppingBag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
@@ -48,6 +48,17 @@ export function ShopRevenue({ orders = [], users = [], loading }: { orders: any[
     return shopRevenueData.reduce((sum, order) => sum + order.items.reduce((itemSum: any, item: any) => itemSum + item.quantity, 0), 0);
   }, [shopRevenueData]);
   
+  const productSummary = useMemo(() => {
+    const summary: { [key: string]: number } = {};
+    shopRevenueData.forEach(order => {
+      order.items.forEach((item: any) => {
+        const productKey = `${item.name} (${item.size})`;
+        summary[productKey] = (summary[productKey] || 0) + item.quantity;
+      });
+    });
+    return Object.entries(summary).sort(([keyA], [keyB]) => keyA.localeCompare(keyB));
+  }, [shopRevenueData]);
+
   const handleDownloadPdf = () => {
     const doc = new jsPDF();
     
@@ -58,7 +69,7 @@ export function ShopRevenue({ orders = [], users = [], loading }: { orders: any[
     doc.text(title, 14, 15);
 
     const tableBody = shopRevenueData.flatMap(order => {
-      const mainRow = [
+      const mainRow: any[] = [
         order.createdAt.toDate().toLocaleString('en-GB'),
         order.shopInfo.shopName || 'N/A',
         order.shopInfo.location || 'N/A',
@@ -78,9 +89,20 @@ export function ShopRevenue({ orders = [], users = [], loading }: { orders: any[
       startY: 20,
       head: [['Date & Time', 'Shop Name', 'Location / Item Details', 'Total Items']],
       body: tableBody,
-      foot: [['', '', 'Total Items', totalItemsForDate.toLocaleString()]],
-      footStyles: { fontStyle: 'bold', fillColor: [230, 230, 230], textColor: 0, halign: 'right' }
     });
+    
+    const finalY = (doc as any).lastAutoTable.finalY;
+
+    // Add summary table
+    doc.text("Product Summary", 14, finalY + 10);
+    (doc as any).autoTable({
+      startY: finalY + 12,
+      head: [['Product', 'Total Quantity']],
+      body: productSummary,
+      foot: [['', ''], ['Overall Total Items', totalItemsForDate.toLocaleString()]],
+      footStyles: { fontStyle: 'bold', fillColor: [230, 230, 230], textColor: 0 },
+    });
+
 
     doc.save('shop_revenue_report.pdf');
   }
@@ -144,10 +166,6 @@ export function ShopRevenue({ orders = [], users = [], loading }: { orders: any[
                  </AccordionContent>
                </AccordionItem>
             ))}
-             <div className="flex justify-end items-center p-4 bg-gray-100 font-bold text-base border-t">
-                  <div className='mr-4'>Total Items for Selected Period:</div>
-                  <div>{totalItemsForDate.toLocaleString()}</div>
-              </div>
           </Accordion>
         ) : (
             <div className="text-center py-16 text-muted-foreground">
@@ -155,6 +173,36 @@ export function ShopRevenue({ orders = [], users = [], loading }: { orders: any[
             </div>
         )}
       </CardContent>
+       {shopRevenueData.length > 0 && (
+         <CardFooter className="flex-col items-start gap-4 p-4 border-t bg-gray-50">
+           <div className='w-full'>
+              <h3 className="text-lg font-bold flex items-center gap-2 mb-3">
+                <ShoppingBag className='h-5 w-5' />
+                Total Product Summary
+              </h3>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Product</TableHead>
+                    <TableHead className="text-right">Total Quantity</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {productSummary.map(([productKey, quantity]) => (
+                    <TableRow key={productKey}>
+                      <TableCell className="font-medium">{productKey}</TableCell>
+                      <TableCell className="text-right font-bold">{quantity.toLocaleString()}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+           </div>
+           <div className="flex justify-end items-center p-4 bg-gray-100 font-bold text-base border-t w-full rounded-md">
+                <div className='mr-4'>Overall Total Items:</div>
+                <div>{totalItemsForDate.toLocaleString()}</div>
+            </div>
+         </CardFooter>
+      )}
     </Card>
   );
 }
