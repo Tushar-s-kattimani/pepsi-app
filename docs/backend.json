@@ -59,9 +59,13 @@
         "stock": {
           "type": "number",
           "description": "The current stock level of the product."
+        },
+        "position": {
+          "type": "number",
+          "description": "The order of the product in the list."
         }
       },
-      "required": ["name", "size", "stock"]
+      "required": ["name", "size", "stock", "position"]
     },
     "Order": {
       "title": "Order",

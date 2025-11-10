@@ -1,8 +1,25 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -11,21 +28,65 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useToast } from '@/components/ui/use-toast';
-import { addDoc, collection, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { addDoc, collection, doc, updateDoc, deleteDoc, writeBatch, query, orderBy } from 'firebase/firestore';
 import { db } from '@/firebase/config';
 import { useCollection } from '@/firebase';
-import { Loader2, PackagePlus } from 'lucide-react';
+import { Loader2, PackagePlus, GripVertical } from 'lucide-react';
 
 const productSchema = z.object({
   name: z.string().min(1, 'Product name is required'),
   size: z.string().min(1, 'Product size is required'),
   stock: z.coerce.number().int().min(0, 'Stock cannot be negative'),
+  position: z.coerce.number(),
 });
 
 type ProductFormValues = z.infer<typeof productSchema>;
 
+const SortableItem = ({ product, handleOpenDialog }: { product: any, handleOpenDialog: (p: any) => void }) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+  } = useSortable({ id: product.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="flex items-center bg-white p-3 my-2 rounded-lg shadow-sm border"
+    >
+      <div {...attributes} {...listeners} className="cursor-grab p-2">
+        <GripVertical className="h-5 w-5 text-muted-foreground" />
+      </div>
+      <div className="flex-grow grid grid-cols-3 gap-4 items-center">
+        <div className="font-medium">{product.name}</div>
+        <div>{product.size}</div>
+        <div>{product.stock}</div>
+      </div>
+      <Button variant="outline" size="sm" onClick={() => handleOpenDialog(product)}>Edit</Button>
+    </div>
+  );
+};
+
+
 export function ProductManagement() {
-  const { data: products, loading } = useCollection('products');
+  const productsQuery = useMemo(() => query(collection(db, 'products'), orderBy('position')), []);
+  const { data: initialProducts, loading } = useCollection(productsQuery);
+  const [products, setProducts] = useState<any[]>([]);
+
+  useEffect(() => {
+    if(initialProducts) {
+        setProducts(initialProducts);
+    }
+  }, [initialProducts]);
+  
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any | null>(null);
@@ -38,9 +99,9 @@ export function ProductManagement() {
   const handleOpenDialog = (product: any | null = null) => {
     setEditingProduct(product);
     if (product) {
-      reset({ name: product.name, size: product.size, stock: product.stock });
+      reset({ name: product.name, size: product.size, stock: product.stock, position: product.position });
     } else {
-      reset({ name: '', size: '', stock: 0 });
+      reset({ name: '', size: '', stock: 0, position: products.length });
     }
     setOpen(true);
   };
@@ -58,7 +119,7 @@ export function ProductManagement() {
         await updateDoc(productRef, data);
         toast({ title: 'Success', description: 'Product updated successfully.' });
       } else {
-        await addDoc(collection(db, 'products'), data);
+        await addDoc(collection(db, 'products'), {...data, position: products.length});
         toast({ title: 'Success', description: 'Product added successfully.' });
       }
       handleCloseDialog();
@@ -81,6 +142,31 @@ export function ProductManagement() {
     }
   };
 
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      const oldIndex = products.findIndex((p) => p.id === active.id);
+      const newIndex = products.findIndex((p) => p.id === over.id);
+      const newOrder = arrayMove(products, oldIndex, newIndex);
+      setProducts(newOrder);
+
+      // Update positions in Firestore
+      const batch = writeBatch(db);
+      newOrder.forEach((product, index) => {
+        const productRef = doc(db, 'products', product.id);
+        batch.update(productRef, { position: index });
+      });
+      await batch.commit();
+      toast({ title: 'Success', description: 'Product order updated.' });
+    }
+  };
 
   return (
     <Card>
@@ -136,28 +222,26 @@ export function ProductManagement() {
         {loading ? (
           <div className="flex justify-center py-10"><Loader2 className="h-8 w-8 animate-spin" /></div>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Product</TableHead>
-                <TableHead>Size</TableHead>
-                <TableHead>Stock</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {products.map((product) => (
-                <TableRow key={product.id}>
-                  <TableCell>{product.name}</TableCell>
-                  <TableCell>{product.size}</TableCell>
-                  <TableCell>{product.stock}</TableCell>
-                  <TableCell>
-                    <Button variant="outline" size="sm" onClick={() => handleOpenDialog(product)}>Edit</Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          <div>
+            <div className="flex items-center bg-gray-50 p-3 my-2 rounded-lg font-semibold text-sm text-muted-foreground">
+                <div className="p-2"><GripVertical className="h-5 w-5 invisible" /></div>
+                <div className="flex-grow grid grid-cols-3 gap-4 items-center">
+                    <div>Product</div>
+                    <div>Size</div>
+                    <div>Stock</div>
+                </div>
+                <div className="w-[68px]"></div>
+            </div>
+            <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+            >
+                <SortableContext items={products} strategy={verticalListSortingStrategy}>
+                {products.map(product => <SortableItem key={product.id} product={product} handleOpenDialog={handleOpenDialog} />)}
+                </SortableContext>
+            </DndContext>
+          </div>
         )}
       </CardContent>
     </Card>
