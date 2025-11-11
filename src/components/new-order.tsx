@@ -5,8 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/components/ui/use-toast';
-import { Loader2, PlusCircle, Trash2, Box, Plus, Minus } from 'lucide-react';
-import { collection, serverTimestamp, doc, getDoc, runTransaction, writeBatch } from 'firebase/firestore';
+import { Loader2, PlusCircle, Trash2, Plus, Minus } from 'lucide-react';
+import { collection, serverTimestamp, doc, getDoc, runTransaction } from 'firebase/firestore';
 import { db } from '@/firebase/config';
 import { useUser } from '@/firebase';
 import { useState } from 'react';
@@ -37,6 +37,7 @@ export function NewOrder({ products = [], loading }: { products: any[], loading:
         toast({ variant: 'destructive', title: 'Insufficient Stock', description: `Only ${product.stock} units available.` });
         return;
     }
+    
     addToCart(product, quantityToAdd);
     // Reset quantity to 1 after adding
     setQuantities(prev => ({ ...prev, [product.id]: 1 }));
