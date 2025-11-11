@@ -31,7 +31,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { addDoc, collection, doc, updateDoc, deleteDoc, writeBatch, query, orderBy } from 'firebase/firestore';
 import { db } from '@/firebase/config';
 import { useCollection } from '@/firebase';
-import { Loader2, PackagePlus, GripVertical } from 'lucide-react';
+import { Loader2, PackagePlus, GripVertical, Save } from 'lucide-react';
 
 const productSchema = z.object({
   name: z.string().min(1, 'Product name is required'),
@@ -80,10 +80,14 @@ export function ProductManagement() {
   const productsQuery = useMemo(() => query(collection(db, 'products'), orderBy('position')), []);
   const { data: initialProducts, loading } = useCollection(productsQuery);
   const [products, setProducts] = useState<any[]>([]);
+  const [isOrderChanged, setIsOrderChanged] = useState(false);
+  const [isSavingOrder, setIsSavingOrder] = useState(false);
+
 
   useEffect(() => {
     if(initialProducts) {
         setProducts(initialProducts);
+        setIsOrderChanged(false);
     }
   }, [initialProducts]);
   
@@ -149,74 +153,94 @@ export function ProductManagement() {
     })
   );
 
-  const handleDragEnd = async (event: DragEndEvent) => {
+  const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     if (over && active.id !== over.id) {
-      const oldIndex = products.findIndex((p) => p.id === active.id);
-      const newIndex = products.findIndex((p) => p.id === over.id);
-      const newOrder = arrayMove(products, oldIndex, newIndex);
-      setProducts(newOrder);
+      setProducts((items) => {
+        const oldIndex = items.findIndex((item) => item.id === active.id);
+        const newIndex = items.findIndex((item) => item.id === over.id);
+        return arrayMove(items, oldIndex, newIndex);
+      });
+      setIsOrderChanged(true);
+    }
+  };
 
-      // Update positions in Firestore
+  const handleSaveOrder = async () => {
+    setIsSavingOrder(true);
+    try {
       const batch = writeBatch(db);
-      newOrder.forEach((product, index) => {
+      products.forEach((product, index) => {
         const productRef = doc(db, 'products', product.id);
         batch.update(productRef, { position: index });
       });
       await batch.commit();
-      toast({ title: 'Success', description: 'Product order updated.' });
+      toast({ title: 'Success', description: 'Product order saved.' });
+      setIsOrderChanged(false);
+    } catch (error) {
+      toast({ variant: 'destructive', title: 'Error', description: 'Failed to save product order.' });
+    } finally {
+      setIsSavingOrder(false);
     }
   };
+
 
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Product Inventory</CardTitle>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={() => handleOpenDialog()}>
-              <PackagePlus className="mr-2 h-4 w-4" /> Add Product
+        <div className="flex items-center gap-2">
+           {isOrderChanged && (
+            <Button onClick={handleSaveOrder} disabled={isSavingOrder}>
+                {isSavingOrder ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                Save Order
             </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>{editingProduct ? 'Edit Product' : 'Add New Product'}</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-              <div>
-                <Label htmlFor="name">Product Name</Label>
-                <Input id="name" {...register('name')} />
-                {errors.name && <p className="text-sm text-red-500 mt-1">{errors.name.message}</p>}
-              </div>
-              <div>
-                <Label htmlFor="size">Size</Label>
-                <Input id="size" {...register('size')} />
-                {errors.size && <p className="text-sm text-red-500 mt-1">{errors.size.message}</p>}
-              </div>
-              <div>
-                <Label htmlFor="stock">Stock</Label>
-                <Input id="stock" type="number" {...register('stock')} />
-                {errors.stock && <p className="text-sm text-red-500 mt-1">{errors.stock.message}</p>}
-              </div>
-              <DialogFooter className="sm:justify-end pt-4">
-                <div className="flex w-full justify-between">
-                    {editingProduct && (
-                        <Button type="button" variant="destructive" onClick={() => handleDelete(editingProduct.id)} disabled={isSubmitting}>
-                            Delete
-                        </Button>
-                    )}
-                    <div className="flex gap-2 ml-auto">
-                        <Button type="button" variant="ghost" onClick={handleCloseDialog}>Cancel</Button>
-                        <Button type="submit" disabled={isSubmitting}>
-                            {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                            {editingProduct ? 'Update Product' : 'Save Product'}
-                        </Button>
-                    </div>
+          )}
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={() => handleOpenDialog()}>
+                <PackagePlus className="mr-2 h-4 w-4" /> Add Product
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>{editingProduct ? 'Edit Product' : 'Add New Product'}</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                <div>
+                  <Label htmlFor="name">Product Name</Label>
+                  <Input id="name" {...register('name')} />
+                  {errors.name && <p className="text-sm text-red-500 mt-1">{errors.name.message}</p>}
                 </div>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
+                <div>
+                  <Label htmlFor="size">Size</Label>
+                  <Input id="size" {...register('size')} />
+                  {errors.size && <p className="text-sm text-red-500 mt-1">{errors.size.message}</p>}
+                </div>
+                <div>
+                  <Label htmlFor="stock">Stock</Label>
+                  <Input id="stock" type="number" {...register('stock')} />
+                  {errors.stock && <p className="text-sm text-red-500 mt-1">{errors.stock.message}</p>}
+                </div>
+                <DialogFooter className="sm:justify-end pt-4">
+                  <div className="flex w-full justify-between">
+                      {editingProduct && (
+                          <Button type="button" variant="destructive" onClick={() => handleDelete(editingProduct.id)} disabled={isSubmitting}>
+                              Delete
+                          </Button>
+                      )}
+                      <div className="flex gap-2 ml-auto">
+                          <Button type="button" variant="ghost" onClick={handleCloseDialog}>Cancel</Button>
+                          <Button type="submit" disabled={isSubmitting}>
+                              {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                              {editingProduct ? 'Update Product' : 'Save Product'}
+                          </Button>
+                      </div>
+                  </div>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
       </CardHeader>
       <CardContent>
         {loading ? (
