@@ -87,7 +87,7 @@ export function NewOrder({ products = [], loading }: { products: any[], loading:
     const orderPayload = {
         shopId: user.uid,
         shopEmail: user.email,
-        items: cart.map(({ stock, ...item }: any) => item), // Remove internal fields
+        items: cart.map(({ stock, price, ...item }: any) => item), // Remove internal fields
         status: 'Pending',
         createdAt: serverTimestamp(),
     };
