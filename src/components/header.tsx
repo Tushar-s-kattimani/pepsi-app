@@ -58,7 +58,7 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
                         <div>
                           <p className="font-semibold">{item.name} ({item.size})</p>
                           <p className="text-sm text-gray-600">
-                            ₹{item.price?.toFixed(2) ?? '0.00'}
+                            ₹{typeof item.price === 'number' ? item.price.toFixed(2) : '0.00'}
                           </p>
                         </div>
                         <div className="flex items-center gap-2">
