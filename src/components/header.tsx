@@ -11,10 +11,7 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
   const { user, signOut, role } = useUser();
   const { cart, updateQuantity, clearCart } = useCart();
 
-  const safeCartItems = cart.map(item => ({
-    ...item,
-    price: typeof item.price === 'number' ? item.price : 0,
-  }));
+  const cartItems = cart;
 
   return (
     <header className="flex h-20 shrink-0 items-center justify-between border-b bg-white px-4 sm:px-6 md:px-10 no-print">
@@ -44,9 +41,9 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
             <SheetTrigger asChild>
               <Button variant="outline" size="icon" className="relative flex-shrink-0">
                 <ShoppingCart className="h-5 w-5" />
-                {safeCartItems.length > 0 && (
+                {cartItems.length > 0 && (
                   <span className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-xs text-white">
-                    {safeCartItems.reduce((sum, item) => sum + item.quantity, 0)}
+                    {cartItems.reduce((sum, item) => sum + item.quantity, 0)}
                   </span>
                 )}
               </Button>
@@ -56,15 +53,12 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
                 <SheetTitle className="text-2xl font-bold">Your Cart</SheetTitle>
               </SheetHeader>
               <div className="flex-1 overflow-y-auto pr-4">
-                {safeCartItems.length > 0 ? (
+                {cartItems.length > 0 ? (
                   <div className="space-y-4">
-                    {safeCartItems.map((item) => (
+                    {cartItems.map((item) => (
                       <div key={item.id} className="flex items-center justify-between rounded-lg bg-gray-50 p-3">
                         <div>
                           <p className="font-semibold">{item.name} ({item.size})</p>
-                          <p className="text-sm text-gray-600">
-                            ₹{item.price.toFixed(2)}
-                          </p>
                         </div>
                         <div className="flex items-center gap-2">
                           <Button size="icon" variant="ghost" onClick={() => updateQuantity(item.id, item.quantity - 1)}>-</Button>
@@ -78,12 +72,12 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
                   <p className="mt-8 text-center text-gray-500">Your cart is empty.</p>
                 )}
               </div>
-              {safeCartItems.length > 0 && (
+              {cartItems.length > 0 && (
                 <SheetFooter className="mt-auto border-t pt-4">
                   <div className="w-full space-y-3">
                      <div className="flex justify-between text-xl font-bold">
                       <span>Total Items</span>
-                      <span>{safeCartItems.reduce((sum, item) => sum + item.quantity, 0)}</span>
+                      <span>{cartItems.reduce((sum, item) => sum + item.quantity, 0)}</span>
                     </div>
                     <Button variant="outline" className="w-full" onClick={clearCart}>Clear Cart</Button>
                   </div>

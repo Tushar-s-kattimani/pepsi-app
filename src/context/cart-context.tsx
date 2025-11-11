@@ -9,7 +9,6 @@ interface Product {
   name: string;
   size: string;
   stock: number;
-  price?: number;
 }
 
 interface CartItem extends Product {
