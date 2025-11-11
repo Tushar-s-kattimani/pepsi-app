@@ -3,7 +3,7 @@
 
 import { useUser } from '@/firebase';
 import { Button } from '@/components/ui/button';
-import { ShoppingCart, LogOut, Menu } from 'lucide-react';
+import { ShoppingCart, LogOut, Menu, Plus, Minus } from 'lucide-react';
 import { useCart } from '@/context/cart-context';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetFooter } from '@/components/ui/sheet';
 
