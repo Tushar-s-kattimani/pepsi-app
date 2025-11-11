@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 
 export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
   const { user, signOut, role } = useUser();
-  const { cart, updateQuantity, clearCart, total } = useCart();
+  const { cart, updateQuantity, clearCart } = useCart();
 
   return (
     <header className="flex h-20 shrink-0 items-center justify-between border-b bg-white px-4 sm:px-6 md:px-10 no-print">
@@ -57,14 +57,12 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
                       <div key={item.id} className="flex items-center justify-between rounded-lg bg-gray-50 p-3">
                         <div>
                           <p className="font-semibold">{item.name} ({item.size})</p>
-                          <p className="text-sm text-gray-600">₹{item.price.toFixed(2)}</p>
                         </div>
                         <div className="flex items-center gap-2">
                           <Button size="icon" variant="ghost" onClick={() => updateQuantity(item.id, item.quantity - 1)}>-</Button>
                           <span>{item.quantity}</span>
                           <Button size="icon" variant="ghost" onClick={() => updateQuantity(item.id, item.quantity + 1)}>+</Button>
                         </div>
-                        <p className="font-semibold">₹{(item.price * item.quantity).toFixed(2)}</p>
                       </div>
                     ))}
                   </div>
@@ -75,11 +73,10 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
               {cart.length > 0 && (
                 <SheetFooter className="mt-auto border-t pt-4">
                   <div className="w-full space-y-3">
-                    <div className="flex justify-between text-xl font-bold">
-                      <span>Total</span>
-                      <span>₹{total.toFixed(2)}</span>
+                     <div className="flex justify-between text-xl font-bold">
+                      <span>Total Items</span>
+                      <span>{cart.reduce((sum, item) => sum + item.quantity, 0)}</span>
                     </div>
-                    <Button className="w-full" size="lg" disabled>Checkout (WIP)</Button>
                     <Button variant="outline" className="w-full" onClick={clearCart}>Clear Cart</Button>
                   </div>
                 </SheetFooter>

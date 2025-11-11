@@ -37,9 +37,7 @@ export function NewOrder({ products = [], loading }: { products: any[], loading:
         toast({ variant: 'destructive', title: 'Insufficient Stock', description: `Only ${product.stock} units available.` });
         return;
     }
-    // Add a placeholder price to the product before adding it to the cart
-    const productWithPrice = { ...product, price: 150 };
-    addToCart(productWithPrice, quantityToAdd);
+    addToCart(product, quantityToAdd);
     // Reset quantity to 1 after adding
     setQuantities(prev => ({ ...prev, [product.id]: 1 }));
   };
@@ -87,7 +85,7 @@ export function NewOrder({ products = [], loading }: { products: any[], loading:
     const orderPayload = {
         shopId: user.uid,
         shopEmail: user.email,
-        items: cart.map(({ stock, price, ...item }: any) => item), // Remove internal fields
+        items: cart.map(({ stock, ...item }: any) => item), // Remove internal fields
         status: 'Pending',
         createdAt: serverTimestamp(),
     };
