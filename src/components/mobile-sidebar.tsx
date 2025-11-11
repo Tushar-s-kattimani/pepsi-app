@@ -1,8 +1,10 @@
 'use client';
 
-import { Sheet, SheetContent, SheetHeader } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { BarChart, Package, Users, ShoppingCart, History, Home, User, Banknote, Calendar, ClipboardList } from 'lucide-react';
+import { cn } from '@/lib/utils';
+
 
 interface MobileSidebarProps {
   role: 'admin' | 'shop';
@@ -73,6 +75,7 @@ export function MobileSidebar({ role, activeSection, setActiveSection, isOpen, s
       <SheetContent side="left" className="p-0 w-64 bg-white">
         <div className="flex h-full flex-col">
           <SheetHeader className='p-4'>
+             <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
             <div className="flex items-center gap-4 rounded-xl bg-gradient-to-br from-blue-100 to-indigo-200 p-4 shadow-md">
                 <div className="h-10 w-10 flex-shrink-0">
                 <PepsiBottleLogo />
@@ -95,7 +98,7 @@ export function MobileSidebar({ role, activeSection, setActiveSection, isOpen, s
                   }
                   onClick={() => handleSectionClick(item.id)}
                 >
-                  <item.icon className={`h-5 w-5 transition-colors ${isActive ? 'text-white' : ''}`} />
+                  <item.icon className={cn('h-5 w-5 transition-colors', isActive ? 'text-white' : '')} />
                   {item.name}
                 </Button>
               );
