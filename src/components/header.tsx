@@ -57,6 +57,9 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
                       <div key={item.id} className="flex items-center justify-between rounded-lg bg-gray-50 p-3">
                         <div>
                           <p className="font-semibold">{item.name} ({item.size})</p>
+                          <p className="text-sm text-gray-600">
+                            ₹{item.price?.toFixed(2) ?? '0.00'}
+                          </p>
                         </div>
                         <div className="flex items-center gap-2">
                           <Button size="icon" variant="ghost" onClick={() => updateQuantity(item.id, item.quantity - 1)}>-</Button>
