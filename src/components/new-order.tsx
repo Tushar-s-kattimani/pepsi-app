@@ -4,7 +4,7 @@ import { useCart } from '@/context/cart-context';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { useToast } from '@/components/ui/use-toast';
-import { Loader2, PlusCircle, Trash2, Plus, Minus, Package } from 'lucide-react';
+import { Loader2, PlusCircle, Trash2, Plus, Minus, Package, ShoppingBasket, ShoppingCart } from 'lucide-react';
 import { collection, serverTimestamp, doc, getDoc, runTransaction } from 'firebase/firestore';
 import { db } from '@/firebase/config';
 import { useUser } from '@/firebase';
@@ -12,6 +12,8 @@ import { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError, SecurityRuleContext } from '@/firebase/errors';
+import Image from 'next/image';
+import placeholderImages from '@/app/lib/placeholder-images.json';
 
 
 export function NewOrder({ products = [], loading }: { products: any[], loading: boolean }) {
@@ -149,80 +151,90 @@ export function NewOrder({ products = [], loading }: { products: any[], loading:
   return (
     <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
       <div className="lg:col-span-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Available Products</CardTitle>
+        <Card className="shadow-none border-none bg-transparent">
+          <CardHeader className="px-0">
+            <CardTitle className="text-2xl font-bold tracking-tight">Available Products</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-0">
             {loading ? (
               <div className="flex justify-center py-10"><Loader2 className="h-8 w-8 animate-spin" /></div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-                {products.map((product) => (
-                  <Card key={product.id} className="flex flex-col">
-                    <CardHeader className="flex-1">
-                       <CardTitle className="text-lg flex items-center gap-3">
-                          <Package className="h-6 w-6 text-muted-foreground" />
-                          {product.name}
-                        </CardTitle>
-                    </CardHeader>
-                     <CardContent className="flex-1 space-y-3">
-                        <div className="flex justify-between items-center text-sm">
-                            <span className="font-medium text-muted-foreground">Size:</span>
-                            <span className="font-bold">{product.size}</span>
-                        </div>
-                         <div className="flex justify-between items-center text-sm">
-                            <span className="font-medium text-muted-foreground">Stock:</span>
-                            <span className={`font-bold ${product.stock === 0 ? 'text-red-600' : 'text-green-600'}`}>{product.stock > 0 ? `${product.stock} units` : 'Out of Stock'}</span>
-                        </div>
-                    </CardContent>
-                    <CardFooter className="flex-col items-stretch space-y-2">
-                      {product.stock > 0 ? (
-                          <>
-                            <div className="flex w-full items-center justify-between gap-2">
-                                <Button variant="outline" size="icon" className="h-9 w-9" onClick={() => handleQuantityChange(product.id, (quantities[product.id] || 1) - 1)}>
-                                <Minus className="h-4 w-4" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+                {products.map((product) => {
+                   const image = placeholderImages.products.find(p => p.id === product.id) || placeholderImages.products[0];
+                   return (
+                    <Card key={product.id} className="flex flex-col overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+                      <div className='relative w-full h-48'>
+                         <Image 
+                            src={image.src}
+                            alt={product.name}
+                            fill
+                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                            className="object-cover"
+                            data-ai-hint={image.hint}
+                          />
+                      </div>
+                      <div className="p-4 flex flex-col flex-grow">
+                          <h3 className="font-bold text-lg">{product.name}</h3>
+                          <p className="text-sm text-muted-foreground">{product.size}</p>
+                          <div className="flex-grow"></div>
+                          <div className="mt-4 text-sm">
+                            <span className={`font-semibold ${product.stock > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                {product.stock > 0 ? `${product.stock} units available` : 'Out of Stock'}
+                            </span>
+                          </div>
+                      </div>
+                      <CardFooter className="flex-col items-stretch space-y-2 bg-gray-50/70 p-4">
+                        {product.stock > 0 ? (
+                            <>
+                              <div className="flex w-full items-center justify-between gap-2">
+                                <Button variant="outline" size="icon" className="h-9 w-9 bg-white" onClick={() => handleQuantityChange(product.id, (quantities[product.id] || 1) - 1)}>
+                                  <Minus className="h-4 w-4" />
+                                </Button>
+                                <Input
+                                  type="number"
+                                  min="1"
+                                  value={quantities[product.id] || 1}
+                                  onChange={(e) => handleQuantityChange(product.id, e.target.value)}
+                                  className="w-16 h-9 text-center font-bold"
+                                />
+                                <Button variant="outline" size="icon" className="h-9 w-9 bg-white" onClick={() => handleQuantityChange(product.id, (quantities[product.id] || 1) + 1)}>
+                                  <Plus className="h-4 w-4" />
+                                </Button>
+                              </div>
+                              <Button size="sm" onClick={() => handleAddToCart(product)} className="w-full h-9">
+                                <PlusCircle className="mr-2 h-4 w-4" /> Add to Cart
                               </Button>
-                              <Input
-                                type="number"
-                                min="1"
-                                value={quantities[product.id] || 1}
-                                onChange={(e) => handleQuantityChange(product.id, e.target.value)}
-                                className="w-16 h-9 text-center"
-                              />
-                               <Button variant="outline" size="icon" className="h-9 w-9" onClick={() => handleQuantityChange(product.id, (quantities[product.id] || 1) + 1)}>
-                                <Plus className="h-4 w-4" />
-                              </Button>
-                            </div>
-                            <Button size="sm" onClick={() => handleAddToCart(product)} className="w-full h-9">
-                              <PlusCircle className="mr-2 h-4 w-4" /> Add
+                            </>
+                          ) : (
+                            <Button size="sm" disabled variant="destructive" className="w-full">
+                              Out of stock
                             </Button>
-                          </>
-                        ) : (
-                           <Button size="sm" disabled variant="destructive" className="w-full">
-                            Out of stock
-                          </Button>
-                        )}
-                    </CardFooter>
-                  </Card>
-                ))}
+                          )}
+                      </CardFooter>
+                    </Card>
+                   )
+                })}
               </div>
             )}
           </CardContent>
         </Card>
       </div>
 
-      <div>
-        <Card className="sticky top-10">
+      <div className="sticky top-[90px] self-start">
+        <Card className="shadow-lg">
           <CardHeader>
-            <CardTitle>Your Order</CardTitle>
+            <CardTitle className="flex items-center gap-3">
+              <ShoppingBasket className="h-6 w-6"/>
+              Your Order
+            </CardTitle>
           </CardHeader>
           <CardContent>
             {cart.length > 0 ? (
               <div className="space-y-4">
-                <div className="max-h-60 overflow-y-auto pr-2">
+                <div className="max-h-64 overflow-y-auto pr-2 -mr-2 space-y-3">
                   {cart.map(item => (
-                    <div key={item.id} className="mb-3 flex items-center justify-between">
+                    <div key={item.id} className="flex items-center justify-between p-2 rounded-lg bg-gray-50">
                       <div>
                         <p className="font-medium">{item.name} ({item.size})</p>
                         <p className="text-sm text-gray-600">
@@ -235,14 +247,16 @@ export function NewOrder({ products = [], loading }: { products: any[], loading:
                     </div>
                   ))}
                 </div>
-                <Button className="w-full" onClick={handlePlaceOrder} disabled={isPlacingOrder}>
-                   {isPlacingOrder ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                  Place Order
-                </Button>
-                 <Button variant="outline" className="w-full" onClick={clearCart}>Clear Cart</Button>
+                 <div className="pt-4 border-t">
+                    <Button className="w-full" onClick={handlePlaceOrder} disabled={isPlacingOrder}>
+                       {isPlacingOrder ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShoppingCart className="mr-2 h-4 w-4" />}
+                      Place Order
+                    </Button>
+                    <Button variant="outline" className="w-full mt-2" onClick={clearCart}>Clear Cart</Button>
+                </div>
               </div>
             ) : (
-              <p className="text-center text-gray-500">Add products to start an order.</p>
+              <p className="text-center text-gray-500 py-8">Add products to start an order.</p>
             )}
           </CardContent>
         </Card>

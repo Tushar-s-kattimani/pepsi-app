@@ -1,0 +1,74 @@
+{
+  "products": [
+    {
+      "id": "1",
+      "src": "https://picsum.photos/seed/product1/400/300",
+      "hint": "beverage bottle"
+    },
+    {
+      "id": "2",
+      "src": "https://picsum.photos/seed/product2/400/300",
+      "hint": "soda can"
+    },
+    {
+      "id": "3",
+      "src": "https://picsum.photos/seed/product3/400/300",
+      "hint": "juice box"
+    },
+    {
+      "id": "4",
+      "src": "https://picsum.photos/seed/product4/400/300",
+      "hint": "water bottle"
+    },
+    {
+      "id": "5",
+      "src": "https://picsum.photos/seed/product5/400/300",
+      "hint": "energy drink"
+    },
+    {
+      "id": "6",
+      "src": "https://picsum.photos/seed/product6/400/300",
+      "hint": "sports drink"
+    },
+    {
+      "id": "7",
+      "src": "https://picsum.photos/seed/product7/400/300",
+      "hint": "iced tea"
+    },
+    {
+      "id": "8",
+      "src": "https://picsum.photos/seed/product8/400/300",
+      "hint": "cola bottle"
+    },
+    {
+      "id": "9",
+      "src": "https://picsum.photos/seed/product9/400/300",
+      "hint": "lemonade pitcher"
+    },
+    {
+      "id": "10",
+      "src": "https://picsum.photos/seed/product10/400/300",
+      "hint": "orange juice"
+    },
+    {
+      "id": "m9TtwQeEThSFrCK9V23s",
+      "src": "https://picsum.photos/seed/product11/400/300",
+      "hint": "beverage bottle"
+    },
+    {
+      "id": "U35vMpF0D0j9v3M3pW0I",
+      "src": "https://picsum.photos/seed/product12/400/300",
+      "hint": "soda can"
+    },
+    {
+      "id": "kU3dJ2G7qS8oN1pE5H0w",
+      "src": "https://picsum.photos/seed/product13/400/300",
+      "hint": "juice box"
+    },
+    {
+      "id": "default",
+      "src": "https://picsum.photos/seed/product-default/400/300",
+      "hint": "beverage"
+    }
+  ]
+}
