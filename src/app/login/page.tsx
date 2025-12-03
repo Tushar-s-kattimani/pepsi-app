@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2, Package, User as UserIcon, Shield, MailWarning } from 'lucide-react';
 import { auth } from '@/firebase/config';
+import Link from 'next/link';
 
 export default function LoginPage() {
   const [shopEmail, setShopEmail] = useState('');
@@ -20,7 +21,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [showVerificationMessage, setShowVerificationMessage] = useState(false);
 
-  const { signUp, signIn, user, loading: authLoading } = useUser();
+  const { signIn, user, loading: authLoading, signUp } = useUser();
   const router = useRouter();
 
   useEffect(() => {
@@ -28,36 +29,6 @@ export default function LoginPage() {
       router.push('/');
     }
   }, [user, authLoading, router]);
-
-  const handleShopSignUp = async () => {
-    if (!shopEmail || !shopPassword) {
-      setError("Email and password cannot be empty.");
-      return;
-    }
-    if (shopPassword.length < 6) {
-      setError("Password must be at least 6 characters long.");
-      return;
-    }
-    if (shopEmail.endsWith('@admin.com')) {
-      setError("This panel is for shop accounts only. Use the Admin panel for admin login.");
-      return;
-    }
-    setLoading(true);
-    setError('');
-    setShowVerificationMessage(false);
-    try {
-      await signUp(shopEmail, shopPassword);
-      setShowVerificationMessage(true);
-    } catch (e: any) {
-      let friendlyMessage = 'An unexpected error occurred during sign up.';
-      if (e.code === 'auth/email-already-in-use') {
-        friendlyMessage = 'An account with this email already exists. Please sign in or verify your email.';
-      }
-      setError(friendlyMessage);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleShopSignIn = async () => {
     if (!shopEmail || !shopPassword) {
@@ -110,6 +81,7 @@ export default function LoginPage() {
       if (e.code === 'auth/user-not-found') {
         // If user not found, try to sign them up as an admin
         try {
+          // This uses the main signUp function which is now configured to handle admins correctly
           await signUp(adminEmail, adminPassword);
         } catch (signUpError: any) {
            let friendlyMessage = 'An unexpected error occurred during sign up.';
@@ -150,7 +122,7 @@ export default function LoginPage() {
             </div>
           <CardTitle className="text-3xl font-bold tracking-tight">Distribution Hub</CardTitle>
           <CardDescription className="text-base text-muted-foreground">
-            Select your role to sign in or create an account
+            Select your role to sign in
           </CardDescription>
         </CardHeader>
         <CardContent className="pb-8 px-8">
@@ -174,7 +146,7 @@ export default function LoginPage() {
                     <Input
                     id="shop-password"
                     type="password"
-                    placeholder="Password (min. 6 characters)"
+                    placeholder="Password"
                     value={shopPassword}
                     onChange={(e) => setShopPassword(e.target.value)}
                     disabled={loading}
@@ -185,7 +157,7 @@ export default function LoginPage() {
                 {showVerificationMessage && (
                   <div className="flex items-center gap-3 rounded-md bg-green-50 p-3 text-green-800">
                     <MailWarning className="h-6 w-6 flex-shrink-0" />
-                    <p className="text-sm font-medium">Account created! Please check your email inbox to verify your account before signing in.</p>
+                    <p className="text-sm font-medium">Please check your email inbox to verify your account before signing in.</p>
                   </div>
                 )}
                 <div className="space-y-3 pt-2">
@@ -196,14 +168,12 @@ export default function LoginPage() {
                     >
                     {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : 'Sign In'}
                     </Button>
-                    <Button
-                    onClick={handleShopSignUp}
-                    disabled={loading}
-                    variant="outline"
-                    className="w-full py-6 text-lg"
-                    >
-                    {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : 'Create Account'}
-                    </Button>
+                     <p className="text-center text-sm text-muted-foreground">
+                        Don&apos;t have an account?{' '}
+                        <Link href="/signup" className="font-semibold text-primary hover:underline">
+                            Create one
+                        </Link>
+                    </p>
                 </div>
             </TabsContent>
 
