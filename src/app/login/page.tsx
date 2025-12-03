@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Package, User as UserIcon, Shield } from 'lucide-react';
+import { Loader2, Package, User as UserIcon, Shield, MailWarning } from 'lucide-react';
+import { auth } from '@/firebase/config';
 
 export default function LoginPage() {
   const [shopEmail, setShopEmail] = useState('');
@@ -17,6 +18,8 @@ export default function LoginPage() {
 
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showVerificationMessage, setShowVerificationMessage] = useState(false);
+
   const { signUp, signIn, user, loading: authLoading } = useUser();
   const router = useRouter();
 
@@ -26,12 +29,12 @@ export default function LoginPage() {
     }
   }, [user, authLoading, router]);
 
-  const handleShopAuth = async (action: (email: string, pass:string) => Promise<any>) => {
+  const handleShopSignUp = async () => {
     if (!shopEmail || !shopPassword) {
       setError("Email and password cannot be empty.");
       return;
     }
-    if (action === signUp && shopPassword.length < 6) {
+    if (shopPassword.length < 6) {
       setError("Password must be at least 6 characters long.");
       return;
     }
@@ -41,21 +44,53 @@ export default function LoginPage() {
     }
     setLoading(true);
     setError('');
+    setShowVerificationMessage(false);
     try {
-      await action(shopEmail, shopPassword);
-      // The useEffect will handle the redirect
+      await signUp(shopEmail, shopPassword);
+      setShowVerificationMessage(true);
     } catch (e: any) {
-      let friendlyMessage = 'An unexpected error occurred.';
-      if (e.code === 'auth/user-not-found' || e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential') {
-        friendlyMessage = 'Invalid email or password. Please try again.';
-      } else if (e.code === 'auth/email-already-in-use') {
-        friendlyMessage = 'An account with this email already exists. Please sign in.';
+      let friendlyMessage = 'An unexpected error occurred during sign up.';
+      if (e.code === 'auth/email-already-in-use') {
+        friendlyMessage = 'An account with this email already exists. Please sign in or verify your email.';
       }
       setError(friendlyMessage);
     } finally {
       setLoading(false);
     }
   };
+
+  const handleShopSignIn = async () => {
+    if (!shopEmail || !shopPassword) {
+      setError("Email and password cannot be empty.");
+      return;
+    }
+     if (shopEmail.endsWith('@admin.com')) {
+      setError("This panel is for shop accounts only. Use the Admin panel for admin login.");
+      return;
+    }
+    setLoading(true);
+    setError('');
+    setShowVerificationMessage(false);
+    try {
+      const userCredential = await signIn(shopEmail, shopPassword);
+      // After successful sign-in attempt, check if email is verified
+      if (userCredential.user && !userCredential.user.emailVerified) {
+        // User is not an admin and email is not verified
+        setError('Please verify your email address to log in. Check your inbox for a verification link.');
+        await auth.signOut(); // Sign them out again
+      }
+      // If verified, the useEffect will redirect
+    } catch (e: any) {
+      let friendlyMessage = 'An unexpected error occurred.';
+      if (e.code === 'auth/user-not-found' || e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential') {
+        friendlyMessage = 'Invalid email or password. Please try again.';
+      }
+      setError(friendlyMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
 
   const handleAdminSignIn = async () => {
     if (!adminEmail || !adminPassword) {
@@ -68,11 +103,12 @@ export default function LoginPage() {
     }
     setLoading(true);
     setError('');
+    setShowVerificationMessage(false);
     try {
       await signIn(adminEmail, adminPassword);
     } catch (e: any) {
       if (e.code === 'auth/user-not-found') {
-        // If user not found, try to sign them up
+        // If user not found, try to sign them up as an admin
         try {
           await signUp(adminEmail, adminPassword);
         } catch (signUpError: any) {
@@ -118,7 +154,7 @@ export default function LoginPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="pb-8 px-8">
-          <Tabs defaultValue="shop" className="w-full" onValueChange={() => setError('')}>
+          <Tabs defaultValue="shop" className="w-full" onValueChange={() => {setError(''); setShowVerificationMessage(false);}}>
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="shop"><UserIcon className="mr-2 h-4 w-4" /> Shop</TabsTrigger>
               <TabsTrigger value="admin"><Shield className="mr-2 h-4 w-4" /> Admin</TabsTrigger>
@@ -146,16 +182,22 @@ export default function LoginPage() {
                     />
                 </div>
                 {error && <p className="text-sm text-center font-medium text-red-500">{error}</p>}
+                {showVerificationMessage && (
+                  <div className="flex items-center gap-3 rounded-md bg-green-50 p-3 text-green-800">
+                    <MailWarning className="h-6 w-6 flex-shrink-0" />
+                    <p className="text-sm font-medium">Account created! Please check your email inbox to verify your account before signing in.</p>
+                  </div>
+                )}
                 <div className="space-y-3 pt-2">
                     <Button
-                    onClick={() => handleShopAuth(signIn)}
+                    onClick={handleShopSignIn}
                     disabled={loading}
                     className="w-full py-6 text-lg"
                     >
                     {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : 'Sign In'}
                     </Button>
                     <Button
-                    onClick={() => handleShopAuth(signUp)}
+                    onClick={handleShopSignUp}
                     disabled={loading}
                     variant="outline"
                     className="w-full py-6 text-lg"
