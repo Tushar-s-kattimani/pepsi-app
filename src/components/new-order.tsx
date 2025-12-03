@@ -157,9 +157,9 @@ export function NewOrder({ products = [], loading }: { products: any[], loading:
             {loading ? (
               <div className="flex justify-center py-10"><Loader2 className="h-8 w-8 animate-spin" /></div>
             ) : (
-              <div className="flex gap-4 overflow-x-auto pb-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {products.map((product) => (
-                  <Card key={product.id} className="min-w-[300px] flex flex-col">
+                  <Card key={product.id} className="flex flex-col">
                     <CardHeader>
                        <CardTitle className="text-lg flex items-center gap-3">
                           <Package className="h-6 w-6 text-muted-foreground" />
