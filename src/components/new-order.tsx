@@ -157,16 +157,16 @@ export function NewOrder({ products = [], loading }: { products: any[], loading:
             {loading ? (
               <div className="flex justify-center py-10"><Loader2 className="h-8 w-8 animate-spin" /></div>
             ) : (
-              <div className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                 {products.map((product) => (
-                  <Card key={product.id} className="flex flex-col sm:flex-row">
+                  <Card key={product.id} className="flex flex-col">
                     <CardHeader className="flex-1">
                        <CardTitle className="text-lg flex items-center gap-3">
                           <Package className="h-6 w-6 text-muted-foreground" />
                           {product.name}
                         </CardTitle>
                     </CardHeader>
-                     <CardContent className="flex-1 space-y-3 pt-6 sm:pt-6">
+                     <CardContent className="flex-1 space-y-3">
                         <div className="flex justify-between items-center text-sm">
                             <span className="font-medium text-muted-foreground">Size:</span>
                             <span className="font-bold">{product.size}</span>
@@ -176,11 +176,11 @@ export function NewOrder({ products = [], loading }: { products: any[], loading:
                             <span className={`font-bold ${product.stock === 0 ? 'text-red-600' : 'text-green-600'}`}>{product.stock > 0 ? `${product.stock} units` : 'Out of Stock'}</span>
                         </div>
                     </CardContent>
-                    <CardFooter className="flex-1 items-center">
+                    <CardFooter className="flex-col items-stretch space-y-2">
                       {product.stock > 0 ? (
-                          <div className="flex w-full items-center justify-between gap-2">
-                            <div className="flex items-center gap-1">
-                               <Button variant="outline" size="icon" className="h-9 w-9" onClick={() => handleQuantityChange(product.id, (quantities[product.id] || 1) - 1)}>
+                          <>
+                            <div className="flex w-full items-center justify-between gap-2">
+                                <Button variant="outline" size="icon" className="h-9 w-9" onClick={() => handleQuantityChange(product.id, (quantities[product.id] || 1) - 1)}>
                                 <Minus className="h-4 w-4" />
                               </Button>
                               <Input
@@ -194,10 +194,10 @@ export function NewOrder({ products = [], loading }: { products: any[], loading:
                                 <Plus className="h-4 w-4" />
                               </Button>
                             </div>
-                            <Button size="sm" onClick={() => handleAddToCart(product)} className="h-9">
+                            <Button size="sm" onClick={() => handleAddToCart(product)} className="w-full h-9">
                               <PlusCircle className="mr-2 h-4 w-4" /> Add
                             </Button>
-                          </div>
+                          </>
                         ) : (
                            <Button size="sm" disabled variant="destructive" className="w-full">
                             Out of stock
