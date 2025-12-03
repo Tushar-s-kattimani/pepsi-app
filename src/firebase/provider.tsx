@@ -18,6 +18,7 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
       setLoading(true);
       if (user) {
         const userRoleGuess = assignUserRole(user.email || '');
+        // For admin, log them in directly. For shops, check if email is verified.
         if (userRoleGuess === 'admin' || user.emailVerified) {
           setUser(user);
           const userDocRef = doc(db, 'users', user.uid);
@@ -27,6 +28,7 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
             const userRole = userDoc.data().role || 'shop';
             setRole(userRole);
           } else {
+            // This case is mainly for the first-time admin login
             const newRole = assignUserRole(user.email || '');
             try {
               const userData: any = {
@@ -35,7 +37,7 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
                 role: newRole,
                 createdAt: serverTimestamp(),
               };
-              if (newRole === 'shop') {
+               if (newRole === 'shop') {
                 userData.profileName = '';
                 userData.phoneNumber = '';
                 userData.shopName = '';
@@ -48,8 +50,8 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
             }
           }
         } else {
-          // This block now mainly serves to prevent login for unverified users
-          // The actual user object is handled on the login page for resending verification
+          // If a shop user is not verified, don't set them as the active user.
+          // The login page will handle the logic for resending the verification email.
           setUser(null);
           setRole(null);
         }
@@ -65,8 +67,10 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
   const signUp = async (email: string, pass: string) => {
     const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
     if (userCredential.user) {
+        // Only send verification for shop users
         if (assignUserRole(email) === 'shop') {
             await sendEmailVerification(userCredential.user);
+            // Sign out the user immediately after sign-up so they have to verify first
             await firebaseSignOut(auth); 
         }
     }

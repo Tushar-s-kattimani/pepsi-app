@@ -180,7 +180,7 @@ export default function LoginPage() {
                 <div className="space-y-3 pt-2">
                     <Button
                     onClick={handleShopSignIn}
-                    disabled={loading}
+                    disabled={loading && !unverifiedUser}
                     className="w-full py-6 text-lg"
                     >
                     {loading && !unverifiedUser ? <Loader2 className="h-6 w-6 animate-spin" /> : 'Sign In'}
