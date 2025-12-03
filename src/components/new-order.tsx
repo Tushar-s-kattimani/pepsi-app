@@ -159,7 +159,7 @@ export function NewOrder({ products = [], loading }: { products: any[], loading:
             ) : (
               <div className="flex gap-4 overflow-x-auto pb-4">
                 {products.map((product) => (
-                  <Card key={product.id} className={`min-w-[300px] flex flex-col ${product.stock === 0 ? 'bg-red-50/50' : 'bg-white'}`}>
+                  <Card key={product.id} className="min-w-[300px] flex flex-col">
                     <CardHeader>
                        <CardTitle className="text-lg flex items-center gap-3">
                           <Package className="h-6 w-6 text-muted-foreground" />
