@@ -6,8 +6,10 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, Package, MailWarning, UserPlus } from 'lucide-react';
+import { Loader2, Package, MailWarning, UserPlus, KeyRound } from 'lucide-react';
 import Link from 'next/link';
+import { useToast } from '@/components/ui/use-toast';
+
 
 export default function SignUpPage() {
   const [email, setEmail] = useState('');
@@ -15,8 +17,10 @@ export default function SignUpPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showVerificationMessage, setShowVerificationMessage] = useState(false);
+  const [emailInUse, setEmailInUse] = useState(false);
 
-  const { signUp } = useUser();
+  const { signUp, sendPasswordReset } = useUser();
+  const { toast } = useToast();
   const router = useRouter();
 
   const handleSignUp = async () => {
@@ -34,6 +38,7 @@ export default function SignUpPage() {
     }
     setLoading(true);
     setError('');
+    setEmailInUse(false);
     setShowVerificationMessage(false);
     try {
       await signUp(email, password);
@@ -41,13 +46,39 @@ export default function SignUpPage() {
     } catch (e: any) {
       let friendlyMessage = 'An unexpected error occurred during sign up.';
       if (e.code === 'auth/email-already-in-use') {
-        friendlyMessage = 'An account with this email already exists. Please sign in instead.';
+        friendlyMessage = 'An account with this email already exists. Forgot your password?';
+        setEmailInUse(true);
       }
       setError(friendlyMessage);
     } finally {
       setLoading(false);
     }
   };
+
+  const handlePasswordReset = async () => {
+    if (!email) {
+      setError("Please enter your email address first.");
+      return;
+    }
+    setLoading(true);
+    try {
+      await sendPasswordReset(email);
+      toast({
+        title: 'Password Reset Email Sent',
+        description: `Please check your inbox at ${email} to reset your password.`,
+      });
+      setError('');
+      setEmailInUse(false);
+    } catch (e: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: `Could not send password reset email. ${e.message}`,
+      });
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
     <div className="flex min-h-screen w-full items-center justify-center bg-gray-100 dark:bg-gray-900 p-4">
@@ -107,6 +138,16 @@ export default function SignUpPage() {
                         >
                         {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : 'Create Account'}
                         </Button>
+                        {emailInUse && (
+                           <Button
+                            variant="secondary"
+                            onClick={handlePasswordReset}
+                            disabled={loading}
+                            className="w-full py-6 text-base"
+                           >
+                            <KeyRound className="mr-2 h-4 w-4" /> Forgot Password?
+                           </Button>
+                        )}
                         <p className="text-center text-sm text-muted-foreground">
                             Already have an account?{' '}
                             <Link href="/login" className="font-semibold text-primary hover:underline">

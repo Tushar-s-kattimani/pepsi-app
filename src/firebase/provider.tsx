@@ -1,7 +1,7 @@
 'use client';
 
 import { ReactNode, useEffect, useState } from 'react';
-import { onAuthStateChanged, User, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut as firebaseSignOut, sendEmailVerification } from 'firebase/auth';
+import { onAuthStateChanged, User, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut as firebaseSignOut, sendEmailVerification, sendPasswordResetEmail } from 'firebase/auth';
 import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { auth, db } from './';
 import { AuthContext } from './auth/use-user';
@@ -77,9 +77,11 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
 
   const signIn = (email: string, pass: string) => signInWithEmailAndPassword(auth, email, pass);
   const signOut = () => firebaseSignOut(auth);
+  const sendPasswordReset = (email: string) => sendPasswordResetEmail(auth, email);
+
 
   return (
-    <AuthContext.Provider value={{ user, loading, role, signUp, signIn, signOut }}>
+    <AuthContext.Provider value={{ user, loading, role, signUp, signIn, signOut, sendPasswordReset }}>
       {children}
       <FirebaseErrorListener />
     </AuthContext.Provider>
