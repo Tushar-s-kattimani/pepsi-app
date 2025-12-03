@@ -8,7 +8,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/firebase/config';
 import { useToast } from '@/components/ui/use-toast';
-import { Loader2, User, Download, Printer, Calendar, Clock, Info, Filter } from 'lucide-react';
+import { Loader2, User, Download, Printer, Calendar, Clock, Info, Filter, Phone } from 'lucide-react';
 import { useMemo, useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 
@@ -202,7 +202,15 @@ export function AllOrders({ orders: initialOrders = [], users = [], loading }: {
                                             </span>
                                           )}
                                         </div>
-                                        <div className="text-sm text-muted-foreground hidden md:block">{shopInfo.location} &bull; {shopInfo.phoneNumber}</div>
+                                        <div className="text-sm text-muted-foreground flex items-center gap-4 mt-1">
+                                            <span>{shopInfo.location}</span>
+                                            {shopInfo.phoneNumber && (
+                                                <a href={`tel:${shopInfo.phoneNumber}`} className="flex items-center gap-1.5 hover:text-primary transition-colors">
+                                                    <Phone className="h-4 w-4" />
+                                                    {shopInfo.phoneNumber}
+                                                </a>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                                 <div className="px-2 py-1 text-xs font-bold text-green-800 bg-green-100 rounded-full inline-block">{orders.length} order(s)</div>
@@ -277,7 +285,3 @@ export function AllOrders({ orders: initialOrders = [], users = [], loading }: {
     </Card>
   );
 }
-
-    
-
-    
