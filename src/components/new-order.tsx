@@ -4,7 +4,7 @@ import { useCart } from '@/context/cart-context';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { useToast } from '@/components/ui/use-toast';
-import { Loader2, PlusCircle, Trash2, Plus, Minus, Package, ShoppingBasket, ShoppingCart } from 'lucide-react';
+import { Loader2, PlusCircle, Trash2, Plus, Minus, ShoppingBasket, ShoppingCart, GlassWater } from 'lucide-react';
 import { collection, serverTimestamp, doc, getDoc, runTransaction } from 'firebase/firestore';
 import { db } from '@/firebase/config';
 import { useUser } from '@/firebase';
@@ -161,7 +161,7 @@ export function NewOrder({ products = [], loading }: { products: any[], loading:
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
                 {products.map((product) => {
-                   const image = placeholderImages.products.find(p => p.id === product.id) || placeholderImages.products[0];
+                   const image = placeholderImages.products.find(p => p.id === product.id) || placeholderImages.products.find(p => p.id === 'default');
                    return (
                     <Card key={product.id} className="flex flex-col overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
                       <div className='relative w-full h-48'>
@@ -175,8 +175,11 @@ export function NewOrder({ products = [], loading }: { products: any[], loading:
                           />
                       </div>
                       <div className="p-4 flex flex-col flex-grow">
-                          <h3 className="font-bold text-lg">{product.name}</h3>
-                          <p className="text-sm text-muted-foreground">{product.size}</p>
+                          <div className="flex items-center gap-2">
+                             <GlassWater className="h-5 w-5 text-primary" />
+                            <h3 className="font-bold text-lg">{product.name}</h3>
+                          </div>
+                          <p className="text-sm text-muted-foreground ml-7">{product.size}</p>
                           <div className="flex-grow"></div>
                           <div className="mt-4 text-sm">
                             <span className={`font-semibold ${product.stock > 0 ? 'text-green-600' : 'text-red-600'}`}>
