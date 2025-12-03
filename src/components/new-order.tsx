@@ -2,10 +2,9 @@
 
 import { useCart } from '@/context/cart-context';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { useToast } from '@/components/ui/use-toast';
-import { Loader2, PlusCircle, Trash2, Plus, Minus } from 'lucide-react';
+import { Loader2, PlusCircle, Trash2, Plus, Minus, Package } from 'lucide-react';
 import { collection, serverTimestamp, doc, getDoc, runTransaction } from 'firebase/firestore';
 import { db } from '@/firebase/config';
 import { useUser } from '@/firebase';
@@ -158,24 +157,28 @@ export function NewOrder({ products = [], loading }: { products: any[], loading:
             {loading ? (
               <div className="flex justify-center py-10"><Loader2 className="h-8 w-8 animate-spin" /></div>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Product</TableHead>
-                    <TableHead>Size</TableHead>
-                    <TableHead>Stock</TableHead>
-                    <TableHead className="text-center">Action</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {products.map((product) => (
-                    <TableRow key={product.id} className={product.stock === 0 ? 'bg-red-50 text-red-900' : ''}>
-                      <TableCell>{product.name}</TableCell>
-                      <TableCell>{product.size}</TableCell>
-                      <TableCell>{product.stock}</TableCell>
-                      <TableCell>
-                        {product.stock > 0 ? (
-                          <div className="flex items-center justify-center gap-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {products.map((product) => (
+                  <Card key={product.id} className={`flex flex-col ${product.stock === 0 ? 'bg-red-50/50' : 'bg-white'}`}>
+                    <CardHeader>
+                       <CardTitle className="text-lg flex items-center gap-3">
+                          <Package className="h-6 w-6 text-muted-foreground" />
+                          {product.name}
+                        </CardTitle>
+                    </CardHeader>
+                     <CardContent className="flex-grow space-y-3">
+                        <div className="flex justify-between items-center text-sm">
+                            <span className="font-medium text-muted-foreground">Size:</span>
+                            <span className="font-bold">{product.size}</span>
+                        </div>
+                         <div className="flex justify-between items-center text-sm">
+                            <span className="font-medium text-muted-foreground">Stock:</span>
+                            <span className={`font-bold ${product.stock === 0 ? 'text-red-600' : 'text-green-600'}`}>{product.stock > 0 ? `${product.stock} units` : 'Out of Stock'}</span>
+                        </div>
+                    </CardContent>
+                    <CardFooter>
+                      {product.stock > 0 ? (
+                          <div className="flex w-full items-center justify-between gap-2">
                             <div className="flex items-center gap-1">
                                <Button variant="outline" size="icon" className="h-9 w-9" onClick={() => handleQuantityChange(product.id, (quantities[product.id] || 1) - 1)}>
                                 <Minus className="h-4 w-4" />
@@ -196,15 +199,14 @@ export function NewOrder({ products = [], loading }: { products: any[], loading:
                             </Button>
                           </div>
                         ) : (
-                           <Button size="sm" disabled variant="destructive">
+                           <Button size="sm" disabled variant="destructive" className="w-full">
                             Out of stock
                           </Button>
                         )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                    </CardFooter>
+                  </Card>
+                ))}
+              </div>
             )}
           </CardContent>
         </Card>
