@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2, Package, User as UserIcon, Shield, MailWarning } from 'lucide-react';
 import { auth } from '@/firebase/config';
 import Link from 'next/link';
+import { useToast } from '@/components/ui/use-toast';
 
 export default function LoginPage() {
   const [shopEmail, setShopEmail] = useState('');
@@ -20,9 +21,11 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showVerificationMessage, setShowVerificationMessage] = useState(false);
+  const [unverifiedUser, setUnverifiedUser] = useState<any | null>(null);
 
-  const { signIn, user, loading: authLoading, signUp } = useUser();
+  const { signIn, user, loading: authLoading, signUp, sendVerificationEmail } = useUser();
   const router = useRouter();
+  const { toast } = useToast();
 
   useEffect(() => {
     if (!authLoading && user) {
@@ -41,16 +44,15 @@ export default function LoginPage() {
     }
     setLoading(true);
     setError('');
+    setUnverifiedUser(null);
     setShowVerificationMessage(false);
     try {
       const userCredential = await signIn(shopEmail, shopPassword);
-      // After successful sign-in attempt, check if email is verified
       if (userCredential.user && !userCredential.user.emailVerified) {
-        // User is not an admin and email is not verified
-        setError('Please verify your email address to log in. Check your inbox for a verification link.');
-        await auth.signOut(); // Sign them out again
+        setError('Please verify your email address to log in.');
+        setUnverifiedUser(userCredential.user); // Store the unverified user object
+        await auth.signOut();
       }
-      // If verified, the useEffect will redirect
     } catch (e: any) {
       let friendlyMessage = 'An unexpected error occurred.';
       if (e.code === 'auth/user-not-found' || e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential') {
@@ -59,6 +61,28 @@ export default function LoginPage() {
       setError(friendlyMessage);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResendVerification = async () => {
+    if (!unverifiedUser) return;
+    setLoading(true);
+    try {
+        await sendVerificationEmail(unverifiedUser);
+        toast({
+            title: 'Verification Email Sent',
+            description: `A new verification link has been sent to ${unverifiedUser.email}.`,
+        });
+        setError('');
+        setUnverifiedUser(null);
+    } catch (error: any) {
+        toast({
+            variant: 'destructive',
+            title: 'Error',
+            description: `Failed to send verification email: ${error.message}`,
+        });
+    } finally {
+        setLoading(false);
     }
   };
 
@@ -77,11 +101,9 @@ export default function LoginPage() {
     setShowVerificationMessage(false);
     try {
       await signIn(adminEmail, adminPassword);
-    } catch (e: any) {
+    } catch (e: any) => {
       if (e.code === 'auth/user-not-found') {
-        // If user not found, try to sign them up as an admin
         try {
-          // This uses the main signUp function which is now configured to handle admins correctly
           await signUp(adminEmail, adminPassword);
         } catch (signUpError: any) {
            let friendlyMessage = 'An unexpected error occurred during sign up.';
@@ -126,7 +148,7 @@ export default function LoginPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="pb-8 px-8">
-          <Tabs defaultValue="shop" className="w-full" onValueChange={() => {setError(''); setShowVerificationMessage(false);}}>
+          <Tabs defaultValue="shop" className="w-full" onValueChange={() => {setError(''); setUnverifiedUser(null); setShowVerificationMessage(false);}}>
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="shop"><UserIcon className="mr-2 h-4 w-4" /> Shop</TabsTrigger>
               <TabsTrigger value="admin"><Shield className="mr-2 h-4 w-4" /> Admin</TabsTrigger>
@@ -154,20 +176,26 @@ export default function LoginPage() {
                     />
                 </div>
                 {error && <p className="text-sm text-center font-medium text-red-500">{error}</p>}
-                {showVerificationMessage && (
-                  <div className="flex items-center gap-3 rounded-md bg-green-50 p-3 text-green-800">
-                    <MailWarning className="h-6 w-6 flex-shrink-0" />
-                    <p className="text-sm font-medium">Please check your email inbox to verify your account before signing in.</p>
-                  </div>
-                )}
+                
                 <div className="space-y-3 pt-2">
                     <Button
                     onClick={handleShopSignIn}
                     disabled={loading}
                     className="w-full py-6 text-lg"
                     >
-                    {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : 'Sign In'}
+                    {loading && !unverifiedUser ? <Loader2 className="h-6 w-6 animate-spin" /> : 'Sign In'}
                     </Button>
+                     {unverifiedUser && (
+                        <Button
+                            variant="secondary"
+                            onClick={handleResendVerification}
+                            disabled={loading}
+                            className="w-full py-6"
+                        >
+                            {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <MailWarning className="mr-2 h-4 w-4" />}
+                            Resend Verification Email
+                        </Button>
+                     )}
                      <p className="text-center text-sm text-muted-foreground">
                         Don&apos;t have an account?{' '}
                         <Link href="/signup" className="font-semibold text-primary hover:underline">

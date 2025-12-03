@@ -11,6 +11,7 @@ interface AuthContextType {
   signIn: (email: string, pass: string) => Promise<any>;
   signOut: () => Promise<void>;
   sendPasswordReset: (email: string) => Promise<void>;
+  sendVerificationEmail: (user: User) => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);

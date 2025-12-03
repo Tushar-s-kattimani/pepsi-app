@@ -17,7 +17,6 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setLoading(true);
       if (user) {
-        // For admin users, bypass email verification check
         const userRoleGuess = assignUserRole(user.email || '');
         if (userRoleGuess === 'admin' || user.emailVerified) {
           setUser(user);
@@ -28,7 +27,6 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
             const userRole = userDoc.data().role || 'shop';
             setRole(userRole);
           } else {
-            // Document doesn't exist, so this is a new sign-up
             const newRole = assignUserRole(user.email || '');
             try {
               const userData: any = {
@@ -50,7 +48,8 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
             }
           }
         } else {
-          // User is not an admin and email is not verified
+          // This block now mainly serves to prevent login for unverified users
+          // The actual user object is handled on the login page for resending verification
           setUser(null);
           setRole(null);
         }
@@ -66,10 +65,9 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
   const signUp = async (email: string, pass: string) => {
     const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
     if (userCredential.user) {
-        // Send verification email only for non-admin users
         if (assignUserRole(email) === 'shop') {
             await sendEmailVerification(userCredential.user);
-            await firebaseSignOut(auth); // Sign out to force verification
+            await firebaseSignOut(auth); 
         }
     }
     return userCredential;
@@ -78,10 +76,11 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
   const signIn = (email: string, pass: string) => signInWithEmailAndPassword(auth, email, pass);
   const signOut = () => firebaseSignOut(auth);
   const sendPasswordReset = (email: string) => sendPasswordResetEmail(auth, email);
+  const sendVerificationEmail = (user: User) => sendEmailVerification(user);
 
 
   return (
-    <AuthContext.Provider value={{ user, loading, role, signUp, signIn, signOut, sendPasswordReset }}>
+    <AuthContext.Provider value={{ user, loading, role, signUp, signIn, signOut, sendPasswordReset, sendVerificationEmail }}>
       {children}
       <FirebaseErrorListener />
     </AuthContext.Provider>
