@@ -11,6 +11,7 @@ import { Loader2, Package, User as UserIcon, Shield, MailWarning } from 'lucide-
 import { auth } from '@/firebase/config';
 import Link from 'next/link';
 import { useToast } from '@/components/ui/use-toast';
+import type { User } from 'firebase/auth';
 
 export default function LoginPage() {
   const [shopEmail, setShopEmail] = useState('');
@@ -20,8 +21,7 @@ export default function LoginPage() {
 
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [showVerificationMessage, setShowVerificationMessage] = useState(false);
-  const [unverifiedUser, setUnverifiedUser] = useState<any | null>(null);
+  const [unverifiedUser, setUnverifiedUser] = useState<User | null>(null);
 
   const { signIn, user, loading: authLoading, signUp, sendVerificationEmail } = useUser();
   const router = useRouter();
@@ -45,13 +45,13 @@ export default function LoginPage() {
     setLoading(true);
     setError('');
     setUnverifiedUser(null);
-    setShowVerificationMessage(false);
+    
     try {
       const userCredential = await signIn(shopEmail, shopPassword);
       if (userCredential.user && !userCredential.user.emailVerified) {
         setError('Please verify your email address to log in.');
-        setUnverifiedUser(userCredential.user); // Store the unverified user object
-        await auth.signOut();
+        setUnverifiedUser(userCredential.user); 
+        await auth.signOut(); // Sign out the unverified user
       }
     } catch (e: any) {
       let friendlyMessage = 'An unexpected error occurred.';
@@ -98,7 +98,7 @@ export default function LoginPage() {
     }
     setLoading(true);
     setError('');
-    setShowVerificationMessage(false);
+    
     try {
       await signIn(adminEmail, adminPassword);
     } catch (e: any) => {
@@ -148,7 +148,7 @@ export default function LoginPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="pb-8 px-8">
-          <Tabs defaultValue="shop" className="w-full" onValueChange={() => {setError(''); setUnverifiedUser(null); setShowVerificationMessage(false);}}>
+          <Tabs defaultValue="shop" className="w-full" onValueChange={() => {setError(''); setUnverifiedUser(null);}}>
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="shop"><UserIcon className="mr-2 h-4 w-4" /> Shop</TabsTrigger>
               <TabsTrigger value="admin"><Shield className="mr-2 h-4 w-4" /> Admin</TabsTrigger>
@@ -192,7 +192,7 @@ export default function LoginPage() {
                             disabled={loading}
                             className="w-full py-6"
                         >
-                            {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <MailWarning className="mr-2 h-4 w-4" />}
+                            {loading && unverifiedUser ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <MailWarning className="mr-2 h-4 w-4" />}
                             Resend Verification Email
                         </Button>
                      )}
