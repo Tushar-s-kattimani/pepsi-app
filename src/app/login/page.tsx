@@ -48,17 +48,24 @@ export default function LoginPage() {
     
     try {
       const userCredential = await signIn(shopEmail, shopPassword);
+      // This part will now only run on successful login
       if (userCredential.user && !userCredential.user.emailVerified) {
+        // This case is for when firebase auto-logs-in a user but they are not verified.
         setError('Please verify your email address to log in.');
         setUnverifiedUser(userCredential.user); 
-        await auth.signOut(); // Sign out the unverified user
+        await auth.signOut();
       }
     } catch (e: any) {
-      let friendlyMessage = 'An unexpected error occurred.';
-      if (e.code === 'auth/user-not-found' || e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential') {
+       // This block now correctly handles login failures
+       if (e.code === 'auth/unverified-email') {
+         setError('Please verify your email address to log in.');
+         setUnverifiedUser(e.unverifiedUser);
+       } else if (e.code === 'auth/user-not-found' || e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential') {
         friendlyMessage = 'Invalid email or password. Please try again.';
+      } else {
+        setError('An unexpected error occurred. Please try again.');
+        console.error(e); // Log the full error for debugging
       }
-      setError(friendlyMessage);
     } finally {
       setLoading(false);
     }
@@ -101,7 +108,7 @@ export default function LoginPage() {
     
     try {
       await signIn(adminEmail, adminPassword);
-    } catch (e: any) => {
+    } catch (e: any) {
       if (e.code === 'auth/user-not-found') {
         try {
           await signUp(adminEmail, adminPassword);
@@ -180,7 +187,7 @@ export default function LoginPage() {
                 <div className="space-y-3 pt-2">
                     <Button
                     onClick={handleShopSignIn}
-                    disabled={loading && !unverifiedUser}
+                    disabled={loading}
                     className="w-full py-6 text-lg"
                     >
                     {loading && !unverifiedUser ? <Loader2 className="h-6 w-6 animate-spin" /> : 'Sign In'}
@@ -247,3 +254,5 @@ export default function LoginPage() {
     </div>
   );
 }
+
+    

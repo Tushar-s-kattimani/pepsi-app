@@ -17,43 +17,39 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setLoading(true);
       if (user) {
-        const userRoleGuess = assignUserRole(user.email || '');
-        // For admin, log them in directly. For shops, check if email is verified.
-        if (userRoleGuess === 'admin' || user.emailVerified) {
+        // We only automatically sign in verified users or admins
+        if (user.emailVerified || assignUserRole(user.email || '') === 'admin') {
           setUser(user);
           const userDocRef = doc(db, 'users', user.uid);
           const userDoc = await getDoc(userDocRef);
 
           if (userDoc.exists()) {
-            const userRole = userDoc.data().role || 'shop';
-            setRole(userRole);
+            setRole(userDoc.data().role || 'shop');
           } else {
-            // This case is mainly for the first-time admin login
+            // New user (likely first-time admin)
             const newRole = assignUserRole(user.email || '');
-            try {
-              const userData: any = {
-                uid: user.uid,
-                email: user.email,
-                role: newRole,
-                createdAt: serverTimestamp(),
-              };
-               if (newRole === 'shop') {
-                userData.profileName = '';
-                userData.phoneNumber = '';
-                userData.shopName = '';
-                userData.location = '';
-              }
-              await setDoc(userDocRef, userData);
-              setRole(newRole);
-            } catch (error) {
-              console.error("Error creating user document:", error);
+            const userData: any = {
+              uid: user.uid,
+              email: user.email,
+              role: newRole,
+              createdAt: serverTimestamp(),
+            };
+             if (newRole === 'shop') {
+              userData.profileName = '';
+              userData.phoneNumber = '';
+              userData.shopName = '';
+              userData.location = '';
             }
+            await setDoc(userDocRef, userData);
+            setRole(newRole);
           }
         } else {
-          // If a shop user is not verified, don't set them as the active user.
-          // The login page will handle the logic for resending the verification email.
+          // User exists but is not verified, so we don't sign them in.
+          // The login page will handle the verification prompt.
           setUser(null);
           setRole(null);
+          // We sign them out to prevent access to authenticated routes
+          await firebaseSignOut(auth);
         }
       } else {
         setUser(null);
@@ -66,18 +62,33 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
 
   const signUp = async (email: string, pass: string) => {
     const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
-    if (userCredential.user) {
-        // Only send verification for shop users
-        if (assignUserRole(email) === 'shop') {
-            await sendEmailVerification(userCredential.user);
-            // Sign out the user immediately after sign-up so they have to verify first
-            await firebaseSignOut(auth); 
-        }
+    if (userCredential.user && assignUserRole(email) === 'shop') {
+      await sendEmailVerification(userCredential.user);
+      // Sign out immediately so they must verify first.
+      await firebaseSignout(auth); 
     }
     return userCredential;
   };
 
-  const signIn = (email: string, pass: string) => signInWithEmailAndPassword(auth, email, pass);
+  const signIn = async (email: string, pass: string) => {
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, email, pass);
+      if (userCredential.user && !userCredential.user.emailVerified && assignUserRole(email) === 'shop') {
+          // Don't let the provider auto-sign them in.
+          await firebaseSignOut(auth); 
+          // Throw a custom error for the login page to catch.
+          const error: any = new Error("Email not verified");
+          error.code = 'auth/unverified-email';
+          error.unverifiedUser = userCredential.user; // Attach the user object
+          throw error;
+      }
+      return userCredential;
+    } catch (error: any) {
+        // Re-throw the error to be caught by the UI
+        throw error;
+    }
+  };
+
   const signOut = () => firebaseSignOut(auth);
   const sendPasswordReset = (email: string) => sendPasswordResetEmail(auth, email);
   const sendVerificationEmail = (user: User) => sendEmailVerification(user);
@@ -90,3 +101,5 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
     </AuthContext.Provider>
   );
 }
+
+    
