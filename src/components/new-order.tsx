@@ -4,7 +4,7 @@ import { useCart } from '@/context/cart-context';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { useToast } from '@/components/ui/use-toast';
-import { Loader2, PlusCircle, Trash2, Plus, Minus, ShoppingBasket, ShoppingCart, GlassWater } from 'lucide-react';
+import { Loader2, PlusCircle, Trash2, Plus, Minus, ShoppingBasket, ShoppingCart } from 'lucide-react';
 import { collection, serverTimestamp, doc, getDoc, runTransaction } from 'firebase/firestore';
 import { db } from '@/firebase/config';
 import { useUser } from '@/firebase';
@@ -12,8 +12,6 @@ import { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError, SecurityRuleContext } from '@/firebase/errors';
-import Image from 'next/image';
-import placeholderImages from '@/app/lib/placeholder-images.json';
 import { PepsiBottleLogo } from './pepsi-logo';
 
 
@@ -162,19 +160,8 @@ export function NewOrder({ products = [], loading }: { products: any[], loading:
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
                 {products.map((product) => {
-                   const image = placeholderImages.products.find(p => p.id === product.id) || placeholderImages.products.find(p => p.id === 'default');
                    return (
                     <Card key={product.id} className="flex flex-col overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
-                      <div className='relative w-full h-48'>
-                         <Image 
-                            src={image.src}
-                            alt={product.name}
-                            fill
-                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                            className="object-cover"
-                            data-ai-hint={image.hint}
-                          />
-                      </div>
                       <div className="p-4 flex flex-col flex-grow">
                           <div className="flex items-center gap-2">
                              <div className="h-8 w-8 flex-shrink-0">
