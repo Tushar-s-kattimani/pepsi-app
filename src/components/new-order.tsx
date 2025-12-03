@@ -14,6 +14,7 @@ import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError, SecurityRuleContext } from '@/firebase/errors';
 import Image from 'next/image';
 import placeholderImages from '@/app/lib/placeholder-images.json';
+import { PepsiBottleLogo } from './pepsi-logo';
 
 
 export function NewOrder({ products = [], loading }: { products: any[], loading: boolean }) {
@@ -176,10 +177,12 @@ export function NewOrder({ products = [], loading }: { products: any[], loading:
                       </div>
                       <div className="p-4 flex flex-col flex-grow">
                           <div className="flex items-center gap-2">
-                             <GlassWater className="h-5 w-5 text-primary" />
+                             <div className="h-8 w-8 flex-shrink-0">
+                                <PepsiBottleLogo />
+                              </div>
                             <h3 className="font-bold text-lg">{product.name}</h3>
                           </div>
-                          <p className="text-sm text-muted-foreground ml-7">{product.size}</p>
+                          <p className="text-sm text-muted-foreground ml-10">{product.size}</p>
                           <div className="flex-grow"></div>
                           <div className="mt-4 text-sm">
                             <span className={`font-semibold ${product.stock > 0 ? 'text-green-600' : 'text-red-600'}`}>
