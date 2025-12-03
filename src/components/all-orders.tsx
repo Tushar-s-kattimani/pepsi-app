@@ -246,7 +246,7 @@ export function AllOrders({ orders: initialOrders = [], users = [], loading }: {
                                         <TableBody>
                                             {order.items.map((item: any) => (
                                             <TableRow key={`${item.id}-${item.size}`}>
-                                                <TableCell>{item.name} <span className="text-muted-foreground">({item.size})</span></TableCell>
+                                                <TableCell>{item.name}</TableCell>
                                                 <TableCell>{item.size}</TableCell>
                                                 <TableCell className='text-center'>{item.quantity}</TableCell>
                                             </TableRow>
