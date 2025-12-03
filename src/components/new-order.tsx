@@ -157,16 +157,16 @@ export function NewOrder({ products = [], loading }: { products: any[], loading:
             {loading ? (
               <div className="flex justify-center py-10"><Loader2 className="h-8 w-8 animate-spin" /></div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="space-y-4">
                 {products.map((product) => (
-                  <Card key={product.id} className="flex flex-col">
-                    <CardHeader>
+                  <Card key={product.id} className="flex flex-col sm:flex-row">
+                    <CardHeader className="flex-1">
                        <CardTitle className="text-lg flex items-center gap-3">
                           <Package className="h-6 w-6 text-muted-foreground" />
                           {product.name}
                         </CardTitle>
                     </CardHeader>
-                     <CardContent className="flex-grow space-y-3">
+                     <CardContent className="flex-1 space-y-3 pt-6 sm:pt-6">
                         <div className="flex justify-between items-center text-sm">
                             <span className="font-medium text-muted-foreground">Size:</span>
                             <span className="font-bold">{product.size}</span>
@@ -176,7 +176,7 @@ export function NewOrder({ products = [], loading }: { products: any[], loading:
                             <span className={`font-bold ${product.stock === 0 ? 'text-red-600' : 'text-green-600'}`}>{product.stock > 0 ? `${product.stock} units` : 'Out of Stock'}</span>
                         </div>
                     </CardContent>
-                    <CardFooter>
+                    <CardFooter className="flex-1 items-center">
                       {product.stock > 0 ? (
                           <div className="flex w-full items-center justify-between gap-2">
                             <div className="flex items-center gap-1">
