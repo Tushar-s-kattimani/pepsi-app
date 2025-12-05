@@ -30,7 +30,7 @@ export function LaborAttendance() {
 
   useEffect(() => {
     const fetchAttendance = async () => {
-      if (!attendanceQuery) return;
+      if (!attendanceQuery || laborersLoading) return;
       setIsLoading(true);
       try {
         const querySnapshot = await getDocs(attendanceQuery);
@@ -59,9 +59,9 @@ export function LaborAttendance() {
         setIsLoading(false);
       }
     };
-    if (!laborersLoading){
-        fetchAttendance();
-    }
+    
+    fetchAttendance();
+    
   }, [attendanceQuery, laborers, laborersLoading, toast, selectedDate]);
 
 
@@ -91,7 +91,9 @@ export function LaborAttendance() {
           const docRef = doc(db, 'attendance', docId);
           await updateDoc(docRef, dataToSave);
         } else { // New record
-          await addDoc(collection(db, 'attendance'), dataToSave);
+          if(dataToSave.status !== 'Absent' || dataToSave.checkIn) {
+            await addDoc(collection(db, 'attendance'), dataToSave);
+          }
         }
       }
       toast({ title: 'Success', description: 'Attendance saved successfully.' });
