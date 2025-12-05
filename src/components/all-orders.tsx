@@ -187,8 +187,8 @@ export function AllOrders({ orders: initialOrders = [], users = [], loading }: {
                       const hasPending = orders.some((order: any) => order.status === 'Pending');
                       return (
                       <AccordionItem value={shopInfo.id} key={shopInfo.id} className="border-t">
-                        <div className="flex items-center">
-                          <AccordionTrigger className="p-4 hover:no-underline flex-grow">
+                        <div className="flex items-center p-4">
+                          <AccordionTrigger className="p-0 hover:no-underline flex-grow">
                               <div className="flex justify-between w-full items-center pr-4">
                                   <div className='flex items-center gap-3'>
                                       <User className="h-5 w-5 text-gray-500" />
@@ -211,7 +211,7 @@ export function AllOrders({ orders: initialOrders = [], users = [], loading }: {
                               </div>
                           </AccordionTrigger>
                            {shopInfo.phoneNumber && (
-                                <a href={`tel:${shopInfo.phoneNumber}`} className="flex items-center mr-4">
+                                <a href={`tel:${shopInfo.phoneNumber}`} className="flex items-center ml-2">
                                     <Button variant="outline" size="icon" className="h-8 w-8">
                                         <Phone className="h-4 w-4" />
                                         <span className="sr-only">Call {shopInfo.shopName}</span>
