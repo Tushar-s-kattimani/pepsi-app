@@ -65,7 +65,7 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
     if (userCredential.user && assignUserRole(email) === 'shop') {
       await sendEmailVerification(userCredential.user);
       // Sign out immediately so they must verify first.
-      await firebaseSignout(auth); 
+      await firebaseSignOut(auth); 
     }
     return userCredential;
   };
@@ -101,5 +101,3 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
     </AuthContext.Provider>
   );
 }
-
-    
