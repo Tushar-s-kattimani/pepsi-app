@@ -258,12 +258,6 @@ export function AllOrders({ orders: initialOrders = [], users = [], loading }: {
                                             <div className="font-bold text-lg">
                                                 Total Items: {order.items.reduce((acc: number, item: any) => acc + item.quantity, 0)}
                                             </div>
-                                             {shopInfo.phoneNumber && (
-                                                <a href={`tel:${shopInfo.phoneNumber}`} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors">
-                                                    <Phone className="h-4 w-4" />
-                                                    {shopInfo.phoneNumber}
-                                                </a>
-                                            )}
                                         </div>
                                         <div className="no-print">
                                             <Select onValueChange={(value) => handleStatusChange(order.id, value)} defaultValue={order.status}>
