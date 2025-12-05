@@ -187,36 +187,38 @@ export function AllOrders({ orders: initialOrders = [], users = [], loading }: {
                       const hasPending = orders.some((order: any) => order.status === 'Pending');
                       return (
                       <AccordionItem value={shopInfo.id} key={shopInfo.id} className="border-t">
-                        <AccordionTrigger className="p-4 hover:no-underline">
-                            <div className="flex justify-between w-full items-center pr-4">
-                                <div className='flex items-center gap-3'>
-                                    <User className="h-5 w-5 text-gray-500" />
-                                    <div className="text-left">
-                                        <div className="font-semibold text-base">
-                                          {shopInfo.shopName}
-                                           {hasPending && (
-                                            <span className="ml-2 inline-flex items-center gap-1.5 animate-blink text-red-600 font-bold">
-                                                <Clock className="h-4 w-4" />
-                                                Pending
-                                            </span>
-                                          )}
-                                        </div>
-                                        <div className="text-sm text-muted-foreground flex items-center gap-2 mt-1">
-                                            <span>{shopInfo.location}</span>
-                                            {shopInfo.phoneNumber && (
-                                                <a href={`tel:${shopInfo.phoneNumber}`} className="flex items-center">
-                                                    <Button variant="outline" size="icon" className="h-8 w-8">
-                                                        <Phone className="h-4 w-4" />
-                                                        <span className="sr-only">Call {shopInfo.shopName}</span>
-                                                    </Button>
-                                                </a>
+                        <div className="flex items-center">
+                          <AccordionTrigger className="p-4 hover:no-underline flex-grow">
+                              <div className="flex justify-between w-full items-center pr-4">
+                                  <div className='flex items-center gap-3'>
+                                      <User className="h-5 w-5 text-gray-500" />
+                                      <div className="text-left">
+                                          <div className="font-semibold text-base">
+                                            {shopInfo.shopName}
+                                             {hasPending && (
+                                              <span className="ml-2 inline-flex items-center gap-1.5 animate-blink text-red-600 font-bold">
+                                                  <Clock className="h-4 w-4" />
+                                                  Pending
+                                              </span>
                                             )}
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="px-2 py-1 text-xs font-bold text-green-800 bg-green-100 rounded-full inline-block">{orders.length} order(s)</div>
-                            </div>
-                        </AccordionTrigger>
+                                          </div>
+                                          <div className="text-sm text-muted-foreground flex items-center gap-2 mt-1">
+                                              <span>{shopInfo.location}</span>
+                                          </div>
+                                      </div>
+                                  </div>
+                                  <div className="px-2 py-1 text-xs font-bold text-green-800 bg-green-100 rounded-full inline-block">{orders.length} order(s)</div>
+                              </div>
+                          </AccordionTrigger>
+                           {shopInfo.phoneNumber && (
+                                <a href={`tel:${shopInfo.phoneNumber}`} className="flex items-center mr-4">
+                                    <Button variant="outline" size="icon" className="h-8 w-8">
+                                        <Phone className="h-4 w-4" />
+                                        <span className="sr-only">Call {shopInfo.shopName}</span>
+                                    </Button>
+                                </a>
+                            )}
+                        </div>
                         <AccordionContent className="pb-2 px-4 bg-gray-50/50">
                             {orders.map((order: any) => (
                                 <div key={order.id} className="mb-4 border rounded-lg p-4 bg-white mt-2">
