@@ -56,6 +56,7 @@ export default function LoginPage() {
         await auth.signOut();
       }
     } catch (e: any) {
+       let friendlyMessage = 'An unexpected error occurred. Please try again.';
        // This block now correctly handles login failures
        if (e.code === 'auth/unverified-email') {
          setError('Please verify your email address to log in.');
@@ -65,6 +66,9 @@ export default function LoginPage() {
       } else {
         setError('An unexpected error occurred. Please try again.');
         console.error(e); // Log the full error for debugging
+      }
+      if(friendlyMessage && e.code !== 'auth/unverified-email'){
+        setError(friendlyMessage)
       }
     } finally {
       setLoading(false);
@@ -145,23 +149,23 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen w-full items-center justify-center bg-gray-100 dark:bg-gray-900 p-4">
       <Card className="w-full max-w-md shadow-2xl">
-        <CardHeader className="text-center space-y-4 pt-8">
-            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg">
-                <Package className="h-10 w-10" />
+        <CardHeader className="text-center space-y-2 pt-6 sm:pt-8">
+            <div className="mx-auto flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg">
+                <Package className="h-8 w-8 sm:h-10 sm:w-10" />
             </div>
-          <CardTitle className="text-3xl font-bold tracking-tight">Distribution Hub</CardTitle>
-          <CardDescription className="text-base text-muted-foreground">
+          <CardTitle className="text-2xl sm:text-3xl font-bold tracking-tight">Distribution Hub</CardTitle>
+          <CardDescription className="text-sm sm:text-base text-muted-foreground">
             Select your role to sign in
           </CardDescription>
         </CardHeader>
-        <CardContent className="pb-8 px-8">
+        <CardContent className="pb-6 sm:pb-8 px-4 sm:px-8">
           <Tabs defaultValue="shop" className="w-full" onValueChange={() => {setError(''); setUnverifiedUser(null);}}>
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="shop"><UserIcon className="mr-2 h-4 w-4" /> Shop</TabsTrigger>
               <TabsTrigger value="admin"><Shield className="mr-2 h-4 w-4" /> Admin</TabsTrigger>
             </TabsList>
             
-            <TabsContent value="shop" className="space-y-6 pt-6">
+            <TabsContent value="shop" className="space-y-4 pt-4">
                 <div className="space-y-4">
                     <Input
                     id="shop-email"
@@ -170,7 +174,7 @@ export default function LoginPage() {
                     value={shopEmail}
                     onChange={(e) => setShopEmail(e.target.value)}
                     disabled={loading}
-                    className="py-6 text-base"
+                    className="py-5 sm:py-6 text-base"
                     />
                     <Input
                     id="shop-password"
@@ -179,7 +183,7 @@ export default function LoginPage() {
                     value={shopPassword}
                     onChange={(e) => setShopPassword(e.target.value)}
                     disabled={loading}
-                    className="py-6 text-base"
+                    className="py-5 sm:py-6 text-base"
                     />
                 </div>
                 {error && <p className="text-sm text-center font-medium text-red-500">{error}</p>}
@@ -188,7 +192,7 @@ export default function LoginPage() {
                     <Button
                     onClick={handleShopSignIn}
                     disabled={loading}
-                    className="w-full py-6 text-lg"
+                    className="w-full py-5 sm:py-6 text-base sm:text-lg"
                     >
                     {loading && !unverifiedUser ? <Loader2 className="h-6 w-6 animate-spin" /> : 'Sign In'}
                     </Button>
@@ -197,7 +201,7 @@ export default function LoginPage() {
                             variant="secondary"
                             onClick={handleResendVerification}
                             disabled={loading}
-                            className="w-full py-6"
+                            className="w-full py-5 sm:py-6"
                         >
                             {loading && unverifiedUser ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <MailWarning className="mr-2 h-4 w-4" />}
                             Resend Verification Email
@@ -212,7 +216,7 @@ export default function LoginPage() {
                 </div>
             </TabsContent>
 
-            <TabsContent value="admin" className="space-y-6 pt-6">
+            <TabsContent value="admin" className="space-y-4 pt-4">
                  <div className="space-y-4">
                     <Input
                     id="admin-email"
@@ -221,7 +225,7 @@ export default function LoginPage() {
                     value={adminEmail}
                     onChange={(e) => setAdminEmail(e.target.value)}
                     disabled={loading}
-                    className="py-6 text-base"
+                    className="py-5 sm:py-6 text-base"
                     />
                     <Input
                     id="admin-password"
@@ -230,7 +234,7 @@ export default function LoginPage() {
                     value={adminPassword}
                     onChange={(e) => setAdminPassword(e.target.value)}
                     disabled={loading}
-                    className="py-6 text-base"
+                    className="py-5 sm:py-6 text-base"
                     />
                 </div>
                 {error && <p className="text-sm text-center font-medium text-red-500">{error}</p>}
@@ -238,7 +242,7 @@ export default function LoginPage() {
                     <Button
                         onClick={handleAdminSignIn}
                         disabled={loading}
-                        className="w-full py-6 text-lg"
+                        className="w-full py-5 sm:py-6 text-base sm:text-lg"
                     >
                         {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : 'Sign In as Admin'}
                     </Button>
@@ -254,5 +258,3 @@ export default function LoginPage() {
     </div>
   );
 }
-
-    

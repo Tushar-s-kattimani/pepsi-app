@@ -214,7 +214,7 @@ export function NewOrder({ products = [], loading }: { products: any[], loading:
         </Card>
       </div>
 
-      <div className="sticky top-[90px] self-start">
+      <div className="lg:sticky top-[90px] self-start">
         <Card className="shadow-lg">
           <CardHeader>
             <CardTitle className="flex items-center gap-3">

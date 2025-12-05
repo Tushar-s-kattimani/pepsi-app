@@ -31,7 +31,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { addDoc, collection, doc, updateDoc, deleteDoc, writeBatch, query, orderBy } from 'firebase/firestore';
 import { db } from '@/firebase/config';
 import { useCollection } from '@/firebase';
-import { Loader2, PackagePlus, GripVertical, Save } from 'lucide-react';
+import { Loader2, PackagePlus, GripVertical, Save, Trash } from 'lucide-react';
 
 const productSchema = z.object({
   name: z.string().min(1, 'Product name is required'),
@@ -62,12 +62,12 @@ const SortableItem = ({ product, handleOpenDialog }: { product: any, handleOpenD
       style={style}
       className="flex items-center bg-white p-3 my-2 rounded-lg shadow-sm border"
     >
-      <div {...attributes} {...listeners} className="cursor-grab p-2">
+      <div {...attributes} {...listeners} className="cursor-grab p-2 touch-none">
         <GripVertical className="h-5 w-5 text-muted-foreground" />
       </div>
       <div className="flex-grow grid grid-cols-3 gap-4 items-center">
-        <div className="font-medium">{product.name}</div>
-        <div>{product.size}</div>
+        <div className="font-medium truncate">{product.name}</div>
+        <div className="truncate">{product.size}</div>
         <div>{product.stock}</div>
       </div>
       <Button variant="outline" size="sm" onClick={() => handleOpenDialog(product)}>Edit</Button>
@@ -186,7 +186,7 @@ export function ProductManagement() {
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
+      <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <CardTitle>Product Inventory</CardTitle>
         <div className="flex items-center gap-2">
            {isOrderChanged && (
@@ -221,20 +221,18 @@ export function ProductManagement() {
                   <Input id="stock" type="number" {...register('stock')} />
                   {errors.stock && <p className="text-sm text-red-500 mt-1">{errors.stock.message}</p>}
                 </div>
-                <DialogFooter className="sm:justify-end pt-4">
-                  <div className="flex w-full justify-between">
-                      {editingProduct && (
-                          <Button type="button" variant="destructive" onClick={() => handleDelete(editingProduct.id)} disabled={isSubmitting}>
-                              Delete
-                          </Button>
-                      )}
-                      <div className="flex gap-2 ml-auto">
-                          <Button type="button" variant="ghost" onClick={handleCloseDialog}>Cancel</Button>
-                          <Button type="submit" disabled={isSubmitting}>
-                              {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                              {editingProduct ? 'Update Product' : 'Save Product'}
-                          </Button>
-                      </div>
+                <DialogFooter className="flex-col-reverse sm:flex-row sm:justify-between pt-4 gap-2">
+                  {editingProduct && (
+                      <Button type="button" variant="destructive" onClick={() => handleDelete(editingProduct.id)} disabled={isSubmitting} className="sm:mr-auto">
+                           <Trash className="mr-2 h-4 w-4" /> Delete
+                      </Button>
+                  )}
+                  <div className="flex gap-2 ml-auto">
+                      <Button type="button" variant="ghost" onClick={handleCloseDialog}>Cancel</Button>
+                      <Button type="submit" disabled={isSubmitting}>
+                          {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                          {editingProduct ? 'Update Product' : 'Save Product'}
+                      </Button>
                   </div>
                 </DialogFooter>
               </form>
@@ -242,11 +240,11 @@ export function ProductManagement() {
           </Dialog>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="overflow-x-auto">
         {loading ? (
           <div className="flex justify-center py-10"><Loader2 className="h-8 w-8 animate-spin" /></div>
         ) : (
-          <div>
+          <div className="min-w-[600px]">
             <div className="flex items-center bg-gray-50 p-3 my-2 rounded-lg font-semibold text-sm text-muted-foreground">
                 <div className="p-2"><GripVertical className="h-5 w-5 invisible" /></div>
                 <div className="flex-grow grid grid-cols-3 gap-4 items-center">

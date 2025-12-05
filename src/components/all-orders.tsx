@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -160,11 +159,11 @@ export function AllOrders({ orders: initialOrders = [], users = [], loading }: {
             </Button>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="overflow-x-auto">
         {loading && initialOrders.length === 0 ? (
             <div className="flex justify-center py-10"><Loader2 className="h-8 w-8 animate-spin" /></div>
         ) : (
-          <Accordion type="multiple" className="w-full space-y-4">
+          <Accordion type="multiple" className="w-full space-y-4 min-w-[600px] md:min-w-full">
             {ordersByDate.map(({ date, totalOrders, shops, hasPending }) => (
               <AccordionItem value={date} key={date} className="border-0 rounded-lg bg-white shadow-sm">
                 <AccordionTrigger className="p-4 hover:no-underline no-print rounded-t-lg border-b">
@@ -202,7 +201,7 @@ export function AllOrders({ orders: initialOrders = [], users = [], loading }: {
                                             </span>
                                           )}
                                         </div>
-                                        <div className="text-sm text-muted-foreground flex items-center gap-4 mt-1">
+                                        <div className="text-sm text-muted-foreground flex items-center gap-2 mt-1">
                                             <span>{shopInfo.location}</span>
                                             {shopInfo.phoneNumber && (
                                                 <a href={`tel:${shopInfo.phoneNumber}`} className="flex items-center">
@@ -237,6 +236,7 @@ export function AllOrders({ orders: initialOrders = [], users = [], loading }: {
                                             {order.status}
                                          </span>
                                     </div>
+                                    <div className="overflow-x-auto">
                                     <Table>
                                         <TableHeader>
                                             <TableRow>
@@ -255,6 +255,7 @@ export function AllOrders({ orders: initialOrders = [], users = [], loading }: {
                                             ))}
                                         </TableBody>
                                     </Table>
+                                    </div>
                                     <div className="flex justify-between items-center mt-4 border-t pt-3">
                                         <div className="font-bold text-lg">
                                             Total Items: {order.items.reduce((acc: number, item: any) => acc + item.quantity, 0)}
