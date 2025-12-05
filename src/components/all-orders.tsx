@@ -254,10 +254,8 @@ export function AllOrders({ orders: initialOrders = [], users = [], loading }: {
                                         </TableBody>
                                     </Table>
                                     <div className="flex justify-between items-center mt-4 border-t pt-3">
-                                        <div className='flex items-center gap-4'>
-                                            <div className="font-bold text-lg">
-                                                Total Items: {order.items.reduce((acc: number, item: any) => acc + item.quantity, 0)}
-                                            </div>
+                                        <div className="font-bold text-lg">
+                                            Total Items: {order.items.reduce((acc: number, item: any) => acc + item.quantity, 0)}
                                         </div>
                                         <div className="no-print">
                                             <Select onValueChange={(value) => handleStatusChange(order.id, value)} defaultValue={order.status}>
