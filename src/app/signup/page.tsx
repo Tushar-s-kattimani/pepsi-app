@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, Package, MailWarning, UserPlus, KeyRound } from 'lucide-react';
+import { Loader2, UserPlus, MailWarning, KeyRound } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/components/ui/use-toast';
 
@@ -136,7 +136,7 @@ export default function SignUpPage() {
                         disabled={loading}
                         className="w-full py-6 text-lg"
                         >
-                        {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : 'Create Account'}
+                        {loading && !emailInUse ? <Loader2 className="h-6 w-6 animate-spin" /> : 'Create Account'}
                         </Button>
                         {emailInUse && (
                            <Button
@@ -145,7 +145,8 @@ export default function SignUpPage() {
                             disabled={loading}
                             className="w-full py-6 text-base"
                            >
-                            <KeyRound className="mr-2 h-4 w-4" /> Forgot Password?
+                            {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <KeyRound className="mr-2 h-4 w-4" />}
+                            Forgot Password?
                            </Button>
                         )}
                         <p className="text-center text-sm text-muted-foreground">
