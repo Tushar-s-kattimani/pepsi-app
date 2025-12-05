@@ -47,15 +47,14 @@ export default function LoginPage() {
     setUnverifiedUser(null);
     
     try {
-      const userCredential = await signIn(shopEmail, shopPassword);
+      await signIn(shopEmail, shopPassword);
       // This part will now only run on successful login if user is verified
     } catch (e: any) {
        let friendlyMessage = 'An unexpected error occurred. Please try again.';
-       // This block now correctly handles login failures
+       
        if (e.code === 'auth/unverified-email' && e.unverifiedUser) {
          setError('Please verify your email address to log in.');
          setUnverifiedUser(e.unverifiedUser);
-         // No friendly message needed, the component state will handle the UI
        } else if (e.code === 'auth/user-not-found' || e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential') {
         friendlyMessage = 'Invalid email or password. Please try again.';
         setError(friendlyMessage);
@@ -146,7 +145,7 @@ export default function LoginPage() {
             <div className="mx-auto flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg">
                 <Package className="h-8 w-8 sm:h-10 sm:w-10" />
             </div>
-          <CardTitle className="text-2xl sm:text-3xl font-bold tracking-tight">Distribution Hub</CardTitle>
+          <CardTitle className="text-2xl sm:text-3xl font-bold tracking-tight">PepsiConnect</CardTitle>
           <CardDescription className="text-sm sm:text-base text-muted-foreground">
             Select your role to sign in
           </CardDescription>
