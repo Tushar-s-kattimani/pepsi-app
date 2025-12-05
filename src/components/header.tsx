@@ -100,7 +100,7 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
         toast({ title: 'Success', description: 'Order placed successfully!' });
         clearCart();
     }).catch((error: any) => {
-        const isPermissionError = error.message.includes('permission');
+        const isPermissionError = error.code === 'permission-denied';
         if(isPermissionError){
           const permissionError = new FirestorePermissionError({
               path: newOrderRef.path,
