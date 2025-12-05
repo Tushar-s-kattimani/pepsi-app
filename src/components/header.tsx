@@ -1,17 +1,126 @@
-
 'use client';
 
 import { useUser } from '@/firebase';
 import { Button } from '@/components/ui/button';
-import { ShoppingCart, LogOut, Menu, Plus, Minus } from 'lucide-react';
+import { ShoppingCart, LogOut, Menu, Loader2, ShoppingBasket } from 'lucide-react';
 import { useCart } from '@/context/cart-context';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetFooter } from '@/components/ui/sheet';
+import { useToast } from '@/components/ui/use-toast';
+import { collection, serverTimestamp, doc, getDoc, runTransaction } from 'firebase/firestore';
+import { db } from '@/firebase/config';
+import { useState } from 'react';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError, SecurityRuleContext } from '@/firebase/errors';
 
 export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
   const { user, signOut, role } = useUser();
   const { cart, updateQuantity, clearCart } = useCart();
+  const { toast } = useToast();
+  const [isPlacingOrder, setIsPlacingOrder] = useState(false);
 
   const cartItems = cart;
+
+  const handlePlaceOrder = async () => {
+    if (!user) {
+      toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to place an order.' });
+      return;
+    }
+    if (cart.length === 0) {
+      toast({ variant: 'destructive', title: 'Empty Cart', description: 'Please add items to your cart before placing an order.' });
+      return;
+    }
+
+    setIsPlacingOrder(true);
+    
+    // 1. Check for complete profile before starting the transaction
+    const userDocRef = doc(db, 'users', user.uid);
+    try {
+      const userDoc = await getDoc(userDocRef);
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        if (!userData.profileName || !userData.phoneNumber || !userData.shopName || !userData.location) {
+          toast({
+            variant: 'destructive',
+            title: 'Incomplete Profile',
+            description: 'Please complete your profile information in the Profile section before placing an order.',
+            duration: 5000,
+          });
+          setIsPlacingOrder(false);
+          return;
+        }
+      } else {
+        throw new Error('User data not found.');
+      }
+    } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Error', description: `Could not verify user profile: ${error.message}` });
+        setIsPlacingOrder(false);
+        return;
+    }
+
+    // 2. Run the transaction to place order and update stock
+    const newOrderRef = doc(collection(db, 'orders'));
+    const orderPayload = {
+        shopId: user.uid,
+        shopEmail: user.email,
+        items: cart.map(({ stock, ...item }: any) => item), // Remove internal fields
+        status: 'Pending',
+        createdAt: serverTimestamp(),
+    };
+
+    runTransaction(db, async (transaction) => {
+      const productRefs = new Map<string, any>();
+      const productSnapshots = new Map<string, any>();
+
+      // First, read all product documents and check stock
+      for (const item of cart) {
+        const productRef = doc(db, 'products', item.id);
+        productRefs.set(item.id, productRef);
+        const productSnap = await transaction.get(productRef);
+        if (!productSnap.exists()) {
+          throw new Error(`Product "${item.name}" not found.`);
+        }
+        const currentStock = productSnap.data().stock;
+        if (currentStock < item.quantity) {
+          throw new Error(`Insufficient stock for ${item.name}. Only ${currentStock} left.`);
+        }
+        productSnapshots.set(item.id, productSnap);
+      }
+
+      // If all stock checks passed, proceed to write
+      transaction.set(newOrderRef, orderPayload);
+
+      // Update product stock
+      for (const item of cart) {
+        const productRef = productRefs.get(item.id);
+        const productSnap = productSnapshots.get(item.id);
+        const newStock = productSnap.data().stock - item.quantity;
+        transaction.update(productRef, { stock: newStock });
+      }
+    }).then(() => {
+        toast({ title: 'Success', description: 'Order placed successfully!' });
+        clearCart();
+    }).catch((error: any) => {
+        const isPermissionError = error.message.includes('permission');
+        if(isPermissionError){
+          const permissionError = new FirestorePermissionError({
+              path: newOrderRef.path,
+              operation: 'create',
+              requestResourceData: orderPayload,
+          } satisfies SecurityRuleContext);
+          errorEmitter.emit('permission-error', permissionError);
+        }
+        
+        toast({
+            variant: 'destructive',
+            title: 'Order Failed',
+            description: isPermissionError ? 'Could not place order due to a permissions issue.' : error.message,
+            duration: 5000,
+        });
+        console.error("Transaction failed: ", error);
+    }).finally(() => {
+        setIsPlacingOrder(false);
+    });
+  };
 
   return (
     <header className="flex h-20 shrink-0 items-center justify-between border-b bg-white px-4 sm:px-6 md:px-10 no-print">
@@ -59,6 +168,7 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
                       <div key={item.id} className="flex items-center justify-between rounded-lg bg-gray-50 p-3">
                         <div>
                           <p className="font-semibold">{item.name} ({item.size})</p>
+                           <p className="text-sm text-gray-500">{item.quantity} units</p>
                         </div>
                         <div className="flex items-center gap-2">
                           <Button size="icon" variant="ghost" onClick={() => updateQuantity(item.id, item.quantity - 1)}>-</Button>
@@ -79,6 +189,10 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
                       <span>Total Items</span>
                       <span>{cartItems.reduce((sum, item) => sum + item.quantity, 0)}</span>
                     </div>
+                     <Button className="w-full" onClick={handlePlaceOrder} disabled={isPlacingOrder}>
+                       {isPlacingOrder ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShoppingBasket className="mr-2 h-4 w-4" />}
+                      Place Order
+                    </Button>
                     <Button variant="outline" className="w-full" onClick={clearCart}>Clear Cart</Button>
                   </div>
                 </SheetFooter>
