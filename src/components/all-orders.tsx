@@ -211,7 +211,7 @@ export function AllOrders({ orders: initialOrders = [], users = [], loading }: {
                               </div>
                           </AccordionTrigger>
                            {shopInfo.phoneNumber && (
-                                <a href={`tel:${shopInfo.phoneNumber}`} className="flex items-center ml-2" onClick={(e) => e.stopPropagation()}>
+                                <a href={`tel:${shopInfo.phoneNumber}`} className="ml-2 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
                                     <Button variant="outline" size="icon" className="h-8 w-8">
                                         <Phone className="h-4 w-4" />
                                         <span className="sr-only">Call {shopInfo.shopName}</span>
