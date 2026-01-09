@@ -78,7 +78,9 @@ export function AdminProfile() {
       <CardHeader>
         <CardTitle>Admin Payment Profile</CardTitle>
         <CardDescription>
-          Enter your existing UPI ID here. This app does not connect to your bank; it only uses the ID you provide to generate QR codes for shop payments. The UPI ID itself must be linked to your bank account through your UPI app (like Google Pay, PhonePe, etc.).
+          To enable online payments for shops, you must enter your UPI ID here. This ID is used to generate QR codes for customers to pay you directly.
+          <br /><br />
+          This app does not connect to your bank account; it only uses the UPI ID you provide. Please ensure this ID is already linked to your bank account through a UPI app like Google Pay, PhonePe, etc.
         </CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit(onSubmit)}>
