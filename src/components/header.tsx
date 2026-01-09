@@ -2,7 +2,7 @@
 
 import { useUser } from '@/firebase';
 import { Button } from '@/components/ui/button';
-import { ShoppingCart, LogOut, Menu, Loader2, ShoppingBasket } from 'lucide-react';
+import { ShoppingCart, LogOut, Menu, Loader2, ShoppingBasket, Wallet, CreditCard } from 'lucide-react';
 import { useCart } from '@/context/cart-context';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetFooter } from '@/components/ui/sheet';
 import { useToast } from '@/components/ui/use-toast';
@@ -11,7 +11,6 @@ import { db } from '@/firebase/config';
 import { useState } from 'react';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError, SecurityRuleContext } from '@/firebase/errors';
-import { PaymentDialog } from './payment-dialog';
 import { UpiPaymentDialog } from './upi-payment-dialog';
 
 export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
@@ -19,14 +18,12 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
   const { cart, updateQuantity, clearCart } = useCart();
   const { toast } = useToast();
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
-  const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const [isUpiDialogOpen, setIsUpiDialogOpen] = useState(false);
 
   const cartItems = cart;
   const totalAmount = cart.reduce((sum, item) => sum + item.rate * item.quantity, 0);
 
-
-  const handlePlaceOrderClick = () => {
+  const handlePayOnlineClick = () => {
     if (!user) {
       toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to place an order.' });
       return;
@@ -35,18 +32,8 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
       toast({ variant: 'destructive', title: 'Empty Cart', description: 'Please add items to your cart.' });
       return;
     }
-    setIsPaymentDialogOpen(true);
+    setIsUpiDialogOpen(true);
   };
-
-  const handleSelectPaymentMethod = (method: 'Cash on Delivery' | 'Online') => {
-    setIsPaymentDialogOpen(false);
-    if (method === 'Online') {
-      setIsUpiDialogOpen(true);
-    } else {
-      handlePlaceOrder(method);
-    }
-  };
-
 
   const handlePlaceOrder = async (paymentMethod: 'Cash on Delivery' | 'Online') => {
     setIsUpiDialogOpen(false); // Close UPI dialog if it was open
@@ -219,14 +206,20 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
               {cartItems.length > 0 && (
                 <SheetFooter className="mt-auto border-t pt-4">
                   <div className="w-full space-y-3">
-                     <div className="flex justify-between text-xl font-bold">
+                     <div className="flex justify-between text-xl font-bold mb-2">
                       <span>Total Items</span>
                       <span>{cartItems.reduce((sum, item) => sum + item.quantity, 0)}</span>
                     </div>
-                     <Button className="w-full" onClick={handlePlaceOrderClick} disabled={isPlacingOrder}>
-                       {isPlacingOrder ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShoppingBasket className="mr-2 h-4 w-4" />}
-                      Place Order
-                    </Button>
+                     <div className="grid grid-cols-2 gap-3">
+                      <Button className="h-12 text-base" variant="secondary" onClick={() => handlePlaceOrder('Cash on Delivery')} disabled={isPlacingOrder}>
+                        {isPlacingOrder ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wallet className="mr-2 h-4 w-4" />}
+                        Pay with Cash
+                      </Button>
+                       <Button className="h-12 text-base" onClick={handlePayOnlineClick} disabled={isPlacingOrder}>
+                        {isPlacingOrder ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CreditCard className="mr-2 h-4 w-4" />}
+                        Pay Online
+                      </Button>
+                    </div>
                     <Button variant="outline" className="w-full" onClick={clearCart}>Clear Cart</Button>
                   </div>
                 </SheetFooter>
@@ -240,11 +233,6 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
         </Button>
       </div>
     </header>
-    <PaymentDialog
-        isOpen={isPaymentDialogOpen}
-        onOpenChange={setIsPaymentDialogOpen}
-        onSelectPayment={handleSelectPaymentMethod}
-      />
       <UpiPaymentDialog
         isOpen={isUpiDialogOpen}
         onOpenChange={setIsUpiDialogOpen}
