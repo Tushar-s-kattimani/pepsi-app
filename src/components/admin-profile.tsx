@@ -3,7 +3,7 @@
 import { useUser } from '@/firebase';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '@/firebase/config';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -12,7 +12,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Upload, Trash2 } from 'lucide-react';
+import { uploadFile } from '@/firebase/storage';
+import Image from 'next/image';
 
 const profileSchema = z.object({
   upiId: z.string().min(1, 'UPI ID is required').regex(/^[a-zA-Z0-9.\-_]{2,256}@[a-zA-Z]{2,64}$/, 'Invalid UPI ID format'),
@@ -25,6 +27,11 @@ export function AdminProfile() {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [qrCodeImageUrl, setQrCodeImageUrl] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
@@ -41,12 +48,45 @@ export function AdminProfile() {
           reset({
             upiId: data.upiId || '',
           });
+          setQrCodeImageUrl(data.qrCodeImageUrl || null);
         }
         setLoading(false);
       };
       fetchUserData();
     }
   }, [user, reset]);
+  
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+      setPreviewUrl(URL.createObjectURL(file));
+    }
+  };
+  
+  const handleRemoveImage = async (e: React.MouseEvent<HTMLButtonElement>) => {
+      e.preventDefault();
+      setIsSubmitting(true);
+      if (!user) {
+        toast({ variant: 'destructive', title: 'Error', description: 'You are not logged in.' });
+        return;
+      }
+      try {
+        const userDocRef = doc(db, 'users', user.uid);
+        await updateDoc(userDocRef, { qrCodeImageUrl: null });
+        setQrCodeImageUrl(null);
+        setSelectedFile(null);
+        setPreviewUrl(null);
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+        toast({ title: 'Success', description: 'QR Code image removed.' });
+      } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Could not remove image.' });
+      } finally {
+        setIsSubmitting(false);
+      }
+  };
 
   const onSubmit = async (data: ProfileFormValues) => {
     if (!user) {
@@ -56,7 +96,25 @@ export function AdminProfile() {
     setIsSubmitting(true);
     try {
       const userDocRef = doc(db, 'users', user.uid);
-      await updateDoc(userDocRef, data);
+      
+      let newImageUrl = qrCodeImageUrl;
+      if (selectedFile) {
+          const filePath = `qrcodes/${user.uid}/${selectedFile.name}`;
+          newImageUrl = await uploadFile(selectedFile, filePath);
+      }
+
+      await updateDoc(userDocRef, {
+        ...data,
+        qrCodeImageUrl: newImageUrl,
+      });
+
+      setQrCodeImageUrl(newImageUrl);
+      setSelectedFile(null);
+      setPreviewUrl(null);
+       if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+
       toast({ title: 'Success', description: 'Profile updated successfully.' });
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Error', description: error.message });
@@ -73,14 +131,16 @@ export function AdminProfile() {
     );
   }
 
+  const currentImage = previewUrl || qrCodeImageUrl;
+
   return (
     <Card className="max-w-2xl mx-auto">
       <CardHeader>
         <CardTitle>Admin Payment Profile</CardTitle>
         <CardDescription>
-          To enable online payments for shops, you must enter your UPI ID here. This ID is used to generate QR codes for customers to pay you directly.
+          To enable online payments for shops, you must enter your UPI ID and optionally upload a QR code image. This QR code image will be shown to users during checkout.
           <br /><br />
-          This app does not connect to your bank account; it only uses the UPI ID you provide. Please ensure this ID is already linked to your bank account through a UPI app like Google Pay, PhonePe, etc.
+          This app does not connect to your bank account; it only uses the details you provide. Please ensure your UPI ID and QR code are already linked to your bank account through an app like Google Pay, PhonePe, etc.
         </CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit(onSubmit)}>
@@ -89,13 +149,33 @@ export function AdminProfile() {
             <Label htmlFor="upiId">Your UPI ID</Label>
             <Input id="upiId" {...register('upiId')} placeholder="yourname@bank" />
             {errors.upiId && <p className="text-sm text-red-500 mt-1">{errors.upiId.message}</p>}
-            <p className="text-xs text-muted-foreground mt-2">Shops will use this UPI ID to send online payments.</p>
+            <p className="text-xs text-muted-foreground mt-2">Shops will use this to verify payments.</p>
+          </div>
+
+           <div className="space-y-2">
+            <Label htmlFor="qrCode">Your UPI QR Code Image</Label>
+            <div className="flex items-center gap-4">
+                {currentImage && (
+                    <div className="relative w-32 h-32 border p-1 rounded-md">
+                        <Image src={currentImage} alt="QR Code Preview" layout="fill" objectFit="contain" />
+                    </div>
+                )}
+                <div className="flex-1 space-y-2">
+                    <Input id="qrCode" type="file" accept="image/*" onChange={handleFileChange} ref={fileInputRef} />
+                    <p className="text-xs text-muted-foreground mt-2">Upload a static QR code image. This will be shown to users.</p>
+                </div>
+                 {currentImage && (
+                    <Button variant="ghost" size="icon" onClick={handleRemoveImage} disabled={isSubmitting}>
+                        <Trash2 className="w-5 h-5 text-red-500"/>
+                    </Button>
+                )}
+            </div>
           </div>
         </CardContent>
         <CardFooter>
           <Button type="submit" disabled={isSubmitting}>
             {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Save UPI ID
+            Save Profile
           </Button>
         </CardFooter>
       </form>
