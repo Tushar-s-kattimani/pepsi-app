@@ -3,7 +3,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2 } from 'lucide-react';
+import { Loader2, CreditCard } from 'lucide-react';
 import { useMemo } from 'react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
@@ -12,6 +12,12 @@ const statusColors: { [key: string]: string } = {
   Confirmed: 'bg-blue-100 text-blue-800',
   Delivered: 'bg-green-100 text-green-800',
 };
+
+const paymentStatusColors: { [key: string]: string } = {
+  Pending: 'text-yellow-600',
+  Paid: 'text-green-600',
+};
+
 
 export function OrderHistory({ orders = [], loading }: { orders: any[], loading: boolean }) {
   
@@ -53,7 +59,7 @@ export function OrderHistory({ orders = [], loading }: { orders: any[], loading:
                             <div className="font-semibold text-gray-500">Total Amount</div>
                             <div className="font-bold">{totalAmount.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</div>
                         </div>
-                         <div>
+                         <div className="text-left">
                             <div className="font-semibold text-gray-500">Status</div>
                             <div>
                                 <span className={`px-2 py-1 text-xs font-semibold rounded-full ${statusColors[order.status]}`}>
@@ -65,6 +71,12 @@ export function OrderHistory({ orders = [], loading }: { orders: any[], loading:
                   </div>
                 </AccordionTrigger>
                 <AccordionContent className="p-4 border border-t-0 rounded-b-lg bg-gray-50/50">
+                    <div className='flex items-center gap-2 mb-4 text-sm'>
+                        <CreditCard className="h-4 w-4" />
+                        <span className="font-semibold">Payment:</span>
+                        <span>{order.paymentMethod} - </span>
+                        <span className={`font-bold ${paymentStatusColors[order.paymentStatus]}`}>{order.paymentStatus}</span>
+                    </div>
                   <h4 className="font-semibold mb-2">Order Items</h4>
                   <Table>
                     <TableHeader>
