@@ -69,12 +69,11 @@ export function AdminProfile() {
   
   const handleRemoveImage = async (e: React.MouseEvent<HTMLButtonElement>) => {
       e.preventDefault();
-      setIsSubmitting(true);
       if (!user) {
         toast({ variant: 'destructive', title: 'Error', description: 'You are not logged in.' });
-        setIsSubmitting(false);
         return;
       }
+      setIsSubmitting(true);
       try {
         const userDocRef = doc(db, 'users', user.uid);
         await updateDoc(userDocRef, { qrCodeImageUrl: null });
