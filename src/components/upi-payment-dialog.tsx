@@ -9,12 +9,12 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { IndianRupee, Loader2, Copy, ScanLine, ImageOff } from 'lucide-react';
+import { IndianRupee, Loader2, Copy, ScanLine, AlertCircle } from 'lucide-react';
 import { useToast } from './ui/use-toast';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '@/firebase/config';
-import Image from 'next/image';
+import QRCode from 'qrcode';
 
 
 interface UpiPaymentDialogProps {
@@ -28,8 +28,9 @@ export function UpiPaymentDialog({ isOpen, onOpenChange, totalAmount, onConfirmP
     const { toast } = useToast();
     const [isProcessing, setIsProcessing] = useState(false);
     const [adminUpiId, setAdminUpiId] = useState('');
-    const [qrCodeImageUrl, setQrCodeImageUrl] = useState<string | null>(null);
     const [isLoadingUpi, setIsLoadingUpi] = useState(true);
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+
 
     useEffect(() => {
         const fetchAdminUpiData = async () => {
@@ -43,7 +44,6 @@ export function UpiPaymentDialog({ isOpen, onOpenChange, totalAmount, onConfirmP
                     const adminDoc = querySnapshot.docs[0];
                     const adminData = adminDoc.data();
                     setAdminUpiId(adminData.upiId || '');
-                    setQrCodeImageUrl(adminData.qrCodeImageUrl || null);
                 }
             } catch (error) {
                 console.error("Error fetching admin UPI data: ", error);
@@ -55,6 +55,19 @@ export function UpiPaymentDialog({ isOpen, onOpenChange, totalAmount, onConfirmP
 
         fetchAdminUpiData();
     }, [isOpen, toast]);
+
+    useEffect(() => {
+        if (isOpen && !isLoadingUpi && adminUpiId && canvasRef.current) {
+            // UPI QR Code format: upi://pay?pa=<upi_id>&pn=<payee_name>&am=<amount>&cu=INR
+            const upiUrl = `upi://pay?pa=${adminUpiId}&pn=Admin&am=${totalAmount}&cu=INR`;
+            QRCode.toCanvas(canvasRef.current, upiUrl, { width: 220 }, (error) => {
+                if (error) {
+                    console.error('QR code generation failed:', error);
+                    toast({ variant: 'destructive', title: 'Error', description: 'Could not generate QR code.' });
+                }
+            });
+        }
+    }, [isOpen, isLoadingUpi, adminUpiId, totalAmount, toast]);
 
     const handleCopyUpi = () => {
         if(!adminUpiId) return;
@@ -88,13 +101,12 @@ export function UpiPaymentDialog({ isOpen, onOpenChange, totalAmount, onConfirmP
                 <div className="flex justify-center items-center h-[288px]">
                     <Loader2 className="h-8 w-8 animate-spin" />
                 </div>
-            ) : qrCodeImageUrl ? (
+            ) : adminUpiId ? (
                 <div className="space-y-4 text-center">
                     <div className="flex justify-center p-4 bg-white rounded-lg shadow-inner">
-                        <Image src={qrCodeImageUrl} alt="Admin UPI QR Code" width={220} height={220} />
+                        <canvas ref={canvasRef} />
                     </div>
                     <p className='text-sm text-muted-foreground'>Scan the QR code with any UPI app.</p>
-                    {adminUpiId && (
                       <div className="flex items-center gap-2">
                           <p id="upiId" className="text-sm font-mono p-2 border rounded-md bg-gray-100 w-full text-center">{adminUpiId}</p>
                           <Button type="button" variant="outline" size="icon" onClick={handleCopyUpi}>
@@ -102,12 +114,11 @@ export function UpiPaymentDialog({ isOpen, onOpenChange, totalAmount, onConfirmP
                               <span className="sr-only">Copy UPI ID</span>
                           </Button>
                       </div>
-                    )}
                 </div>
             ) : (
                 <div className="h-[288px] flex flex-col justify-center items-center text-center gap-4 bg-gray-50 rounded-lg">
-                    <ImageOff className="h-12 w-12 text-muted-foreground" />
-                    <p className="text-red-500 font-medium">Admin QR Code is not configured.</p>
+                    <AlertCircle className="h-12 w-12 text-red-500" />
+                    <p className="text-red-500 font-medium">Admin UPI ID is not configured.</p>
                     <p className="text-sm text-muted-foreground mt-2 px-4">Please contact support to enable online payments.</p>
                 </div>
             )}
@@ -117,7 +128,7 @@ export function UpiPaymentDialog({ isOpen, onOpenChange, totalAmount, onConfirmP
                     size="lg"
                     className="w-full h-14 text-lg"
                     onClick={handlePaymentConfirmation}
-                    disabled={isProcessing || isLoadingUpi || !qrCodeImageUrl}
+                    disabled={isProcessing || isLoadingUpi || !adminUpiId}
                 >
                     {isProcessing ? (
                         <Loader2 className="mr-2 h-6 w-6 animate-spin" />
