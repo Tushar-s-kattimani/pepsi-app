@@ -62,7 +62,13 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
     const orderPayload = {
         shopId: user.uid,
         shopEmail: user.email,
-        items: cart.map(({ stock, ...item }: any) => item), // Remove internal fields
+        items: cart.map(item => ({
+          id: item.id,
+          name: item.name,
+          size: item.size,
+          quantity: item.quantity,
+          rate: item.rate,
+        })),
         status: 'Pending',
         createdAt: serverTimestamp(),
     };

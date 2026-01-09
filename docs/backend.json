@@ -94,9 +94,10 @@
               "id": { "type": "string" },
               "name": { "type": "string" },
               "size": { "type": "string" },
-              "quantity": { "type": "number" }
+              "quantity": { "type": "number" },
+              "rate": { "type": "number" }
             },
-            "required": ["id", "name", "quantity"]
+            "required": ["id", "name", "quantity", "rate"]
           }
         },
         "status": {

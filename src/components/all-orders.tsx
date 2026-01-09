@@ -94,7 +94,7 @@ export function AllOrders({ orders: initialOrders = [], users = [], loading }: {
 
   const handleDownload = () => {
     let csvContent = "data:text/csv;charset=utf-8,";
-    csvContent += "Date,Order ID,Shop Name,Phone Number,Location,Product Name,Size,Quantity,Status\r\n";
+    csvContent += "Date,Order ID,Shop Name,Phone Number,Location,Product Name,Size,Quantity,Rate,Amount,Status\r\n";
 
     orders.forEach((order) => {
         const shopInfo = usersMap.get(order.shopId);
@@ -109,6 +109,8 @@ export function AllOrders({ orders: initialOrders = [], users = [], loading }: {
                 `"${item.name}"`,
                 `"${item.size}"`,
                 item.quantity,
+                item.rate,
+                item.quantity * (item.rate || 0),
                 order.status,
             ].join(',');
             csvContent += row + "\r\n";
@@ -220,7 +222,9 @@ export function AllOrders({ orders: initialOrders = [], users = [], loading }: {
                             )}
                         </div>
                         <AccordionContent className="pb-2 px-4 bg-gray-50/50">
-                            {orders.map((order: any) => (
+                            {orders.map((order: any) => {
+                                const totalAmount = order.items.reduce((acc: number, item: any) => acc + (item.quantity * (item.rate || 0)), 0);
+                                return (
                                 <div key={order.id} className="mb-4 border rounded-lg p-4 bg-white mt-2">
                                     <div className="flex justify-between items-start mb-3">
                                         <div>
@@ -245,14 +249,18 @@ export function AllOrders({ orders: initialOrders = [], users = [], loading }: {
                                                 <TableHead>Product</TableHead>
                                                 <TableHead>Size</TableHead>
                                                 <TableHead className='text-center'>Qty</TableHead>
+                                                <TableHead className='text-right'>Rate</TableHead>
+                                                <TableHead className='text-right'>Amount</TableHead>
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
-                                            {order.items.map((item: any) => (
-                                            <TableRow key={`${item.id}-${item.size}`}>
+                                            {order.items.map((item: any, index: number) => (
+                                            <TableRow key={`${item.id}-${item.size}-${index}`}>
                                                 <TableCell>{item.name}</TableCell>
                                                 <TableCell>{item.size}</TableCell>
                                                 <TableCell className='text-center'>{item.quantity}</TableCell>
+                                                <TableCell className='text-right'>{item.rate?.toLocaleString('en-IN', { style: 'currency', currency: 'INR' }) ?? 'N/A'}</TableCell>
+                                                <TableCell className='text-right font-semibold'>{(item.quantity * (item.rate || 0)).toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</TableCell>
                                             </TableRow>
                                             ))}
                                         </TableBody>
@@ -260,7 +268,7 @@ export function AllOrders({ orders: initialOrders = [], users = [], loading }: {
                                     </div>
                                     <div className="flex justify-between items-center mt-4 border-t pt-3">
                                         <div className="font-bold text-lg">
-                                            Total Items: {order.items.reduce((acc: number, item: any) => acc + item.quantity, 0)}
+                                            Total: {totalAmount.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}
                                         </div>
                                         <div className="no-print">
                                             <Select onValueChange={(value) => handleStatusChange(order.id, value)} defaultValue={order.status}>
@@ -276,7 +284,7 @@ export function AllOrders({ orders: initialOrders = [], users = [], loading }: {
                                         </div>
                                     </div>
                                 </div>
-                            ))}
+                            )})}
                         </AccordionContent>
                       </AccordionItem>
                     )})}
