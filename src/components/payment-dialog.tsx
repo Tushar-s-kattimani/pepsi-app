@@ -18,15 +18,7 @@ interface PaymentDialogProps {
 }
 
 export function PaymentDialog({ isOpen, onOpenChange, onSelectPayment }: PaymentDialogProps) {
-  const { toast } = useToast();
-
-  const handleOnlinePayment = () => {
-    toast({
-      title: 'Coming Soon!',
-      description: 'Online payment functionality is not yet available.',
-    });
-  };
-
+  
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
@@ -49,7 +41,7 @@ export function PaymentDialog({ isOpen, onOpenChange, onSelectPayment }: Payment
             size="lg"
             variant="secondary"
             className="h-16 text-lg"
-            onClick={handleOnlinePayment}
+            onClick={() => onSelectPayment('Online')}
           >
             <CreditCard className="mr-3 h-6 w-6" />
             Pay Online

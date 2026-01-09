@@ -12,6 +12,7 @@ import { useState } from 'react';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError, SecurityRuleContext } from '@/firebase/errors';
 import { PaymentDialog } from './payment-dialog';
+import { UpiPaymentDialog } from './upi-payment-dialog';
 
 export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
   const { user, signOut, role } = useUser();
@@ -19,8 +20,11 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
   const { toast } = useToast();
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
+  const [isUpiDialogOpen, setIsUpiDialogOpen] = useState(false);
 
   const cartItems = cart;
+  const totalAmount = cart.reduce((sum, item) => sum + item.rate * item.quantity, 0);
+
 
   const handlePlaceOrderClick = () => {
     if (!user) {
@@ -34,9 +38,18 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
     setIsPaymentDialogOpen(true);
   };
 
+  const handleSelectPaymentMethod = (method: 'Cash on Delivery' | 'Online') => {
+    setIsPaymentDialogOpen(false);
+    if (method === 'Online') {
+      setIsUpiDialogOpen(true);
+    } else {
+      handlePlaceOrder(method);
+    }
+  };
+
 
   const handlePlaceOrder = async (paymentMethod: 'Cash on Delivery' | 'Online') => {
-    setIsPaymentDialogOpen(false); // Close the dialog first
+    setIsUpiDialogOpen(false); // Close UPI dialog if it was open
     if (!user) {
       toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to place an order.' });
       return;
@@ -84,7 +97,7 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
         status: 'Pending',
         createdAt: serverTimestamp(),
         paymentMethod: paymentMethod,
-        paymentStatus: 'Pending',
+        paymentStatus: paymentMethod === 'Online' ? 'Paid' : 'Pending',
     };
 
     runTransaction(db, async (transaction) => {
@@ -230,7 +243,13 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
     <PaymentDialog
         isOpen={isPaymentDialogOpen}
         onOpenChange={setIsPaymentDialogOpen}
-        onSelectPayment={handlePlaceOrder}
+        onSelectPayment={handleSelectPaymentMethod}
+      />
+      <UpiPaymentDialog
+        isOpen={isUpiDialogOpen}
+        onOpenChange={setIsUpiDialogOpen}
+        totalAmount={totalAmount}
+        onConfirmPayment={() => handlePlaceOrder('Online')}
       />
     </>
   );
