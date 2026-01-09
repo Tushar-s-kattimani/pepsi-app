@@ -16,7 +16,8 @@ service cloud.firestore {
     // Rules for the 'users' collection
     match /users/{userId} {
       // Allow any authenticated user to read user profiles (e.g., for fetching admin UPI ID).
-      allow read: if request.auth != null;
+      // Allow list for querying users by role.
+      allow read, list: if request.auth != null;
       // Only the owner or an admin can write to a user document.
       allow write: if isAdmin() || isOwner(userId);
     }
