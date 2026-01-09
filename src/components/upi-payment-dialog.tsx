@@ -85,7 +85,7 @@ export function UpiPaymentDialog({ isOpen, onOpenChange, totalAmount, onConfirmP
         <DialogHeader>
           <DialogTitle className="text-2xl text-center">Complete Your Payment</DialogTitle>
            <DialogDescription className="text-center">
-            You are paying
+            You are paying the total amount of:
           </DialogDescription>
           <div className="flex items-center justify-center text-4xl font-bold py-2">
               <IndianRupee className="h-8 w-8" />
