@@ -63,9 +63,13 @@
         "position": {
           "type": "number",
           "description": "The order of the product in the list."
+        },
+        "rate": {
+          "type": "number",
+          "description": "The price or rate of the product."
         }
       },
-      "required": ["name", "size", "stock", "position"]
+      "required": ["name", "size", "stock", "position", "rate"]
     },
     "Order": {
       "title": "Order",
