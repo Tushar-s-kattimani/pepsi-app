@@ -56,7 +56,7 @@ export function UpiPaymentDialog({ isOpen, onOpenChange, totalAmount, onConfirmP
                 if (upiId && qrCodeRef.current) {
                     // upi://pay?pa=UPI_ID&pn=Payee_Name&am=Amount&cu=Currency_Code
                     const upiString = `upi://pay?pa=${upiId}&pn=Admin&am=${totalAmount}&cu=INR`;
-                    QRCode.toCanvas(qrCodeRef.current, upiString, (error) => {
+                    QRCode.toCanvas(qrCodeRef.current, upiString, { width: 220 }, (error) => {
                         if (error) console.error('Error generating QR code:', error);
                     });
                 }
@@ -67,22 +67,16 @@ export function UpiPaymentDialog({ isOpen, onOpenChange, totalAmount, onConfirmP
     }, [isOpen, totalAmount, toast]);
 
     const handleCopyUpi = () => {
+        if(!adminUpiId) return;
         navigator.clipboard.writeText(adminUpiId);
         toast({ title: 'UPI ID Copied!', description: 'You can now paste it in your payment app.' });
     };
 
     const handlePaymentConfirmation = () => {
         setIsProcessing(true);
-        toast({
-            title: 'Confirming Payment...',
-            description: 'Please wait while we confirm your payment and place the order.',
-        });
-
-        // Simulate a delay for payment processing
-        setTimeout(() => {
-            onConfirmPayment();
-            setIsProcessing(false);
-        }, 3000); 
+        // This is where a real payment verification would happen.
+        // For this simulation, we trust the user has paid and proceed.
+        onConfirmPayment();
     };
 
   return (
@@ -107,7 +101,7 @@ export function UpiPaymentDialog({ isOpen, onOpenChange, totalAmount, onConfirmP
             ) : adminUpiId ? (
                 <div className="space-y-4 text-center">
                     <div className="flex justify-center">
-                        <canvas ref={qrCodeRef} className="rounded-lg shadow-md"></canvas>
+                        <canvas ref={qrCodeRef} className="rounded-lg shadow-md bg-white"></canvas>
                     </div>
                     <p className='text-sm text-muted-foreground'>Scan the QR code with any UPI app.</p>
                     <div className="flex items-center gap-2">
@@ -141,8 +135,8 @@ export function UpiPaymentDialog({ isOpen, onOpenChange, totalAmount, onConfirmP
             </div>
         </div>
 
-         <DialogFooter className="text-xs text-muted-foreground justify-center">
-          This is a simulated payment flow. After paying, click the button above.
+         <DialogFooter className="text-xs text-muted-foreground justify-center text-center">
+          This is a simulated payment flow. After paying in your UPI app, click the button above to confirm and place your order.
         </DialogFooter>
       </DialogContent>
     </Dialog>
