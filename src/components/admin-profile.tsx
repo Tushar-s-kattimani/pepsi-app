@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
-import { Loader2, Upload, Trash2 } from 'lucide-react';
+import { Loader2, Trash2 } from 'lucide-react';
 import { uploadFile } from '@/firebase/storage';
 import Image from 'next/image';
 
@@ -35,6 +35,9 @@ export function AdminProfile() {
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
+    defaultValues: {
+      upiId: '',
+    }
   });
 
   useEffect(() => {
@@ -69,6 +72,7 @@ export function AdminProfile() {
       setIsSubmitting(true);
       if (!user) {
         toast({ variant: 'destructive', title: 'Error', description: 'You are not logged in.' });
+        setIsSubmitting(false);
         return;
       }
       try {
@@ -104,7 +108,7 @@ export function AdminProfile() {
       }
 
       await updateDoc(userDocRef, {
-        ...data,
+        upiId: data.upiId,
         qrCodeImageUrl: newImageUrl,
       });
 
@@ -138,7 +142,7 @@ export function AdminProfile() {
       <CardHeader>
         <CardTitle>Admin Payment Profile</CardTitle>
         <CardDescription>
-          To enable online payments for shops, you must enter your UPI ID and optionally upload a QR code image. This QR code image will be shown to users during checkout.
+          To enable online payments for shops, you must enter your UPI ID and upload a corresponding QR code image. This QR code will be shown to users during checkout.
           <br /><br />
           This app does not connect to your bank account; it only uses the details you provide. Please ensure your UPI ID and QR code are already linked to your bank account through an app like Google Pay, PhonePe, etc.
         </CardDescription>
@@ -156,17 +160,18 @@ export function AdminProfile() {
             <Label htmlFor="qrCode">Your UPI QR Code Image</Label>
             <div className="flex items-center gap-4">
                 {currentImage && (
-                    <div className="relative w-32 h-32 border p-1 rounded-md">
+                    <div className="relative w-32 h-32 border p-1 rounded-md bg-white">
                         <Image src={currentImage} alt="QR Code Preview" layout="fill" objectFit="contain" />
                     </div>
                 )}
                 <div className="flex-1 space-y-2">
-                    <Input id="qrCode" type="file" accept="image/*" onChange={handleFileChange} ref={fileInputRef} />
-                    <p className="text-xs text-muted-foreground mt-2">Upload a static QR code image. This will be shown to users.</p>
+                    <Input id="qrCode" type="file" accept="image/*" onChange={handleFileChange} ref={fileInputRef} className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"/>
+                    <p className="text-xs text-muted-foreground mt-2">Upload a static QR code image from your payment app.</p>
                 </div>
                  {currentImage && (
-                    <Button variant="ghost" size="icon" onClick={handleRemoveImage} disabled={isSubmitting}>
+                    <Button type="button" variant="ghost" size="icon" onClick={handleRemoveImage} disabled={isSubmitting}>
                         <Trash2 className="w-5 h-5 text-red-500"/>
+                        <span className="sr-only">Remove QR Code image</span>
                     </Button>
                 )}
             </div>
