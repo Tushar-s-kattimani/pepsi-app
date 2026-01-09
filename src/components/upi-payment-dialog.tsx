@@ -15,6 +15,7 @@ import { useToast } from './ui/use-toast';
 import { useState, useEffect } from 'react';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '@/firebase/config';
+import { Label } from '@/components/ui/label';
 
 const GPayLogo = 'https://upload.wikimedia.org/wikipedia/commons/1/13/Google_Pay_GPay_Logo.svg';
 const PhonePeLogo = 'https://upload.wikimedia.org/wikipedia/commons/7/71/PhonePe_Logo.svg';
@@ -68,6 +69,7 @@ export function UpiPaymentDialog({ isOpen, onOpenChange, totalAmount, onConfirmP
             description: 'Please wait while we confirm your payment and place the order.',
         });
 
+        // Simulate a delay for payment processing
         setTimeout(() => {
             onConfirmPayment();
             setIsProcessing(false);
