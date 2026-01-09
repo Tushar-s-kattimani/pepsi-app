@@ -77,7 +77,7 @@ export function AdminProfile() {
     <Card className="max-w-2xl mx-auto">
       <CardHeader>
         <CardTitle>Admin Profile</CardTitle>
-        <CardDescription>Manage your payment settings.</CardDescription>
+        <CardDescription>Manage your payment settings. The UPI ID you set here will be shown to shops when they choose to pay online.</CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit(onSubmit)}>
         <CardContent className="space-y-6">
