@@ -33,10 +33,9 @@ export function UpiPaymentDialog({ isOpen, onOpenChange, totalAmount, onConfirmP
     const qrCodeRef = useRef<HTMLCanvasElement>(null);
 
     useEffect(() => {
-        const fetchAdminUpiIdAndGenerateQr = async () => {
+        const fetchAdminUpiId = async () => {
             if (isOpen) {
                 setIsLoadingUpi(true);
-                let upiId = '';
                 try {
                     const q = query(collection(db, 'users'), where('role', '==', 'admin'));
                     const querySnapshot = await getDocs(q);
@@ -44,7 +43,6 @@ export function UpiPaymentDialog({ isOpen, onOpenChange, totalAmount, onConfirmP
                         const adminDoc = querySnapshot.docs[0];
                         const fetchedUpiId = adminDoc.data().upiId || '';
                         setAdminUpiId(fetchedUpiId);
-                        upiId = fetchedUpiId;
                     }
                 } catch (error) {
                     console.error("Error fetching admin UPI ID: ", error);
@@ -52,19 +50,22 @@ export function UpiPaymentDialog({ isOpen, onOpenChange, totalAmount, onConfirmP
                 } finally {
                     setIsLoadingUpi(false);
                 }
-
-                if (upiId && qrCodeRef.current) {
-                    // upi://pay?pa=UPI_ID&pn=Payee_Name&am=Amount&cu=Currency_Code
-                    const upiString = `upi://pay?pa=${upiId}&pn=Admin&am=${totalAmount}&cu=INR`;
-                    QRCode.toCanvas(qrCodeRef.current, upiString, { width: 220 }, (error) => {
-                        if (error) console.error('Error generating QR code:', error);
-                    });
-                }
             }
         };
 
-        fetchAdminUpiIdAndGenerateQr();
-    }, [isOpen, totalAmount, toast]);
+        fetchAdminUpiId();
+    }, [isOpen, toast]);
+
+    useEffect(() => {
+        if (adminUpiId && qrCodeRef.current) {
+            // upi://pay?pa=UPI_ID&pn=Payee_Name&am=Amount&cu=Currency_Code
+            const upiString = `upi://pay?pa=${adminUpiId}&pn=Admin&am=${totalAmount}&cu=INR`;
+            QRCode.toCanvas(qrCodeRef.current, upiString, { width: 220 }, (error) => {
+                if (error) console.error('Error generating QR code:', error);
+            });
+        }
+    }, [adminUpiId, totalAmount]);
+
 
     const handleCopyUpi = () => {
         if(!adminUpiId) return;
@@ -85,7 +86,7 @@ export function UpiPaymentDialog({ isOpen, onOpenChange, totalAmount, onConfirmP
         <DialogHeader>
           <DialogTitle className="text-2xl text-center">Complete Your Payment</DialogTitle>
            <DialogDescription className="text-center">
-            You are paying the total amount of:
+            Scan the QR to pay the total amount of:
           </DialogDescription>
           <div className="flex items-center justify-center text-4xl font-bold py-2">
               <IndianRupee className="h-8 w-8" />
