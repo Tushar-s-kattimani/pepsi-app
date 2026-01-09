@@ -4,13 +4,9 @@ import { initializeApp, getApps } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore, collection, onSnapshot, query, doc } from 'firebase/firestore';
 import { useState, useEffect, useMemo } from 'react';
-import { firebaseConfig, db } from './config';
+import { firebaseConfig, db, auth } from './config';
 
-// --- INITIALIZATION ---
-let firebaseApp = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
-const auth = getAuth(firebaseApp);
-
-export { db, auth, firebaseApp };
+export { db, auth, firebaseApp } from './config';
 
 // --- HOOKS ---
 export const useCollection = (pathOrQuery: string | any) => {
@@ -54,3 +50,5 @@ export const useCollection = (pathOrQuery: string | any) => {
 
 export * from './provider';
 export * from './auth/use-user';
+
+    

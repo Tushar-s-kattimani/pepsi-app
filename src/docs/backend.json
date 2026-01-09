@@ -43,6 +43,11 @@
         "upiId": {
             "type": "string",
             "description": "The UPI ID of the admin user for receiving payments."
+        },
+        "qrCodeImageUrl": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL of the admin's uploaded UPI QR code image."
         }
       },
       "required": ["uid", "email", "role"]
@@ -207,3 +212,5 @@
     }
   }
 }
+
+    
