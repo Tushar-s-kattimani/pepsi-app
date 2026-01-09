@@ -100,19 +100,23 @@ export function AdminProfile() {
     setIsSubmitting(true);
     try {
       const userDocRef = doc(db, 'users', user.uid);
+      const updateData: { upiId: string; qrCodeImageUrl?: string | null } = {
+        upiId: data.upiId,
+      };
       
       let newImageUrl = qrCodeImageUrl;
       if (selectedFile) {
           const filePath = `qrcodes/${user.uid}/${selectedFile.name}`;
           newImageUrl = await uploadFile(selectedFile, filePath);
+          updateData.qrCodeImageUrl = newImageUrl;
       }
 
-      await updateDoc(userDocRef, {
-        upiId: data.upiId,
-        qrCodeImageUrl: newImageUrl,
-      });
+      await updateDoc(userDocRef, updateData);
 
-      setQrCodeImageUrl(newImageUrl);
+      if (newImageUrl) {
+        setQrCodeImageUrl(newImageUrl);
+      }
+
       setSelectedFile(null);
       setPreviewUrl(null);
        if (fileInputRef.current) {
@@ -121,7 +125,7 @@ export function AdminProfile() {
 
       toast({ title: 'Success', description: 'Profile updated successfully.' });
     } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Error', description: error.message });
+      toast({ variant: 'destructive', title: 'Error', description: `Failed to update profile: ${error.message}` });
     } finally {
       setIsSubmitting(false);
     }
