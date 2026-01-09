@@ -10,11 +10,12 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
-import { IndianRupee } from 'lucide-react';
+import { IndianRupee, Loader2, Copy } from 'lucide-react';
 import { useToast } from './ui/use-toast';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { db } from '@/firebase/config';
 
-// You would host these images in your public folder
 const GPayLogo = 'https://upload.wikimedia.org/wikipedia/commons/1/13/Google_Pay_GPay_Logo.svg';
 const PhonePeLogo = 'https://upload.wikimedia.org/wikipedia/commons/7/71/PhonePe_Logo.svg';
 const PaytmLogo = 'https://upload.wikimedia.org/wikipedia/commons/b/b9/Paytm_Logo.svg';
@@ -29,24 +30,48 @@ interface UpiPaymentDialogProps {
 export function UpiPaymentDialog({ isOpen, onOpenChange, totalAmount, onConfirmPayment }: UpiPaymentDialogProps) {
     const { toast } = useToast();
     const [isProcessing, setIsProcessing] = useState(false);
+    const [adminUpiId, setAdminUpiId] = useState('');
+    const [isLoadingUpi, setIsLoadingUpi] = useState(true);
 
-    const handlePaymentSimulation = (appName: string) => {
+    useEffect(() => {
+        const fetchAdminUpiId = async () => {
+            if (isOpen) {
+                setIsLoadingUpi(true);
+                try {
+                    const q = query(collection(db, 'users'), where('role', '==', 'admin'));
+                    const querySnapshot = await getDocs(q);
+                    if (!querySnapshot.empty) {
+                        const adminDoc = querySnapshot.docs[0];
+                        setAdminUpiId(adminDoc.data().upiId || '');
+                    }
+                } catch (error) {
+                    console.error("Error fetching admin UPI ID: ", error);
+                    toast({ variant: 'destructive', title: 'Error', description: 'Could not fetch admin UPI ID.' });
+                } finally {
+                    setIsLoadingUpi(false);
+                }
+            }
+        };
+
+        fetchAdminUpiId();
+    }, [isOpen, toast]);
+
+    const handleCopyUpi = () => {
+        navigator.clipboard.writeText(adminUpiId);
+        toast({ title: 'UPI ID Copied!', description: 'You can now paste it in your payment app.' });
+    };
+
+    const handlePaymentConfirmation = () => {
         setIsProcessing(true);
         toast({
-            title: 'Processing Payment...',
-            description: `Redirecting to ${appName} to complete the payment.`,
+            title: 'Confirming Payment...',
+            description: 'Please wait while we confirm your payment and place the order.',
         });
 
-        // Simulate payment processing delay
         setTimeout(() => {
             onConfirmPayment();
-            // The parent component will close the dialog upon successful order placement
             setIsProcessing(false);
-             toast({
-                title: 'Payment Successful!',
-                description: 'Your order is being placed.',
-            });
-        }, 3000); // 3-second delay to simulate API calls
+        }, 3000); 
     };
 
   return (
@@ -54,51 +79,53 @@ export function UpiPaymentDialog({ isOpen, onOpenChange, totalAmount, onConfirmP
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-2xl text-center">Complete Your Payment</DialogTitle>
-          <DialogDescription className="text-center">
+           <DialogDescription className="text-center">
             You are paying
           </DialogDescription>
-          <div className="flex items-center justify-center text-4xl font-bold py-4">
+          <div className="flex items-center justify-center text-4xl font-bold py-2">
               <IndianRupee className="h-8 w-8" />
               {totalAmount.toLocaleString('en-IN')}
           </div>
         </DialogHeader>
-        <div className="space-y-3 py-4">
-            <h3 className="text-sm font-medium text-center text-muted-foreground">
-                CHOOSE A PAYMENT OPTION
-            </h3>
-            <Button
-                size="lg"
-                variant="outline"
-                className="w-full h-16 text-lg justify-start gap-4"
-                onClick={() => handlePaymentSimulation('Google Pay')}
-                disabled={isProcessing}
-            >
-                <Image src={GPayLogo} alt="Google Pay" width={40} height={40} className="h-8 w-auto"/>
-                Google Pay
-            </Button>
-             <Button
-                size="lg"
-                variant="outline"
-                className="w-full h-16 text-lg justify-start gap-4"
-                onClick={() => handlePaymentSimulation('PhonePe')}
-                disabled={isProcessing}
-            >
-                <Image src={PhonePeLogo} alt="PhonePe" width={40} height={40} className="h-8 w-auto"/>
-                PhonePe
-            </Button>
-             <Button
-                size="lg"
-                variant="outline"
-                className="w-full h-16 text-lg justify-start gap-4"
-                onClick={() => handlePaymentSimulation('Paytm')}
-                disabled={isProcessing}
-            >
-                <Image src={PaytmLogo} alt="Paytm" width={40} height={40} className="h-8 w-auto"/>
-                Paytm
-            </Button>
+
+        <div className="space-y-4 py-4">
+             {isLoadingUpi ? (
+                <div className="flex justify-center items-center h-20">
+                    <Loader2 className="h-8 w-8 animate-spin" />
+                </div>
+            ) : adminUpiId ? (
+                <div className="space-y-3 text-center">
+                    <Label htmlFor="upiId" className="text-muted-foreground font-normal">Send the payment to the admin's UPI ID:</Label>
+                    <div className="flex items-center gap-2">
+                        <p id="upiId" className="text-lg font-mono p-2 border rounded-md bg-gray-100 w-full text-center">{adminUpiId}</p>
+                        <Button type="button" variant="outline" size="icon" onClick={handleCopyUpi}>
+                            <Copy className="h-4 w-4" />
+                            <span className="sr-only">Copy UPI ID</span>
+                        </Button>
+                    </div>
+                </div>
+            ) : (
+                <p className="text-center text-red-500 font-medium">Admin UPI ID is not configured. Please contact support.</p>
+            )}
+
+            <div className="border-t pt-4 mt-4">
+                 <Button
+                    size="lg"
+                    className="w-full h-14 text-lg"
+                    onClick={handlePaymentConfirmation}
+                    disabled={isProcessing || isLoadingUpi || !adminUpiId}
+                >
+                    {isProcessing ? (
+                        <Loader2 className="mr-2 h-6 w-6 animate-spin" />
+                    ) : (
+                        'I have paid. Confirm Order.'
+                    )}
+                </Button>
+            </div>
         </div>
+
          <DialogFooter className="text-xs text-muted-foreground justify-center">
-          This is a simulated payment flow. No real money will be charged.
+          This is a simulated payment flow. After paying, click the button above.
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -12,6 +12,7 @@ import { ShopRevenue } from '@/components/shop-revenue';
 import { LaborerManagement } from '@/components/laborer-management';
 import { LaborAttendance } from '@/components/labor-attendance';
 import { StockReport } from '@/components/stock-report';
+import { AdminProfile } from '@/components/admin-profile';
 import { query, collection, orderBy } from 'firebase/firestore';
 import { db } from '@/firebase/config';
 import { MobileSidebar } from './mobile-sidebar';
@@ -44,6 +45,8 @@ export function AdminDashboard() {
         return <LaborerManagement />;
       case 'attendance':
         return <LaborAttendance />;
+      case 'profile':
+        return <AdminProfile />;
       default:
         return <AdminOverview orders={orders || []} products={products || []} users={users || []} loading={ordersLoading || productsLoading || usersLoading} />;
     }
