@@ -76,8 +76,10 @@ export function AdminProfile() {
   return (
     <Card className="max-w-2xl mx-auto">
       <CardHeader>
-        <CardTitle>Admin Profile</CardTitle>
-        <CardDescription>Manage your payment settings. The UPI ID you set here will be shown to shops when they choose to pay online.</CardDescription>
+        <CardTitle>Admin Payment Profile</CardTitle>
+        <CardDescription>
+          Enter your existing UPI ID here. This app does not connect to your bank; it only uses the ID you provide to generate QR codes for shop payments. The UPI ID itself must be linked to your bank account through your UPI app (like Google Pay, PhonePe, etc.).
+        </CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit(onSubmit)}>
         <CardContent className="space-y-6">
