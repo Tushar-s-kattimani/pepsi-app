@@ -1,7 +1,7 @@
 'use client';
 
 import { ReactNode, useEffect, useState } from 'react';
-import { onAuthStateChanged, User, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut as firebaseSignOut } from 'firebase/auth';
+import { onAuthStateChanged, User, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut as firebaseSignOut, sendEmailVerification, sendPasswordResetEmail } from 'firebase/auth';
 import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { auth, db } from './';
 import { AuthContext } from './auth/use-user';
@@ -17,24 +17,24 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setLoading(true);
       if (user) {
-        setUser(user);
-        const userDocRef = doc(db, 'users', user.uid);
-        const userDoc = await getDoc(userDocRef);
+        // We only automatically sign in verified users or admins
+        if (user.emailVerified || assignUserRole(user.email || '') === 'admin') {
+          setUser(user);
+          const userDocRef = doc(db, 'users', user.uid);
+          const userDoc = await getDoc(userDocRef);
 
-        if (userDoc.exists()) {
-          const userRole = userDoc.data().role || 'shop';
-          setRole(userRole);
-        } else {
-          // Document doesn't exist, so this is a new sign-up
-          const newRole = assignUserRole(user.email || '');
-          try {
+          if (userDoc.exists()) {
+            setRole(userDoc.data().role || 'shop');
+          } else {
+            // New user (likely first-time admin)
+            const newRole = assignUserRole(user.email || '');
             const userData: any = {
               uid: user.uid,
               email: user.email,
               role: newRole,
               createdAt: serverTimestamp(),
             };
-            if (newRole === 'shop') {
+             if (newRole === 'shop') {
               userData.profileName = '';
               userData.phoneNumber = '';
               userData.shopName = '';
@@ -42,9 +42,14 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
             }
             await setDoc(userDocRef, userData);
             setRole(newRole);
-          } catch (error) {
-            console.error("Error creating user document:", error);
           }
+        } else {
+          // User exists but is not verified, so we don't sign them in.
+          // The login page will handle the verification prompt.
+          setUser(null);
+          setRole(null);
+          // We sign them out to prevent access to authenticated routes
+          await firebaseSignOut(auth);
         }
       } else {
         setUser(null);
@@ -55,12 +60,42 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
     return () => unsubscribe();
   }, []);
 
-  const signUp = (email: string, pass: string) => createUserWithEmailAndPassword(auth, email, pass);
-  const signIn = (email: string, pass: string) => signInWithEmailAndPassword(auth, email, pass);
+  const signUp = async (email: string, pass: string) => {
+    const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
+    if (userCredential.user && assignUserRole(email) === 'shop') {
+      await sendEmailVerification(userCredential.user);
+      // Sign out immediately so they must verify first.
+      await firebaseSignOut(auth); 
+    }
+    return userCredential;
+  };
+
+  const signIn = async (email: string, pass: string) => {
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, email, pass);
+      if (userCredential.user && !userCredential.user.emailVerified && assignUserRole(email) === 'shop') {
+          // Don't let the provider auto-sign them in.
+          await firebaseSignOut(auth); 
+          // Throw a custom error for the login page to catch.
+          const error: any = new Error("Email not verified");
+          error.code = 'auth/unverified-email';
+          error.unverifiedUser = userCredential.user; // Attach the user object
+          throw error;
+      }
+      return userCredential;
+    } catch (error: any) {
+        // Re-throw the error to be caught by the UI
+        throw error;
+    }
+  };
+
   const signOut = () => firebaseSignOut(auth);
+  const sendPasswordReset = (email: string) => sendPasswordResetEmail(auth, email);
+  const sendVerificationEmail = (user: User) => sendEmailVerification(user);
+
 
   return (
-    <AuthContext.Provider value={{ user, loading, role, signUp, signIn, signOut }}>
+    <AuthContext.Provider value={{ user, loading, role, signUp, signIn, signOut, sendPasswordReset, sendVerificationEmail }}>
       {children}
       <FirebaseErrorListener />
     </AuthContext.Provider>

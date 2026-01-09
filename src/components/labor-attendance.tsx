@@ -30,7 +30,7 @@ export function LaborAttendance() {
 
   useEffect(() => {
     const fetchAttendance = async () => {
-      if (!attendanceQuery) return;
+      if (!attendanceQuery || laborersLoading) return;
       setIsLoading(true);
       try {
         const querySnapshot = await getDocs(attendanceQuery);
@@ -59,9 +59,9 @@ export function LaborAttendance() {
         setIsLoading(false);
       }
     };
-    if (!laborersLoading){
-        fetchAttendance();
-    }
+    
+    fetchAttendance();
+    
   }, [attendanceQuery, laborers, laborersLoading, toast, selectedDate]);
 
 
@@ -91,7 +91,9 @@ export function LaborAttendance() {
           const docRef = doc(db, 'attendance', docId);
           await updateDoc(docRef, dataToSave);
         } else { // New record
-          await addDoc(collection(db, 'attendance'), dataToSave);
+          if(dataToSave.status !== 'Absent' || dataToSave.checkIn) {
+            await addDoc(collection(db, 'attendance'), dataToSave);
+          }
         }
       }
       toast({ title: 'Success', description: 'Attendance saved successfully.' });
@@ -107,27 +109,29 @@ export function LaborAttendance() {
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
+      <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <CardTitle>Labor Attendance</CardTitle>
-        <div className="flex items-center gap-2">
-            <CalendarIcon className="h-5 w-5 text-gray-500"/>
-            <Input
-                type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                className="w-auto"
-            />
-            <Button onClick={handleSave} disabled={isSaving}>
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+            <div className="flex items-center gap-2">
+                <CalendarIcon className="h-5 w-5 text-gray-500"/>
+                <Input
+                    type="date"
+                    value={selectedDate}
+                    onChange={(e) => setSelectedDate(e.target.value)}
+                    className="w-full sm:w-auto"
+                />
+            </div>
+            <Button onClick={handleSave} disabled={isSaving} className="w-full sm:w-auto">
                 {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                 Save Attendance
             </Button>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="overflow-x-auto">
         {loading ? (
           <div className="flex justify-center py-10"><Loader2 className="h-8 w-8 animate-spin" /></div>
         ) : (
-          <Table>
+          <Table className="min-w-[600px]">
             <TableHeader>
               <TableRow>
                 <TableHead>Laborer Name</TableHead>

@@ -12,11 +12,11 @@ export function ShopManagement({ users = [], loading }: { users: any[], loading:
       <CardHeader>
         <CardTitle>Shop Management</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="overflow-x-auto">
         {loading ? (
           <div className="flex justify-center py-10"><Loader2 className="h-8 w-8 animate-spin" /></div>
         ) : (
-          <Table>
+          <Table className="min-w-[700px]">
             <TableHeader>
               <TableRow>
                 <TableHead>Shop Name</TableHead>

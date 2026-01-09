@@ -63,9 +63,13 @@
         "position": {
           "type": "number",
           "description": "The order of the product in the list."
+        },
+        "rate": {
+          "type": "number",
+          "description": "The price or rate of the product."
         }
       },
-      "required": ["name", "size", "stock", "position"]
+      "required": ["name", "size", "stock", "position", "rate"]
     },
     "Order": {
       "title": "Order",
@@ -90,9 +94,10 @@
               "id": { "type": "string" },
               "name": { "type": "string" },
               "size": { "type": "string" },
-              "quantity": { "type": "number" }
+              "quantity": { "type": "number" },
+              "rate": { "type": "number" }
             },
-            "required": ["id", "name", "quantity"]
+            "required": ["id", "name", "size", "quantity", "rate"]
           }
         },
         "status": {
@@ -104,9 +109,19 @@
           "type": "string",
           "format": "date-time",
           "description": "The timestamp when the order was placed."
+        },
+        "paymentMethod": {
+          "type": "string",
+          "description": "The method used for payment.",
+          "enum": ["Cash on Delivery", "Online"]
+        },
+        "paymentStatus": {
+          "type": "string",
+          "description": "The status of the payment.",
+          "enum": ["Pending", "Paid"]
         }
       },
-      "required": ["shopId", "items", "status", "createdAt"]
+      "required": ["shopId", "items", "status", "createdAt", "paymentMethod", "paymentStatus"]
     },
     "Laborer": {
       "title": "Laborer",

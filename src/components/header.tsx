@@ -2,16 +2,148 @@
 
 import { useUser } from '@/firebase';
 import { Button } from '@/components/ui/button';
-import { ShoppingCart, LogOut, Search, Menu } from 'lucide-react';
+import { ShoppingCart, LogOut, Menu, Loader2, ShoppingBasket } from 'lucide-react';
 import { useCart } from '@/context/cart-context';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetFooter } from '@/components/ui/sheet';
-import { Input } from '@/components/ui/input';
+import { useToast } from '@/components/ui/use-toast';
+import { collection, serverTimestamp, doc, getDoc, runTransaction } from 'firebase/firestore';
+import { db } from '@/firebase/config';
+import { useState } from 'react';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError, SecurityRuleContext } from '@/firebase/errors';
+import { PaymentDialog } from './payment-dialog';
 
 export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
   const { user, signOut, role } = useUser();
-  const { cart, updateQuantity, clearCart, total } = useCart();
+  const { cart, updateQuantity, clearCart } = useCart();
+  const { toast } = useToast();
+  const [isPlacingOrder, setIsPlacingOrder] = useState(false);
+  const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
+
+  const cartItems = cart;
+
+  const handlePlaceOrderClick = () => {
+    if (!user) {
+      toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to place an order.' });
+      return;
+    }
+    if (cart.length === 0) {
+      toast({ variant: 'destructive', title: 'Empty Cart', description: 'Please add items to your cart.' });
+      return;
+    }
+    setIsPaymentDialogOpen(true);
+  };
+
+
+  const handlePlaceOrder = async (paymentMethod: 'Cash on Delivery' | 'Online') => {
+    setIsPaymentDialogOpen(false); // Close the dialog first
+    if (!user) {
+      toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to place an order.' });
+      return;
+    }
+    
+    setIsPlacingOrder(true);
+    
+    // 1. Check for complete profile before starting the transaction
+    const userDocRef = doc(db, 'users', user.uid);
+    try {
+      const userDoc = await getDoc(userDocRef);
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        if (!userData.profileName || !userData.phoneNumber || !userData.shopName || !userData.location) {
+          toast({
+            variant: 'destructive',
+            title: 'Incomplete Profile',
+            description: 'Please complete your profile information in the Profile section before placing an order.',
+            duration: 5000,
+          });
+          setIsPlacingOrder(false);
+          return;
+        }
+      } else {
+        throw new Error('User data not found.');
+      }
+    } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Error', description: `Could not verify user profile: ${error.message}` });
+        setIsPlacingOrder(false);
+        return;
+    }
+
+    // 2. Run the transaction to place order and update stock
+    const newOrderRef = doc(collection(db, 'orders'));
+    const orderPayload = {
+        shopId: user.uid,
+        shopEmail: user.email,
+        items: cart.map(item => ({
+          id: item.id,
+          name: item.name,
+          size: item.size,
+          quantity: item.quantity,
+          rate: item.rate,
+        })),
+        status: 'Pending',
+        createdAt: serverTimestamp(),
+        paymentMethod: paymentMethod,
+        paymentStatus: 'Pending',
+    };
+
+    runTransaction(db, async (transaction) => {
+      const productRefs = new Map<string, any>();
+      const productSnapshots = new Map<string, any>();
+
+      // First, read all product documents and check stock
+      for (const item of cart) {
+        const productRef = doc(db, 'products', item.id);
+        productRefs.set(item.id, productRef);
+        const productSnap = await transaction.get(productRef);
+        if (!productSnap.exists()) {
+          throw new Error(`Product "${item.name}" not found.`);
+        }
+        const currentStock = productSnap.data().stock;
+        if (currentStock < item.quantity) {
+          throw new Error(`Insufficient stock for ${item.name}. Only ${currentStock} left.`);
+        }
+        productSnapshots.set(item.id, productSnap);
+      }
+
+      // If all stock checks passed, proceed to write
+      transaction.set(newOrderRef, orderPayload);
+
+      // Update product stock
+      for (const item of cart) {
+        const productRef = productRefs.get(item.id);
+        const productSnap = productSnapshots.get(item.id);
+        const newStock = productSnap.data().stock - item.quantity;
+        transaction.update(productRef, { stock: newStock });
+      }
+    }).then(() => {
+        toast({ title: 'Success', description: 'Order placed successfully!' });
+        clearCart();
+    }).catch((error: any) => {
+        const isPermissionError = error.code === 'permission-denied';
+        if(isPermissionError){
+          const permissionError = new FirestorePermissionError({
+              path: newOrderRef.path,
+              operation: 'create',
+              requestResourceData: orderPayload,
+          } satisfies SecurityRuleContext);
+          errorEmitter.emit('permission-error', permissionError);
+        }
+        
+        toast({
+            variant: 'destructive',
+            title: 'Order Failed',
+            description: isPermissionError ? 'Could not place order due to a permissions issue.' : error.message,
+            duration: 5000,
+        });
+        console.error("Transaction failed: ", error);
+    }).finally(() => {
+        setIsPlacingOrder(false);
+    });
+  };
 
   return (
+    <>
     <header className="flex h-20 shrink-0 items-center justify-between border-b bg-white px-4 sm:px-6 md:px-10 no-print">
       <div className="flex items-center gap-4 overflow-hidden">
         <Button
@@ -39,9 +171,9 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
             <SheetTrigger asChild>
               <Button variant="outline" size="icon" className="relative flex-shrink-0">
                 <ShoppingCart className="h-5 w-5" />
-                {cart.length > 0 && (
+                {cartItems.length > 0 && (
                   <span className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-xs text-white">
-                    {cart.reduce((sum, item) => sum + item.quantity, 0)}
+                    {cartItems.reduce((sum, item) => sum + item.quantity, 0)}
                   </span>
                 )}
               </Button>
@@ -51,20 +183,19 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
                 <SheetTitle className="text-2xl font-bold">Your Cart</SheetTitle>
               </SheetHeader>
               <div className="flex-1 overflow-y-auto pr-4">
-                {cart.length > 0 ? (
+                {cartItems.length > 0 ? (
                   <div className="space-y-4">
-                    {cart.map((item) => (
+                    {cartItems.map((item) => (
                       <div key={item.id} className="flex items-center justify-between rounded-lg bg-gray-50 p-3">
                         <div>
                           <p className="font-semibold">{item.name} ({item.size})</p>
-                          <p className="text-sm text-gray-600">₹{item.price.toFixed(2)}</p>
+                           <p className="text-sm text-gray-500">{item.quantity} units</p>
                         </div>
                         <div className="flex items-center gap-2">
                           <Button size="icon" variant="ghost" onClick={() => updateQuantity(item.id, item.quantity - 1)}>-</Button>
                           <span>{item.quantity}</span>
                           <Button size="icon" variant="ghost" onClick={() => updateQuantity(item.id, item.quantity + 1)}>+</Button>
                         </div>
-                        <p className="font-semibold">₹{(item.price * item.quantity).toFixed(2)}</p>
                       </div>
                     ))}
                   </div>
@@ -72,14 +203,17 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
                   <p className="mt-8 text-center text-gray-500">Your cart is empty.</p>
                 )}
               </div>
-              {cart.length > 0 && (
+              {cartItems.length > 0 && (
                 <SheetFooter className="mt-auto border-t pt-4">
                   <div className="w-full space-y-3">
-                    <div className="flex justify-between text-xl font-bold">
-                      <span>Total</span>
-                      <span>₹{total.toFixed(2)}</span>
+                     <div className="flex justify-between text-xl font-bold">
+                      <span>Total Items</span>
+                      <span>{cartItems.reduce((sum, item) => sum + item.quantity, 0)}</span>
                     </div>
-                    <Button className="w-full" size="lg" disabled>Checkout (WIP)</Button>
+                     <Button className="w-full" onClick={handlePlaceOrderClick} disabled={isPlacingOrder}>
+                       {isPlacingOrder ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShoppingBasket className="mr-2 h-4 w-4" />}
+                      Place Order
+                    </Button>
                     <Button variant="outline" className="w-full" onClick={clearCart}>Clear Cart</Button>
                   </div>
                 </SheetFooter>
@@ -93,5 +227,11 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
         </Button>
       </div>
     </header>
+    <PaymentDialog
+        isOpen={isPaymentDialogOpen}
+        onOpenChange={setIsPaymentDialogOpen}
+        onSelectPayment={handlePlaceOrder}
+      />
+    </>
   );
 }

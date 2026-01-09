@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,7 +7,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/firebase/config';
 import { useToast } from '@/components/ui/use-toast';
-import { Loader2, User, Download, Printer, Calendar, Clock, Info, Filter } from 'lucide-react';
+import { Loader2, User, Download, Printer, Calendar, Clock, Info, Filter, Phone, CreditCard } from 'lucide-react';
 import { useMemo, useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 
@@ -16,6 +15,11 @@ const statusColors: { [key: string]: string } = {
   Pending: 'bg-yellow-100 text-yellow-800',
   Confirmed: 'bg-blue-100 text-blue-800',
   Delivered: 'bg-green-100 text-green-800',
+};
+
+const paymentStatusColors: { [key: string]: string } = {
+  Pending: 'text-yellow-600',
+  Paid: 'text-green-600',
 };
 
 export function AllOrders({ orders: initialOrders = [], users = [], loading }: { orders: any[], users: any[], loading: boolean }) {
@@ -95,7 +99,7 @@ export function AllOrders({ orders: initialOrders = [], users = [], loading }: {
 
   const handleDownload = () => {
     let csvContent = "data:text/csv;charset=utf-8,";
-    csvContent += "Date,Order ID,Shop Name,Phone Number,Location,Product Name,Size,Quantity,Status\r\n";
+    csvContent += "Date,Order ID,Shop Name,Phone Number,Location,Product Name,Size,Quantity,Rate,Amount,Status,Payment Method,Payment Status\r\n";
 
     orders.forEach((order) => {
         const shopInfo = usersMap.get(order.shopId);
@@ -110,7 +114,11 @@ export function AllOrders({ orders: initialOrders = [], users = [], loading }: {
                 `"${item.name}"`,
                 `"${item.size}"`,
                 item.quantity,
+                item.rate,
+                item.quantity * (item.rate || 0),
                 order.status,
+                order.paymentMethod || 'N/A',
+                order.paymentStatus || 'N/A',
             ].join(',');
             csvContent += row + "\r\n";
         });
@@ -160,11 +168,11 @@ export function AllOrders({ orders: initialOrders = [], users = [], loading }: {
             </Button>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="overflow-x-auto">
         {loading && initialOrders.length === 0 ? (
             <div className="flex justify-center py-10"><Loader2 className="h-8 w-8 animate-spin" /></div>
         ) : (
-          <Accordion type="multiple" className="w-full space-y-4">
+          <Accordion type="multiple" className="w-full space-y-4 min-w-[600px] md:min-w-full">
             {ordersByDate.map(({ date, totalOrders, shops, hasPending }) => (
               <AccordionItem value={date} key={date} className="border-0 rounded-lg bg-white shadow-sm">
                 <AccordionTrigger className="p-4 hover:no-underline no-print rounded-t-lg border-b">
@@ -188,30 +196,44 @@ export function AllOrders({ orders: initialOrders = [], users = [], loading }: {
                       const hasPending = orders.some((order: any) => order.status === 'Pending');
                       return (
                       <AccordionItem value={shopInfo.id} key={shopInfo.id} className="border-t">
-                        <AccordionTrigger className="p-4 hover:no-underline">
-                            <div className="flex justify-between w-full items-center pr-4">
-                                <div className='flex items-center gap-3'>
-                                    <User className="h-5 w-5 text-gray-500" />
-                                    <div className="text-left">
-                                        <div className="font-semibold text-base">
-                                          {shopInfo.shopName}
-                                           {hasPending && (
-                                            <span className="ml-2 inline-flex items-center gap-1.5 animate-blink text-red-600 font-bold">
-                                                <Clock className="h-4 w-4" />
-                                                Pending
-                                            </span>
-                                          )}
-                                        </div>
-                                        <div className="text-sm text-muted-foreground hidden md:block">{shopInfo.location} &bull; {shopInfo.phoneNumber}</div>
-                                    </div>
-                                </div>
-                                <div className="px-2 py-1 text-xs font-bold text-green-800 bg-green-100 rounded-full inline-block">{orders.length} order(s)</div>
-                            </div>
-                        </AccordionTrigger>
+                         <div className="flex items-center p-4">
+                          <AccordionTrigger className="p-0 hover:no-underline flex-grow">
+                              <div className="flex justify-between w-full items-center pr-4">
+                                  <div className='flex items-center gap-3'>
+                                      <User className="h-5 w-5 text-gray-500" />
+                                      <div className="text-left">
+                                          <div className="font-semibold text-base">
+                                            {shopInfo.shopName}
+                                             {hasPending && (
+                                              <span className="ml-2 inline-flex items-center gap-1.5 animate-blink text-red-600 font-bold">
+                                                  <Clock className="h-4 w-4" />
+                                                  Pending
+                                              </span>
+                                            )}
+                                          </div>
+                                          <div className="text-sm text-muted-foreground flex items-center gap-2 mt-1">
+                                              <span>{shopInfo.location}</span>
+                                          </div>
+                                      </div>
+                                  </div>
+                                  <div className="px-2 py-1 text-xs font-bold text-green-800 bg-green-100 rounded-full inline-block">{orders.length} order(s)</div>
+                              </div>
+                          </AccordionTrigger>
+                           {shopInfo.phoneNumber && (
+                                <a href={`tel:${shopInfo.phoneNumber}`} className="ml-2 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+                                    <Button variant="outline" size="icon" className="h-8 w-8">
+                                        <Phone className="h-4 w-4" />
+                                        <span className="sr-only">Call {shopInfo.shopName}</span>
+                                    </Button>
+                                </a>
+                            )}
+                        </div>
                         <AccordionContent className="pb-2 px-4 bg-gray-50/50">
-                            {orders.map((order: any) => (
+                            {orders.map((order: any) => {
+                                const totalAmount = order.items.reduce((acc: number, item: any) => acc + (item.quantity * (item.rate || 0)), 0);
+                                return (
                                 <div key={order.id} className="mb-4 border rounded-lg p-4 bg-white mt-2">
-                                    <div className="flex justify-between items-start mb-3">
+                                    <div className="flex justify-between items-start mb-3 flex-wrap gap-2">
                                         <div>
                                             <div className='flex items-center gap-2'>
                                                 <Info className="h-4 w-4" />
@@ -223,31 +245,44 @@ export function AllOrders({ orders: initialOrders = [], users = [], loading }: {
                                                 <span>{order.createdAt?.toDate().toLocaleTimeString()}</span>
                                             </div>
                                         </div>
-                                         <span className={`px-2 py-1 text-xs font-semibold rounded-full ${statusColors[order.status]}`}>
-                                            {order.status}
-                                         </span>
+                                         <div className="text-right">
+                                             <span className={`px-2 py-1 text-xs font-semibold rounded-full ${statusColors[order.status]}`}>
+                                                {order.status}
+                                             </span>
+                                              <div className='flex items-center justify-end gap-2 mt-2 text-xs'>
+                                                <CreditCard className="h-3 w-3" />
+                                                <span>{order.paymentMethod} - </span>
+                                                <span className={`font-semibold ${paymentStatusColors[order.paymentStatus]}`}>{order.paymentStatus}</span>
+                                            </div>
+                                         </div>
                                     </div>
+                                    <div className="overflow-x-auto">
                                     <Table>
                                         <TableHeader>
                                             <TableRow>
                                                 <TableHead>Product</TableHead>
                                                 <TableHead>Size</TableHead>
                                                 <TableHead className='text-center'>Qty</TableHead>
+                                                <TableHead className='text-right'>Rate</TableHead>
+                                                <TableHead className='text-right'>Amount</TableHead>
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
-                                            {order.items.map((item: any) => (
-                                            <TableRow key={`${item.id}-${item.size}`}>
-                                                <TableCell>{item.name} <span className="text-muted-foreground">({item.size})</span></TableCell>
+                                            {order.items.map((item: any, index: number) => (
+                                            <TableRow key={`${item.id}-${item.size}-${index}`}>
+                                                <TableCell>{item.name}</TableCell>
                                                 <TableCell>{item.size}</TableCell>
                                                 <TableCell className='text-center'>{item.quantity}</TableCell>
+                                                <TableCell className='text-right'>{item.rate?.toLocaleString('en-IN', { style: 'currency', currency: 'INR' }) ?? 'N/A'}</TableCell>
+                                                <TableCell className='text-right font-semibold'>{(item.quantity * (item.rate || 0)).toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</TableCell>
                                             </TableRow>
                                             ))}
                                         </TableBody>
                                     </Table>
+                                    </div>
                                     <div className="flex justify-between items-center mt-4 border-t pt-3">
                                         <div className="font-bold text-lg">
-                                            Total Items: {order.items.reduce((acc: number, item: any) => acc + item.quantity, 0)}
+                                            Total: {totalAmount.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}
                                         </div>
                                         <div className="no-print">
                                             <Select onValueChange={(value) => handleStatusChange(order.id, value)} defaultValue={order.status}>
@@ -263,7 +298,7 @@ export function AllOrders({ orders: initialOrders = [], users = [], loading }: {
                                         </div>
                                     </div>
                                 </div>
-                            ))}
+                            )})}
                         </AccordionContent>
                       </AccordionItem>
                     )})}
@@ -277,7 +312,3 @@ export function AllOrders({ orders: initialOrders = [], users = [], loading }: {
     </Card>
   );
 }
-
-    
-
-    

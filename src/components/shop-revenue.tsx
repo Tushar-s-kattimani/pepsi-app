@@ -112,7 +112,7 @@ export function ShopRevenue({ orders = [], users = [], loading }: { orders: any[
     <Card className="printable-area">
       <CardHeader className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between no-print rounded-t-lg bg-gray-50/50 border-b p-4">
         <div className="flex items-center gap-3">
-          <Banknote className="w-8 h-8 text-gray-600" />
+          <Banknote className="w-6 h-6 md:w-8 md:h-8 text-gray-600" />
           <CardTitle className='text-xl md:text-2xl font-bold tracking-tight'>Shop Revenue</CardTitle>
         </div>
         <div className="flex flex-col sm:flex-row items-center gap-2 w-full md:w-auto">
@@ -120,7 +120,7 @@ export function ShopRevenue({ orders = [], users = [], loading }: { orders: any[
             type="date"
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
-            className="w-full md:w-auto bg-white"
+            className="w-full sm:w-auto bg-white"
           />
           <Button variant="outline" onClick={() => setSelectedDate('')} disabled={!selectedDate} className='bg-white w-full sm:w-auto'>Clear</Button>
           <Button onClick={() => setShowSummary(!showSummary)} variant="outline" className='bg-white w-full sm:w-auto'>
@@ -129,22 +129,22 @@ export function ShopRevenue({ orders = [], users = [], loading }: { orders: any[
           </Button>
            <Button onClick={handleDownloadPdf} disabled={shopRevenueData.length === 0} className='w-full sm:w-auto'>
             <Download className="mr-2 h-4 w-4" />
-            Download PDF
+            PDF
           </Button>
         </div>
       </CardHeader>
-      <CardContent className='p-0'>
+      <CardContent className='p-0 overflow-x-auto'>
         {loading ? (
           <div className="flex justify-center py-10"><Loader2 className="h-8 w-8 animate-spin" /></div>
         ) : shopRevenueData.length > 0 ? (
-          <Accordion type="single" collapsible className="w-full">
+          <Accordion type="single" collapsible className="w-full min-w-[700px]">
             {shopRevenueData.map((order) => (
                <AccordionItem value={order.id} key={order.id} className="border-b">
                  <AccordionTrigger className="p-4 hover:no-underline [&[data-state=open]>svg]:text-primary">
                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-left w-full items-center">
-                     <div className="font-medium">{order.createdAt.toDate().toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>
-                     <div className="font-medium">{order.shopInfo.shopName || 'N/A'}</div>
-                     <div className="text-muted-foreground hidden md:block">{order.shopInfo.location || 'N/A'}</div>
+                     <div className="font-medium truncate">{order.createdAt.toDate().toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>
+                     <div className="font-medium truncate">{order.shopInfo.shopName || 'N/A'}</div>
+                     <div className="text-muted-foreground hidden md:block truncate">{order.shopInfo.location || 'N/A'}</div>
                      <div className="font-bold text-right pr-4">{order.items.reduce((itemSum: any, item: any) => itemSum + item.quantity, 0)} items</div>
                    </div>
                  </AccordionTrigger>
@@ -180,12 +180,12 @@ export function ShopRevenue({ orders = [], users = [], loading }: { orders: any[
       </CardContent>
        {showSummary && shopRevenueData.length > 0 && (
          <CardFooter className="flex-col items-start gap-4 p-4 border-t bg-gray-50">
-           <div className='w-full'>
+           <div className='w-full overflow-x-auto'>
               <h3 className="text-lg font-bold flex items-center gap-2 mb-3">
                 <ShoppingBag className='h-5 w-5' />
                 Total Product Summary
               </h3>
-              <Table>
+              <Table className="min-w-[400px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Product</TableHead>
@@ -202,7 +202,7 @@ export function ShopRevenue({ orders = [], users = [], loading }: { orders: any[
                 </TableBody>
               </Table>
            </div>
-           <div className="flex justify-end items-center p-4 bg-gray-100 font-bold text-base border-t w-full rounded-md">
+           <div className="flex justify-end items-center p-4 bg-gray-100 font-bold text-base border-t w-full rounded-md mt-4">
                 <div className='mr-4'>Overall Total Items:</div>
                 <div>{totalItemsForDate.toLocaleString()}</div>
             </div>

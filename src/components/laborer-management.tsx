@@ -105,9 +105,9 @@ export function LaborerManagement() {
                 <Input id="trade" {...register('trade')} placeholder="e.g., Electrician, Plumber"/>
                 {errors.trade && <p className="text-sm text-red-500 mt-1">{errors.trade.message}</p>}
               </div>
-              <DialogFooter className="sm:justify-between pt-4">
+              <DialogFooter className="sm:justify-between pt-4 flex-col sm:flex-row gap-2">
                 {editingLaborer && (
-                    <Button type="button" variant="destructive" onClick={() => handleDelete(editingLaborer.id)} disabled={isSubmitting}>
+                    <Button type="button" variant="destructive" onClick={() => handleDelete(editingLaborer.id)} disabled={isSubmitting} className="sm:mr-auto">
                         <Trash className="mr-2 h-4 w-4" /> Delete
                     </Button>
                 )}
@@ -123,11 +123,11 @@ export function LaborerManagement() {
           </DialogContent>
         </Dialog>
       </CardHeader>
-      <CardContent>
+      <CardContent className="overflow-x-auto">
         {loading ? (
           <div className="flex justify-center py-10"><Loader2 className="h-8 w-8 animate-spin" /></div>
         ) : (
-          <Table>
+          <Table className="min-w-[500px]">
             <TableHeader>
               <TableRow>
                 <TableHead>Name</TableHead>
