@@ -37,6 +37,7 @@ const productSchema = z.object({
   name: z.string().min(1, 'Product name is required'),
   size: z.string().min(1, 'Product size is required'),
   stock: z.coerce.number().int().min(0, 'Stock cannot be negative'),
+  rate: z.coerce.number().min(0, 'Rate cannot be negative'),
   position: z.coerce.number(),
 });
 
@@ -65,9 +66,10 @@ const SortableItem = ({ product, handleOpenDialog }: { product: any, handleOpenD
       <div {...attributes} {...listeners} className="cursor-grab p-2 touch-none">
         <GripVertical className="h-5 w-5 text-muted-foreground" />
       </div>
-      <div className="flex-grow grid grid-cols-3 gap-4 items-center">
+      <div className="flex-grow grid grid-cols-4 gap-4 items-center">
         <div className="font-medium truncate">{product.name}</div>
         <div className="truncate">{product.size}</div>
+        <div>{product.rate?.toLocaleString('en-IN', { style: 'currency', currency: 'INR' }) ?? 'N/A'}</div>
         <div>{product.stock}</div>
       </div>
       <Button variant="outline" size="sm" onClick={() => handleOpenDialog(product)}>Edit</Button>
@@ -103,9 +105,9 @@ export function ProductManagement() {
   const handleOpenDialog = (product: any | null = null) => {
     setEditingProduct(product);
     if (product) {
-      reset({ name: product.name, size: product.size, stock: product.stock, position: product.position });
+      reset({ name: product.name, size: product.size, stock: product.stock, rate: product.rate, position: product.position });
     } else {
-      reset({ name: '', size: '', stock: 0, position: products.length });
+      reset({ name: '', size: '', stock: 0, rate: 0, position: products.length });
     }
     setOpen(true);
   };
@@ -217,6 +219,11 @@ export function ProductManagement() {
                   {errors.size && <p className="text-sm text-red-500 mt-1">{errors.size.message}</p>}
                 </div>
                 <div>
+                  <Label htmlFor="rate">Rate (Price)</Label>
+                  <Input id="rate" type="number" step="0.01" {...register('rate')} />
+                  {errors.rate && <p className="text-sm text-red-500 mt-1">{errors.rate.message}</p>}
+                </div>
+                <div>
                   <Label htmlFor="stock">Stock</Label>
                   <Input id="stock" type="number" {...register('stock')} />
                   {errors.stock && <p className="text-sm text-red-500 mt-1">{errors.stock.message}</p>}
@@ -247,9 +254,10 @@ export function ProductManagement() {
           <div className="min-w-[600px]">
             <div className="flex items-center bg-gray-50 p-3 my-2 rounded-lg font-semibold text-sm text-muted-foreground">
                 <div className="p-2"><GripVertical className="h-5 w-5 invisible" /></div>
-                <div className="flex-grow grid grid-cols-3 gap-4 items-center">
+                <div className="flex-grow grid grid-cols-4 gap-4 items-center">
                     <div>Product</div>
                     <div>Size</div>
+                    <div>Rate</div>
                     <div>Stock</div>
                 </div>
                 <div className="w-[68px]"></div>

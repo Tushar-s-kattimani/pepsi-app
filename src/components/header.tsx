@@ -11,25 +11,37 @@ import { db } from '@/firebase/config';
 import { useState } from 'react';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError, SecurityRuleContext } from '@/firebase/errors';
+import { PaymentDialog } from './payment-dialog';
 
 export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
   const { user, signOut, role } = useUser();
   const { cart, updateQuantity, clearCart } = useCart();
   const { toast } = useToast();
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
+  const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
 
   const cartItems = cart;
 
-  const handlePlaceOrder = async () => {
+  const handlePlaceOrderClick = () => {
     if (!user) {
       toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to place an order.' });
       return;
     }
     if (cart.length === 0) {
-      toast({ variant: 'destructive', title: 'Empty Cart', description: 'Please add items to your cart before placing an order.' });
+      toast({ variant: 'destructive', title: 'Empty Cart', description: 'Please add items to your cart.' });
       return;
     }
+    setIsPaymentDialogOpen(true);
+  };
 
+
+  const handlePlaceOrder = async (paymentMethod: 'Cash on Delivery' | 'Online') => {
+    setIsPaymentDialogOpen(false); // Close the dialog first
+    if (!user) {
+      toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to place an order.' });
+      return;
+    }
+    
     setIsPlacingOrder(true);
     
     // 1. Check for complete profile before starting the transaction
@@ -62,9 +74,17 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
     const orderPayload = {
         shopId: user.uid,
         shopEmail: user.email,
-        items: cart.map(({ stock, ...item }: any) => item), // Remove internal fields
+        items: cart.map(item => ({
+          id: item.id,
+          name: item.name,
+          size: item.size,
+          quantity: item.quantity,
+          rate: item.rate,
+        })),
         status: 'Pending',
         createdAt: serverTimestamp(),
+        paymentMethod: paymentMethod,
+        paymentStatus: 'Pending',
     };
 
     runTransaction(db, async (transaction) => {
@@ -123,6 +143,7 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
   };
 
   return (
+    <>
     <header className="flex h-20 shrink-0 items-center justify-between border-b bg-white px-4 sm:px-6 md:px-10 no-print">
       <div className="flex items-center gap-4 overflow-hidden">
         <Button
@@ -189,7 +210,7 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
                       <span>Total Items</span>
                       <span>{cartItems.reduce((sum, item) => sum + item.quantity, 0)}</span>
                     </div>
-                     <Button className="w-full" onClick={handlePlaceOrder} disabled={isPlacingOrder}>
+                     <Button className="w-full" onClick={handlePlaceOrderClick} disabled={isPlacingOrder}>
                        {isPlacingOrder ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShoppingBasket className="mr-2 h-4 w-4" />}
                       Place Order
                     </Button>
@@ -206,5 +227,11 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
         </Button>
       </div>
     </header>
+    <PaymentDialog
+        isOpen={isPaymentDialogOpen}
+        onOpenChange={setIsPaymentDialogOpen}
+        onSelectPayment={handlePlaceOrder}
+      />
+    </>
   );
 }
