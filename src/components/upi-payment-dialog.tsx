@@ -31,19 +31,23 @@ export function UpiPaymentDialog({ isOpen, onOpenChange, totalAmount, onConfirmP
     const [isLoadingUpi, setIsLoadingUpi] = useState(true);
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
-
+    // Effect to fetch the admin UPI ID when the dialog opens
     useEffect(() => {
-        const fetchAdminUpiData = async () => {
-            if (!isOpen) return;
+        if (!isOpen) return;
 
+        const fetchAdminUpiData = async () => {
             setIsLoadingUpi(true);
+            setAdminUpiId(''); // Reset on each open
             try {
                 const q = query(collection(db, 'users'), where('role', '==', 'admin'));
                 const querySnapshot = await getDocs(q);
+
                 if (!querySnapshot.empty) {
                     const adminDoc = querySnapshot.docs[0];
                     const adminData = adminDoc.data();
-                    setAdminUpiId(adminData.upiId || '');
+                    if (adminData.upiId) {
+                      setAdminUpiId(adminData.upiId);
+                    }
                 }
             } catch (error) {
                 console.error("Error fetching admin UPI data: ", error);
@@ -56,11 +60,12 @@ export function UpiPaymentDialog({ isOpen, onOpenChange, totalAmount, onConfirmP
         fetchAdminUpiData();
     }, [isOpen, toast]);
 
+    // Effect to generate the QR code once the adminUpiId is available
     useEffect(() => {
         if (isOpen && !isLoadingUpi && adminUpiId && canvasRef.current) {
             // UPI QR Code format: upi://pay?pa=<upi_id>&pn=<payee_name>&am=<amount>&cu=INR
             const upiUrl = `upi://pay?pa=${adminUpiId}&pn=Admin&am=${totalAmount}&cu=INR`;
-            QRCode.toCanvas(canvasRef.current, upiUrl, { width: 220 }, (error) => {
+            QRCode.toCanvas(canvasRef.current, upiUrl, { width: 220, margin: 2 }, (error) => {
                 if (error) {
                     console.error('QR code generation failed:', error);
                     toast({ variant: 'destructive', title: 'Error', description: 'Could not generate QR code.' });
@@ -77,8 +82,6 @@ export function UpiPaymentDialog({ isOpen, onOpenChange, totalAmount, onConfirmP
 
     const handlePaymentConfirmation = () => {
         setIsProcessing(true);
-        // This is where a real payment verification would happen.
-        // For this simulation, we trust the user has paid and proceed.
         onConfirmPayment();
     };
 
@@ -116,10 +119,10 @@ export function UpiPaymentDialog({ isOpen, onOpenChange, totalAmount, onConfirmP
                       </div>
                 </div>
             ) : (
-                <div className="h-[288px] flex flex-col justify-center items-center text-center gap-4 bg-gray-50 rounded-lg">
-                    <AlertCircle className="h-12 w-12 text-red-500" />
-                    <p className="text-red-500 font-medium">Admin UPI ID is not configured.</p>
-                    <p className="text-sm text-muted-foreground mt-2 px-4">Please contact support to enable online payments.</p>
+                <div className="h-[288px] flex flex-col justify-center items-center text-center gap-4 bg-yellow-50 text-yellow-800 border border-yellow-200 rounded-lg p-4">
+                    <AlertCircle className="h-12 w-12" />
+                    <p className="font-semibold">Admin UPI ID is not configured.</p>
+                    <p className="text-sm text-yellow-700 mt-2 px-4">The administrator needs to set their UPI ID in their profile to enable online payments.</p>
                 </div>
             )}
 
