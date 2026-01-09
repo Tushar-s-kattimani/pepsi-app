@@ -97,7 +97,7 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
         status: 'Pending',
         createdAt: serverTimestamp(),
         paymentMethod: paymentMethod,
-        paymentStatus: paymentMethod === 'Online' ? 'Paid' : 'Pending',
+        paymentStatus: 'Pending',
     };
 
     runTransaction(db, async (transaction) => {
