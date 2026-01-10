@@ -2,7 +2,7 @@
 
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { BarChart, Package, Users, ShoppingCart, History, Home, User, Banknote, Calendar, ClipboardList } from 'lucide-react';
+import { BarChart, Package, Users, ShoppingCart, History, Home, User, Banknote, Calendar, ClipboardList, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { PepsiBottleLogo } from './pepsi-logo';
 
@@ -25,7 +25,7 @@ const navItems = {
     { id: 'stock-report', name: 'Stock Report', icon: ClipboardList },
     { id: 'laborers', name: 'Laborers', icon: Users },
     { id: 'attendance', name: 'Labor Attendance', icon: Calendar },
-    { id: 'profile', name: 'Profile', icon: User },
+    { id: 'settings', name: 'Settings', icon: Settings },
   ],
   shop: [
     { id: 'new_order', name: 'New Order', icon: Home },

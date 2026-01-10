@@ -6,7 +6,7 @@ import { ShoppingCart, LogOut, Menu, Loader2, CreditCard, Truck } from 'lucide-r
 import { useCart } from '@/context/cart-context';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetFooter } from '@/components/ui/sheet';
 import { useToast } from '@/components/ui/use-toast';
-import { collection, serverTimestamp, doc, getDocs, query, where, runTransaction } from 'firebase/firestore';
+import { collection, serverTimestamp, doc, getDocs, query, where, runTransaction, getDoc } from 'firebase/firestore';
 import { db } from '@/firebase/config';
 import { useState } from 'react';
 import { UpiPaymentDialog } from './upi-payment-dialog';
@@ -120,28 +120,18 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
 
     setIsFetchingAdminUpi(true);
     try {
-        // This query requires a Firestore index.
-        // Go to your Firebase console > Firestore Database > Indexes.
-        // Create a composite index for the 'users' collection with:
-        // 1. role (Ascending)
-        const usersRef = collection(db, 'users');
-        const q = query(usersRef, where("role", "==", "admin"));
-        const querySnapshot = await getDocs(q);
+        const settingsRef = doc(db, 'settings', 'admin');
+        const settingsSnap = await getDoc(settingsRef);
 
-        if (querySnapshot.empty) {
-            throw new Error("Admin account could not be found.");
+        if (!settingsSnap.exists() || !settingsSnap.data().upiId) {
+            throw new Error("Admin UPI ID is not configured. Please contact support.");
         }
         
-        // Assuming there is only one admin
-        const adminDoc = querySnapshot.docs[0];
-        const adminData = adminDoc.data();
+        const settingsData = settingsSnap.data();
         
-        if (adminData && adminData.upiId) {
-            setAdminUpiId(adminData.upiId);
-            setIsUpiDialogOpen(true);
-        } else {
-             throw new Error("Admin UPI ID is not configured. Please contact support.");
-        }
+        setAdminUpiId(settingsData.upiId);
+        setIsUpiDialogOpen(true);
+
     } catch (error: any) {
         toast({
             variant: "destructive",

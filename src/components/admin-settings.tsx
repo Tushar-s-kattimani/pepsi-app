@@ -1,7 +1,7 @@
 'use client';
 
 import { useUser } from '@/firebase';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '@/firebase/config';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -14,20 +14,20 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { Loader2 } from 'lucide-react';
 
-const profileSchema = z.object({
+const settingsSchema = z.object({
   upiId: z.string().min(3, 'A valid UPI ID is required').optional().or(z.literal('')),
 });
 
-type ProfileFormValues = z.infer<typeof profileSchema>;
+type SettingsFormValues = z.infer<typeof settingsSchema>;
 
-export function AdminProfile() {
+export function AdminSettings() {
   const { user } = useUser();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<ProfileFormValues>({
-    resolver: zodResolver(profileSchema),
+  const { register, handleSubmit, reset, formState: { errors } } = useForm<SettingsFormValues>({
+    resolver: zodResolver(settingsSchema),
     defaultValues: {
       upiId: '',
     }
@@ -35,32 +35,33 @@ export function AdminProfile() {
 
   useEffect(() => {
     if (user) {
-      const fetchUserData = async () => {
+      const fetchSettings = async () => {
         setLoading(true);
-        const userDocRef = doc(db, 'users', user.uid);
-        const userDoc = await getDoc(userDocRef);
-        if (userDoc.exists()) {
-          const data = userDoc.data();
+        const settingsDocRef = doc(db, 'settings', 'admin');
+        const settingsDoc = await getDoc(settingsDocRef);
+        if (settingsDoc.exists()) {
+          const data = settingsDoc.data();
           reset({
             upiId: data.upiId || '',
           });
         }
         setLoading(false);
       };
-      fetchUserData();
+      fetchSettings();
     }
   }, [user, reset]);
 
-  const onSubmit = async (data: ProfileFormValues) => {
+  const onSubmit = async (data: SettingsFormValues) => {
     if (!user) {
       toast({ variant: 'destructive', title: 'Error', description: 'You are not logged in.' });
       return;
     }
     setIsSubmitting(true);
     try {
-      const userDocRef = doc(db, 'users', user.uid);
-      await updateDoc(userDocRef, { upiId: data.upiId || '' });
-      toast({ title: 'Success', description: 'Profile updated successfully.' });
+      const settingsDocRef = doc(db, 'settings', 'admin');
+      // Use setDoc with merge:true to create or update the document
+      await setDoc(settingsDocRef, { upiId: data.upiId || '' }, { merge: true });
+      toast({ title: 'Success', description: 'Settings updated successfully.' });
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Error', description: error.message });
     } finally {
@@ -79,7 +80,7 @@ export function AdminProfile() {
   return (
     <Card className="max-w-2xl mx-auto">
       <CardHeader>
-        <CardTitle>Admin Profile & Payment Settings</CardTitle>
+        <CardTitle>Admin Payment Settings</CardTitle>
         <CardDescription>Set your UPI ID here to accept online payments from shops.</CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit(onSubmit)}>
@@ -93,7 +94,7 @@ export function AdminProfile() {
         <CardFooter>
           <Button type="submit" disabled={isSubmitting}>
             {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Save Profile
+            Save Settings
           </Button>
         </CardFooter>
       </form>

@@ -5,6 +5,8 @@ service cloud.firestore {
 
     // Helper function to check if the user has the 'admin' role
     function isAdmin() {
+      // It's safer to check the role from the user's token claims if available,
+      // but reading from their user document is a common pattern.
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
@@ -15,18 +17,26 @@ service cloud.firestore {
 
     // Rules for the 'users' collection
     match /users/{userId} {
-      // Allow any authenticated user to read and list user profiles.
-      // This is necessary for shops to fetch the admin's UPI details.
-      allow read, list: if request.auth != null;
+      // Allow any authenticated user to read user profiles.
+      // This is necessary for shops to fetch admin details or for other UI purposes.
+      allow read: if request.auth != null;
       // Only the owner or an admin can write to a user document.
-      allow write: if isAdmin() || isOwner(userId);
+      allow write: if isOwner(userId) || isAdmin();
+    }
+    
+    // Rules for the 'settings' collection
+    match /settings/admin {
+       // Any authenticated user can read the admin settings (e.g., to get UPI ID)
+      allow read: if request.auth != null;
+      // Only admins can write to the admin settings
+      allow write: if isAdmin();
     }
 
     // Rules for the 'products' collection
     match /products/{productId} {
       allow read: if request.auth != null;
-      // Allow write for admins, OR for any authenticated user (for stock updates during orders)
-      allow write: if isAdmin() || request.auth != null;
+      // Allow write for admins.
+      allow write: if isAdmin();
     }
 
     // Rules for the 'orders' collection
@@ -40,8 +50,12 @@ service cloud.firestore {
                     request.resource.data.status == "Pending" &&
                     request.resource.data.createdAt == request.time;
 
-      // Only admins can update or delete orders
-      allow update, delete: if isAdmin();
+      // Admins can update orders (e.g., change status)
+      // Shops should not be able to update their own orders after placing them.
+      allow update: if isAdmin();
+      
+      // Only admins can delete orders
+      allow delete: if isAdmin();
     }
 
     // Rules for 'laborers' and 'attendance' collections

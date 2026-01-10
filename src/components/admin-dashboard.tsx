@@ -15,7 +15,7 @@ import { StockReport } from '@/components/stock-report';
 import { query, collection, orderBy } from 'firebase/firestore';
 import { db } from '@/firebase/config';
 import { MobileSidebar } from './mobile-sidebar';
-import { AdminProfile } from './admin-profile';
+import { AdminSettings } from './admin-settings';
 
 export function AdminDashboard() {
   const [activeSection, setActiveSection] = useState('dashboard');
@@ -45,8 +45,8 @@ export function AdminDashboard() {
         return <LaborerManagement />;
       case 'attendance':
         return <LaborAttendance />;
-      case 'profile':
-        return <AdminProfile />;
+      case 'settings':
+        return <AdminSettings />;
       default:
         return <AdminOverview orders={orders || []} products={products || []} users={users || []} loading={ordersLoading || productsLoading || usersLoading} />;
     }
