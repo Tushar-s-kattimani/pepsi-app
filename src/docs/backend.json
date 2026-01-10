@@ -71,6 +71,11 @@
         "rate": {
           "type": "number",
           "description": "The price or rate of the product."
+        },
+        "imageUrl": {
+          "type": "string",
+          "format": "uri",
+          "description": "The URL of the product's image."
         }
       },
       "required": ["name", "size", "stock", "position", "rate"]

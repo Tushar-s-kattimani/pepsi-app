@@ -23,5 +23,3 @@ export const uploadFile = async (file: File, path: string): Promise<string> => {
     throw new Error('Failed to upload file.');
   }
 };
-
-    

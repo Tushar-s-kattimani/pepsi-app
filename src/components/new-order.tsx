@@ -4,11 +4,10 @@ import { useCart } from '@/context/cart-context';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { useToast } from '@/components/ui/use-toast';
-import { Loader2, PlusCircle, Trash2, Plus, Minus, ShoppingBasket } from 'lucide-react';
-import { useUser } from '@/firebase';
+import { Loader2, PlusCircle, Trash2, Plus, Minus, ShoppingBasket, Image as ImageIcon } from 'lucide-react';
 import { useState } from 'react';
 import { Input } from '@/components/ui/input';
-import { PepsiBottleLogo } from './pepsi-logo';
+import Image from 'next/image';
 
 
 export function NewOrder({ products = [], loading }: { products: any[], loading: boolean }) {
@@ -52,14 +51,16 @@ export function NewOrder({ products = [], loading }: { products: any[], loading:
                 {products.map((product) => {
                    return (
                     <Card key={product.id} className="flex flex-col overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+                       <div className="relative h-40 w-full bg-gray-100 flex items-center justify-center">
+                            {product.imageUrl ? (
+                                <Image src={product.imageUrl} alt={product.name} layout="fill" objectFit="contain" className="p-2"/>
+                            ) : (
+                                <ImageIcon className="h-12 w-12 text-gray-300" />
+                            )}
+                      </div>
                       <div className="p-4 flex flex-col flex-grow">
-                          <div className="flex items-center gap-2">
-                             <div className="h-8 w-8 flex-shrink-0">
-                                <PepsiBottleLogo />
-                              </div>
-                            <h3 className="font-bold text-lg">{product.name}</h3>
-                          </div>
-                          <p className="text-sm text-muted-foreground ml-10">{product.size}</p>
+                          <h3 className="font-bold text-lg">{product.name}</h3>
+                          <p className="text-sm text-muted-foreground">{product.size}</p>
                           <div className="flex-grow"></div>
                           <div className="mt-4 text-sm">
                             <span className={`font-semibold ${product.stock > 0 ? 'text-green-600' : 'text-red-600'}`}>

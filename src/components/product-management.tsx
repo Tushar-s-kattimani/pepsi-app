@@ -31,7 +31,9 @@ import { useToast } from '@/components/ui/use-toast';
 import { addDoc, collection, doc, updateDoc, deleteDoc, writeBatch, query, orderBy } from 'firebase/firestore';
 import { db } from '@/firebase/config';
 import { useCollection } from '@/firebase';
-import { Loader2, PackagePlus, GripVertical, Save, Trash } from 'lucide-react';
+import { uploadFile } from '@/firebase/storage';
+import { Loader2, PackagePlus, GripVertical, Save, Trash, Image as ImageIcon } from 'lucide-react';
+import Image from 'next/image';
 
 const productSchema = z.object({
   name: z.string().min(1, 'Product name is required'),
@@ -39,6 +41,7 @@ const productSchema = z.object({
   stock: z.coerce.number().int().min(0, 'Stock cannot be negative'),
   rate: z.coerce.number().min(0, 'Rate cannot be negative'),
   position: z.coerce.number(),
+  imageUrl: z.string().optional(),
 });
 
 type ProductFormValues = z.infer<typeof productSchema>;
@@ -66,6 +69,13 @@ const SortableItem = ({ product, handleOpenDialog }: { product: any, handleOpenD
       <div {...attributes} {...listeners} className="cursor-grab p-2 touch-none">
         <GripVertical className="h-5 w-5 text-muted-foreground" />
       </div>
+       <div className="relative h-12 w-12 mr-4 rounded-md overflow-hidden bg-gray-100 flex items-center justify-center">
+        {product.imageUrl ? (
+            <Image src={product.imageUrl} alt={product.name} layout="fill" objectFit="contain" />
+        ) : (
+            <ImageIcon className="h-6 w-6 text-gray-400" />
+        )}
+      </div>
       <div className="flex-grow grid grid-cols-4 gap-4 items-center">
         <div className="font-medium truncate">{product.name}</div>
         <div className="truncate">{product.size}</div>
@@ -84,6 +94,7 @@ export function ProductManagement() {
   const [products, setProducts] = useState<any[]>([]);
   const [isOrderChanged, setIsOrderChanged] = useState(false);
   const [isSavingOrder, setIsSavingOrder] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
 
 
   useEffect(() => {
@@ -98,16 +109,19 @@ export function ProductManagement() {
   const [editingProduct, setEditingProduct] = useState<any | null>(null);
   const { toast } = useToast();
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<ProductFormValues>({
+  const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
   });
+  
+  const currentImageUrl = watch('imageUrl');
 
   const handleOpenDialog = (product: any | null = null) => {
     setEditingProduct(product);
+    setImageFile(null);
     if (product) {
-      reset({ name: product.name, size: product.size, stock: product.stock, rate: product.rate, position: product.position });
+      reset({ name: product.name, size: product.size, stock: product.stock, rate: product.rate, position: product.position, imageUrl: product.imageUrl });
     } else {
-      reset({ name: '', size: '', stock: 0, rate: 0, position: products.length });
+      reset({ name: '', size: '', stock: 0, rate: 0, position: products.length, imageUrl: '' });
     }
     setOpen(true);
   };
@@ -115,17 +129,27 @@ export function ProductManagement() {
   const handleCloseDialog = () => {
     setOpen(false);
     setEditingProduct(null);
+    setImageFile(null);
   }
 
   const onSubmit = async (data: ProductFormValues) => {
     setIsSubmitting(true);
+    let finalImageUrl = editingProduct?.imageUrl || '';
+    
     try {
+       if (imageFile) {
+        const filePath = `products/${Date.now()}_${imageFile.name}`;
+        finalImageUrl = await uploadFile(imageFile, filePath);
+      }
+      
+      const productData = { ...data, imageUrl: finalImageUrl };
+
       if (editingProduct) {
         const productRef = doc(db, 'products', editingProduct.id);
-        await updateDoc(productRef, data);
+        await updateDoc(productRef, productData);
         toast({ title: 'Success', description: 'Product updated successfully.' });
       } else {
-        await addDoc(collection(db, 'products'), {...data, position: products.length});
+        await addDoc(collection(db, 'products'), {...productData, position: products.length});
         toast({ title: 'Success', description: 'Product added successfully.' });
       }
       handleCloseDialog();
@@ -203,11 +227,26 @@ export function ProductManagement() {
                 <PackagePlus className="mr-2 h-4 w-4" /> Add Product
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="sm:max-w-md">
               <DialogHeader>
                 <DialogTitle>{editingProduct ? 'Edit Product' : 'Add New Product'}</DialogTitle>
               </DialogHeader>
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                 <div>
+                    <Label htmlFor="image">Product Image</Label>
+                    <Input id="image" type="file" onChange={(e) => setImageFile(e.target.files?.[0] || null)} accept="image/*" />
+                    {(currentImageUrl || imageFile) && (
+                        <div className="mt-4 relative w-24 h-24 rounded-md border bg-gray-100">
+                             <Image
+                                src={imageFile ? URL.createObjectURL(imageFile) : currentImageUrl}
+                                alt="Product Preview"
+                                layout="fill"
+                                objectFit="contain"
+                                className="rounded-md"
+                            />
+                        </div>
+                    )}
+                 </div>
                 <div>
                   <Label htmlFor="name">Product Name</Label>
                   <Input id="name" {...register('name')} />
@@ -251,9 +290,10 @@ export function ProductManagement() {
         {loading ? (
           <div className="flex justify-center py-10"><Loader2 className="h-8 w-8 animate-spin" /></div>
         ) : (
-          <div className="min-w-[600px]">
+          <div className="min-w-[700px]">
             <div className="flex items-center bg-gray-50 p-3 my-2 rounded-lg font-semibold text-sm text-muted-foreground">
                 <div className="p-2"><GripVertical className="h-5 w-5 invisible" /></div>
+                <div className="w-[60px]">Image</div>
                 <div className="flex-grow grid grid-cols-4 gap-4 items-center">
                     <div>Product</div>
                     <div>Size</div>
