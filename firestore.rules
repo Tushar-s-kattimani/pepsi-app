@@ -18,7 +18,8 @@ service cloud.firestore {
     // Rules for the 'users' collection
     match /users/{userId} {
       // Allow any authenticated user to read user profiles.
-      // This is necessary for shops to fetch admin details or for other UI purposes.
+      // This is necessary for shops to fetch admin details or for other UI purposes,
+      // and for cross-service security rules (like Storage) to function correctly.
       allow read: if request.auth != null;
       // Only the owner or an admin can write to a user document.
       allow write: if isOwner(userId) || isAdmin();
