@@ -26,7 +26,7 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
           if (userDoc.exists()) {
             setRole(userDoc.data().role || 'shop');
           } else {
-            // New user (likely first-time admin)
+            // New user (likely first-time admin or verified shop)
             const newRole = assignUserRole(user.email || '');
             const userData: any = {
               uid: user.uid,

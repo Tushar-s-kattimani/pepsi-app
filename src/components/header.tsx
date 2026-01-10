@@ -125,15 +125,16 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
         const adminDocSnap = await getDoc(adminDocRef);
 
         if (!adminDocSnap.exists()) {
-            throw new Error("Admin account not found.");
+            throw new Error("Admin account could not be found.");
         }
         
         const adminData = adminDocSnap.data();
-        if (!adminData.upiId) {
-            throw new Error("Admin UPI ID is not configured. Please contact support.");
+        if (adminData && adminData.upiId) {
+            setAdminUpiId(adminData.upiId);
+            setIsUpiDialogOpen(true);
+        } else {
+             throw new Error("Admin UPI ID is not configured. Please contact support.");
         }
-        setAdminUpiId(adminData.upiId);
-        setIsUpiDialogOpen(true);
     } catch (error: any) {
         toast({
             variant: "destructive",
