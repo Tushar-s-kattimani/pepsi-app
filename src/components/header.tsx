@@ -2,32 +2,29 @@
 
 import { useUser } from '@/firebase';
 import { Button } from '@/components/ui/button';
-import { ShoppingCart, LogOut, Menu, Loader2, ShoppingBasket } from 'lucide-react';
+import { ShoppingCart, LogOut, Menu, Loader2, CreditCard, Truck } from 'lucide-react';
 import { useCart } from '@/context/cart-context';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetFooter } from '@/components/ui/sheet';
 import { useToast } from '@/components/ui/use-toast';
-import { collection, serverTimestamp, doc, getDoc, runTransaction } from 'firebase/firestore';
+import { collection, serverTimestamp, doc, getDoc, runTransaction, query, where, getDocs } from 'firebase/firestore';
 import { db } from '@/firebase/config';
 import { useState } from 'react';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError, SecurityRuleContext } from '@/firebase/errors';
+import { UpiPaymentDialog } from './upi-payment-dialog';
 
 export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
   const { user, signOut, role } = useUser();
   const { cart, updateQuantity, clearCart } = useCart();
   const { toast } = useToast();
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
+  const [isUpiDialogOpen, setIsUpiDialogOpen] = useState(false);
+  const [adminUpiId, setAdminUpiId] = useState<string | null>(null);
+  const [isFetchingAdminUpi, setIsFetchingAdminUpi] = useState(false);
 
   const cartItems = cart;
+  const cartTotal = cart.reduce((sum, item) => sum + item.quantity * item.rate, 0);
 
-  const handlePlaceOrder = async () => {
-    if (!user) {
-      toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to place an order.' });
-      return;
-    }
-    
-    setIsPlacingOrder(true);
-    
+  const checkUserProfile = async () => {
+    if (!user) return false;
     const userDocRef = doc(db, 'users', user.uid);
     try {
       const userDoc = await getDoc(userDocRef);
@@ -40,85 +37,108 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
             description: 'Please complete your profile information in the Profile section before placing an order.',
             duration: 5000,
           });
-          setIsPlacingOrder(false);
-          return;
+          return false;
         }
-      } else {
-        throw new Error('User data not found.');
+        return true;
       }
+      throw new Error('User data not found.');
     } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Error', description: `Could not verify user profile: ${error.message}` });
-        setIsPlacingOrder(false);
-        return;
+      toast({ variant: 'destructive', title: 'Error', description: `Could not verify user profile: ${error.message}` });
+      return false;
+    }
+  };
+
+  const placeOrder = async (paymentMethod: 'Cash on Delivery' | 'Online') => {
+    if (!user) {
+      toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to place an order.' });
+      return;
     }
 
+    const isProfileComplete = await checkUserProfile();
+    if (!isProfileComplete) return;
+    
+    setIsPlacingOrder(true);
+    
     const newOrderRef = doc(collection(db, 'orders'));
     const orderPayload = {
-        shopId: user.uid,
-        shopEmail: user.email,
-        items: cart.map(item => ({
-          id: item.id,
-          name: item.name,
-          size: item.size,
-          quantity: item.quantity,
-          rate: item.rate,
-        })),
-        status: 'Pending',
-        createdAt: serverTimestamp(),
-        paymentMethod: 'Cash on Delivery',
-        paymentStatus: 'Pending',
+      shopId: user.uid,
+      shopEmail: user.email,
+      items: cart.map(item => ({
+        id: item.id,
+        name: item.name,
+        size: item.size,
+        quantity: item.quantity,
+        rate: item.rate,
+      })),
+      status: 'Pending',
+      createdAt: serverTimestamp(),
+      paymentMethod: paymentMethod,
+      paymentStatus: paymentMethod === 'Online' ? 'Paid' : 'Pending',
     };
 
     runTransaction(db, async (transaction) => {
-      const productRefs = new Map<string, any>();
-      const productSnapshots = new Map<string, any>();
-
+      // Stock check
       for (const item of cart) {
         const productRef = doc(db, 'products', item.id);
-        productRefs.set(item.id, productRef);
         const productSnap = await transaction.get(productRef);
-        if (!productSnap.exists()) {
-          throw new Error(`Product "${item.name}" not found.`);
+        if (!productSnap.exists() || productSnap.data().stock < item.quantity) {
+          throw new Error(`Insufficient stock for ${item.name}.`);
         }
-        const currentStock = productSnap.data().stock;
-        if (currentStock < item.quantity) {
-          throw new Error(`Insufficient stock for ${item.name}. Only ${currentStock} left.`);
-        }
-        productSnapshots.set(item.id, productSnap);
       }
-
-      transaction.set(newOrderRef, orderPayload);
-
+      
+      // Update stock
       for (const item of cart) {
-        const productRef = productRefs.get(item.id);
-        const productSnap = productSnapshots.get(item.id);
+        const productRef = doc(db, 'products', item.id);
+        const productSnap = await transaction.get(productRef);
         const newStock = productSnap.data().stock - item.quantity;
         transaction.update(productRef, { stock: newStock });
       }
+
+      // Create order
+      transaction.set(newOrderRef, orderPayload);
     }).then(() => {
         toast({ title: 'Success', description: 'Order placed successfully!' });
         clearCart();
     }).catch((error: any) => {
-        const isPermissionError = error.code === 'permission-denied';
-        if(isPermissionError){
-          const permissionError = new FirestorePermissionError({
-              path: newOrderRef.path,
-              operation: 'create',
-              requestResourceData: orderPayload,
-          } satisfies SecurityRuleContext);
-          errorEmitter.emit('permission-error', permissionError);
-        }
-        
         toast({
             variant: 'destructive',
             title: 'Order Failed',
-            description: isPermissionError ? 'Could not place order due to a permissions issue.' : error.message,
+            description: error.message,
             duration: 5000,
         });
         console.error("Transaction failed: ", error);
     }).finally(() => {
         setIsPlacingOrder(false);
     });
+  };
+
+  const handlePayOnline = async () => {
+    const isProfileComplete = await checkUserProfile();
+    if (!isProfileComplete) return;
+
+    setIsFetchingAdminUpi(true);
+    try {
+        const q = query(collection(db, "users"), where("role", "==", "admin"));
+        const querySnapshot = await getDocs(q);
+        if (querySnapshot.empty) {
+            throw new Error("Admin account not found.");
+        }
+        const adminDoc = querySnapshot.docs[0];
+        const adminData = adminDoc.data();
+        if (!adminData.upiId) {
+            throw new Error("Admin UPI ID is not configured. Please contact support.");
+        }
+        setAdminUpiId(adminData.upiId);
+        setIsUpiDialogOpen(true);
+    } catch (error: any) {
+        toast({
+            variant: "destructive",
+            title: "Payment Error",
+            description: error.message,
+        });
+    } finally {
+        setIsFetchingAdminUpi(false);
+    }
   };
 
   return (
@@ -168,7 +188,7 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
                       <div key={item.id} className="flex items-center justify-between rounded-lg bg-gray-50 p-3">
                         <div>
                           <p className="font-semibold">{item.name} ({item.size})</p>
-                           <p className="text-sm text-gray-500">{item.quantity} units</p>
+                           <p className="text-sm text-gray-500">{item.quantity} units &times; {item.rate.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</p>
                         </div>
                         <div className="flex items-center gap-2">
                           <Button size="icon" variant="ghost" onClick={() => updateQuantity(item.id, item.quantity - 1)}>-</Button>
@@ -186,14 +206,18 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
                 <SheetFooter className="mt-auto border-t pt-4">
                   <div className="w-full space-y-3">
                      <div className="flex justify-between text-xl font-bold mb-2">
-                      <span>Total Items</span>
-                      <span>{cartItems.reduce((sum, item) => sum + item.quantity, 0)}</span>
+                      <span>Total Amount</span>
+                      <span>{cartTotal.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</span>
                     </div>
-                     <div className="grid grid-cols-1 gap-3">
-                      <Button className="h-12 text-base" onClick={handlePlaceOrder} disabled={isPlacingOrder}>
-                        {isPlacingOrder ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShoppingBasket className="mr-2 h-4 w-4" />}
-                        Place Order
-                      </Button>
+                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <Button className="h-12 text-base" onClick={() => placeOrder('Cash on Delivery')} disabled={isPlacingOrder}>
+                            {isPlacingOrder ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Truck className="mr-2 h-4 w-4" />}
+                            Pay with Cash
+                        </Button>
+                        <Button className="h-12 text-base" onClick={handlePayOnline} disabled={isPlacingOrder || isFetchingAdminUpi}>
+                            {isFetchingAdminUpi ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CreditCard className="mr-2 h-4 w-4" />}
+                            Pay Online
+                        </Button>
                     </div>
                     <Button variant="outline" className="w-full" onClick={clearCart}>Clear Cart</Button>
                   </div>
@@ -208,6 +232,15 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
         </Button>
       </div>
     </header>
+    {role === 'shop' && (
+        <UpiPaymentDialog
+            isOpen={isUpiDialogOpen}
+            setIsOpen={setIsUpiDialogOpen}
+            upiId={adminUpiId || ''}
+            amount={cartTotal}
+            onPaymentConfirm={() => placeOrder('Online')}
+        />
+    )}
     </>
   );
 }
