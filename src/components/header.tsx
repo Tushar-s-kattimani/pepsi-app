@@ -6,7 +6,7 @@ import { ShoppingCart, LogOut, Menu, Loader2, CreditCard, Truck } from 'lucide-r
 import { useCart } from '@/context/cart-context';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetFooter } from '@/components/ui/sheet';
 import { useToast } from '@/components/ui/use-toast';
-import { collection, serverTimestamp, doc, getDoc, runTransaction } from 'firebase/firestore';
+import { collection, serverTimestamp, doc, getDocs, query, where, runTransaction } from 'firebase/firestore';
 import { db } from '@/firebase/config';
 import { useState } from 'react';
 import { UpiPaymentDialog } from './upi-payment-dialog';
@@ -41,6 +41,7 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
         }
         return true;
       }
+      // This will be caught by the catch block below
       throw new Error('User data not found.');
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Error', description: `Could not verify user profile: ${error.message}` });
@@ -76,30 +77,31 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
       paymentStatus: paymentMethod === 'Online' ? 'Paid' : 'Pending',
     };
 
-    runTransaction(db, async (transaction) => {
-      // Stock check
-      for (const item of cart) {
-        const productRef = doc(db, 'products', item.id);
-        const productSnap = await transaction.get(productRef);
-        if (!productSnap.exists() || productSnap.data().stock < item.quantity) {
-          throw new Error(`Insufficient stock for ${item.name}.`);
+    try {
+      await runTransaction(db, async (transaction) => {
+        // Stock check
+        for (const item of cart) {
+          const productRef = doc(db, 'products', item.id);
+          const productSnap = await transaction.get(productRef);
+          if (!productSnap.exists() || productSnap.data().stock < item.quantity) {
+            throw new Error(`Insufficient stock for ${item.name}. Only ${productSnap.data().stock} left.`);
+          }
         }
-      }
-      
-      // Update stock
-      for (const item of cart) {
-        const productRef = doc(db, 'products', item.id);
-        const productSnap = await transaction.get(productRef);
-        const newStock = productSnap.data().stock - item.quantity;
-        transaction.update(productRef, { stock: newStock });
-      }
+        
+        // Update stock
+        for (const item of cart) {
+          const productRef = doc(db, 'products', item.id);
+          transaction.update(productRef, { stock: item.stock - item.quantity });
+        }
+  
+        // Create order
+        transaction.set(newOrderRef, orderPayload);
+      });
 
-      // Create order
-      transaction.set(newOrderRef, orderPayload);
-    }).then(() => {
-        toast({ title: 'Success', description: 'Order placed successfully!' });
-        clearCart();
-    }).catch((error: any) => {
+      toast({ title: 'Success', description: 'Order placed successfully!' });
+      clearCart();
+      
+    } catch (error: any) {
         toast({
             variant: 'destructive',
             title: 'Order Failed',
@@ -107,9 +109,9 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
             duration: 5000,
         });
         console.error("Transaction failed: ", error);
-    }).finally(() => {
+    } finally {
         setIsPlacingOrder(false);
-    });
+    }
   };
 
   const handlePayOnline = async () => {
@@ -118,17 +120,22 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
 
     setIsFetchingAdminUpi(true);
     try {
-        // The default admin user ID for tushar@admin.com is 7rYvVp5f5FRXjN1T9g5bJm4xQx92
-        // We will fetch this document directly instead of querying to avoid needing an index.
-        const adminUserId = '7rYvVp5f5FRXjN1T9g5bJm4xQx92';
-        const adminDocRef = doc(db, 'users', adminUserId);
-        const adminDocSnap = await getDoc(adminDocRef);
+        // This query requires a Firestore index.
+        // Go to your Firebase console > Firestore Database > Indexes.
+        // Create a composite index for the 'users' collection with:
+        // 1. role (Ascending)
+        const usersRef = collection(db, 'users');
+        const q = query(usersRef, where("role", "==", "admin"));
+        const querySnapshot = await getDocs(q);
 
-        if (!adminDocSnap.exists()) {
+        if (querySnapshot.empty) {
             throw new Error("Admin account could not be found.");
         }
         
-        const adminData = adminDocSnap.data();
+        // Assuming there is only one admin
+        const adminDoc = querySnapshot.docs[0];
+        const adminData = adminDoc.data();
+        
         if (adminData && adminData.upiId) {
             setAdminUpiId(adminData.upiId);
             setIsUpiDialogOpen(true);
@@ -141,6 +148,7 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
             title: "Payment Error",
             description: error.message,
         });
+        console.error("Error fetching admin UPI:", error);
     } finally {
         setIsFetchingAdminUpi(false);
     }
