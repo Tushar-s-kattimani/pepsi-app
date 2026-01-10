@@ -14,8 +14,13 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { Loader2 } from 'lucide-react';
 
+// A simple regex to validate common UPI ID formats.
+const upiIdRegex = new RegExp(/^[\w.-]+@[\w.-]+$/);
+
 const settingsSchema = z.object({
-  upiId: z.string().min(3, 'A valid UPI ID is required').optional().or(z.literal('')),
+  upiId: z.string().refine(val => val === '' || upiIdRegex.test(val), {
+    message: 'Please enter a valid UPI ID (e.g., your-name@oksbi) or leave it blank.',
+  }),
 });
 
 type SettingsFormValues = z.infer<typeof settingsSchema>;
@@ -38,18 +43,24 @@ export function AdminSettings() {
       const fetchSettings = async () => {
         setLoading(true);
         const settingsDocRef = doc(db, 'settings', 'admin');
-        const settingsDoc = await getDoc(settingsDocRef);
-        if (settingsDoc.exists()) {
-          const data = settingsDoc.data();
-          reset({
-            upiId: data.upiId || '',
-          });
+        try {
+            const settingsDoc = await getDoc(settingsDocRef);
+            if (settingsDoc.exists()) {
+              const data = settingsDoc.data();
+              reset({
+                upiId: data.upiId || '',
+              });
+            }
+        } catch (error) {
+            console.error("Error fetching admin settings:", error);
+            toast({ variant: 'destructive', title: 'Error', description: 'Could not load settings. Please check console for details.' });
+        } finally {
+            setLoading(false);
         }
-        setLoading(false);
       };
       fetchSettings();
     }
-  }, [user, reset]);
+  }, [user, reset, toast]);
 
   const onSubmit = async (data: SettingsFormValues) => {
     if (!user) {
@@ -63,7 +74,8 @@ export function AdminSettings() {
       await setDoc(settingsDocRef, { upiId: data.upiId || '' }, { merge: true });
       toast({ title: 'Success', description: 'Settings updated successfully.' });
     } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Error', description: error.message });
+      toast({ variant: 'destructive', title: 'Error', description: `Failed to update settings: ${error.message}` });
+      console.error("Error updating settings:", error);
     } finally {
       setIsSubmitting(false);
     }
@@ -81,7 +93,7 @@ export function AdminSettings() {
     <Card className="max-w-2xl mx-auto">
       <CardHeader>
         <CardTitle>Admin Payment Settings</CardTitle>
-        <CardDescription>Set your UPI ID here to accept online payments from shops.</CardDescription>
+        <CardDescription>Set your UPI ID here to accept online payments from shops. Leave it blank to disable online payments.</CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit(onSubmit)}>
         <CardContent className="space-y-6">

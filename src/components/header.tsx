@@ -122,12 +122,11 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
     try {
         const settingsRef = doc(db, 'settings', 'admin');
         const settingsSnap = await getDoc(settingsRef);
+        const settingsData = settingsSnap.data();
 
-        if (!settingsSnap.exists() || !settingsSnap.data().upiId) {
+        if (!settingsSnap.exists() || !settingsData?.upiId || settingsData.upiId.trim() === '') {
             throw new Error("Admin UPI ID is not configured. Please contact support.");
         }
-        
-        const settingsData = settingsSnap.data();
         
         setAdminUpiId(settingsData.upiId);
         setIsUpiDialogOpen(true);
