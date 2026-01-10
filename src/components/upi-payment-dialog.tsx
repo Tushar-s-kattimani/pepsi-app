@@ -15,6 +15,7 @@ import { useState, useEffect } from 'react';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '@/firebase/config';
 import Image from 'next/image';
+import QRCode from 'qrcode';
 
 interface UpiPaymentDialogProps {
   isOpen: boolean;
@@ -27,16 +28,16 @@ export function UpiPaymentDialog({ isOpen, onOpenChange, totalAmount, onConfirmP
     const { toast } = useToast();
     const [isProcessing, setIsProcessing] = useState(false);
     const [adminUpiId, setAdminUpiId] = useState('');
-    const [qrCodeUrl, setQrCodeUrl] = useState('');
+    const [qrCodeDataUrl, setQrCodeDataUrl] = useState('');
     const [isLoadingUpi, setIsLoadingUpi] = useState(true);
 
     useEffect(() => {
         if (!isOpen) return;
 
-        const fetchAdminUpiData = async () => {
+        const fetchAdminUpiDataAndGenerateQr = async () => {
             setIsLoadingUpi(true);
             setAdminUpiId('');
-            setQrCodeUrl('');
+            setQrCodeDataUrl('');
             try {
                 const q = query(collection(db, 'users'), where('role', '==', 'admin'));
                 const querySnapshot = await getDocs(q);
@@ -44,19 +45,25 @@ export function UpiPaymentDialog({ isOpen, onOpenChange, totalAmount, onConfirmP
                 if (!querySnapshot.empty) {
                     const adminDoc = querySnapshot.docs[0];
                     const adminData = adminDoc.data();
-                    if (adminData.upiId) setAdminUpiId(adminData.upiId);
-                    if (adminData.qrCodeImageUrl) setQrCodeUrl(adminData.qrCodeImageUrl);
+                    if (adminData.upiId) {
+                      setAdminUpiId(adminData.upiId);
+                      // UPI link format: upi://pay?pa=<upi_id>&pn=<payee_name>&am=<amount>&cu=INR
+                      // Keeping it simple for broad compatibility
+                      const upiLink = `upi://pay?pa=${adminData.upiId}&pn=Gajanan%20Enterprise&am=${totalAmount}&cu=INR`;
+                      const dataUrl = await QRCode.toDataURL(upiLink, { width: 220 });
+                      setQrCodeDataUrl(dataUrl);
+                    }
                 }
             } catch (error) {
-                console.error("Error fetching admin UPI data: ", error);
-                toast({ variant: 'destructive', title: 'Error', description: 'Could not fetch admin payment details.' });
+                console.error("Error generating QR code: ", error);
+                toast({ variant: 'destructive', title: 'Error', description: 'Could not generate QR code.' });
             } finally {
                 setIsLoadingUpi(false);
             }
         };
 
-        fetchAdminUpiData();
-    }, [isOpen, toast]);
+        fetchAdminUpiDataAndGenerateQr();
+    }, [isOpen, toast, totalAmount]);
     
     const handleCopyUpi = () => {
         if(!adminUpiId) return;
@@ -88,10 +95,10 @@ export function UpiPaymentDialog({ isOpen, onOpenChange, totalAmount, onConfirmP
                 <div className="flex justify-center items-center h-[288px]">
                     <Loader2 className="h-8 w-8 animate-spin" />
                 </div>
-            ) : qrCodeUrl ? (
+            ) : qrCodeDataUrl ? (
                 <div className="space-y-4 text-center">
                     <div className="flex justify-center p-4 bg-white rounded-lg shadow-inner">
-                        <Image src={qrCodeUrl} alt="Admin UPI QR Code" width={220} height={220} />
+                        <Image src={qrCodeDataUrl} alt="Admin UPI QR Code" width={220} height={220} />
                     </div>
                     <p className='text-sm text-muted-foreground'>Scan the QR code with any UPI app.</p>
                       {adminUpiId && (
@@ -107,8 +114,8 @@ export function UpiPaymentDialog({ isOpen, onOpenChange, totalAmount, onConfirmP
             ) : (
                 <div className="h-[288px] flex flex-col justify-center items-center text-center gap-4 bg-yellow-50 text-yellow-800 border border-yellow-200 rounded-lg p-4">
                     <AlertCircle className="h-12 w-12" />
-                    <p className="font-semibold">Admin QR Code is not configured.</p>
-                    <p className="text-sm text-yellow-700 mt-2 px-4">The administrator needs to upload a QR code image in their profile to enable online payments.</p>
+                    <p className="font-semibold">Admin UPI ID is not configured.</p>
+                    <p className="text-sm text-yellow-700 mt-2 px-4">The administrator needs to set their UPI ID in their profile to enable online payments.</p>
                 </div>
             )}
 
@@ -117,7 +124,7 @@ export function UpiPaymentDialog({ isOpen, onOpenChange, totalAmount, onConfirmP
                     size="lg"
                     className="w-full h-14 text-lg"
                     onClick={handlePaymentConfirmation}
-                    disabled={isProcessing || isLoadingUpi || !qrCodeUrl}
+                    disabled={isProcessing || isLoadingUpi || !qrCodeDataUrl}
                 >
                     {isProcessing ? (
                         <Loader2 className="mr-2 h-6 w-6 animate-spin" />
@@ -135,5 +142,3 @@ export function UpiPaymentDialog({ isOpen, onOpenChange, totalAmount, onConfirmP
     </Dialog>
   );
 }
-
-    
