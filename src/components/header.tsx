@@ -120,15 +120,22 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
 
     setIsFetchingAdminUpi(true);
     try {
-        const settingsRef = doc(db, 'settings', 'admin');
-        const settingsSnap = await getDoc(settingsRef);
-        const settingsData = settingsSnap.data();
+        const usersRef = collection(db, 'users');
+        const q = query(usersRef, where("role", "==", "admin"));
+        const querySnapshot = await getDocs(q);
 
-        if (!settingsSnap.exists() || !settingsData?.upiId || settingsData.upiId.trim() === '') {
+        if (querySnapshot.empty) {
+          throw new Error("Admin account not found.");
+        }
+
+        const adminUserDoc = querySnapshot.docs[0];
+        const adminData = adminUserDoc.data();
+        
+        if (!adminData.upiId || adminData.upiId.trim() === '') {
             throw new Error("Admin UPI ID is not configured. Please contact support.");
         }
         
-        setAdminUpiId(settingsData.upiId);
+        setAdminUpiId(adminData.upiId);
         setIsUpiDialogOpen(true);
 
     } catch (error: any) {

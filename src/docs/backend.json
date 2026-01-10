@@ -41,8 +41,8 @@
             "description": "The location of the shop."
         },
         "upiId": {
-            "type": "string",
-            "description": "The UPI ID of the admin user for receiving payments."
+          "type": "string",
+          "description": "The UPI ID of the admin user for receiving payments."
         }
       },
       "required": ["uid", "email", "role"]
@@ -75,7 +75,7 @@
         "imageUrl": {
           "type": "string",
           "format": "uri",
-          "description": "The URL of the product's image."
+          "description": "URL of the product image."
         }
       },
       "required": ["name", "size", "stock", "position", "rate"]

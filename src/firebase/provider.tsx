@@ -40,6 +40,9 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
               userData.shopName = '';
               userData.location = '';
             }
+            if (newRole === 'admin') {
+              userData.upiId = '';
+            }
             await setDoc(userDocRef, userData);
             setRole(newRole);
           }

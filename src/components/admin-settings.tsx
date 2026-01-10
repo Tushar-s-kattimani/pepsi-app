@@ -1,7 +1,7 @@
 'use client';
 
 import { useUser } from '@/firebase';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '@/firebase/config';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -14,7 +14,6 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { Loader2 } from 'lucide-react';
 
-// A simple regex to validate common UPI ID formats.
 const upiIdRegex = new RegExp(/^[\w.-]+@[\w.-]+$/);
 
 const settingsSchema = z.object({
@@ -42,11 +41,11 @@ export function AdminSettings() {
     if (user) {
       const fetchSettings = async () => {
         setLoading(true);
-        const settingsDocRef = doc(db, 'settings', 'admin');
+        const userDocRef = doc(db, 'users', user.uid);
         try {
-            const settingsDoc = await getDoc(settingsDocRef);
-            if (settingsDoc.exists()) {
-              const data = settingsDoc.data();
+            const userDoc = await getDoc(userDocRef);
+            if (userDoc.exists()) {
+              const data = userDoc.data();
               reset({
                 upiId: data.upiId || '',
               });
@@ -69,9 +68,8 @@ export function AdminSettings() {
     }
     setIsSubmitting(true);
     try {
-      const settingsDocRef = doc(db, 'settings', 'admin');
-      // Use setDoc with merge:true to create or update the document
-      await setDoc(settingsDocRef, { upiId: data.upiId || '' }, { merge: true });
+      const userDocRef = doc(db, 'users', user.uid);
+      await updateDoc(userDocRef, { upiId: data.upiId || '' });
       toast({ title: 'Success', description: 'Settings updated successfully.' });
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Error', description: `Failed to update settings: ${error.message}` });
