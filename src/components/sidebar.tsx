@@ -20,7 +20,6 @@ const navItems = {
     { id: 'stock-report', name: 'Stock Report', icon: ClipboardList },
     { id: 'laborers', name: 'Laborers', icon: Users },
     { id: 'attendance', name: 'Labor Attendance', icon: Calendar },
-    { id: 'profile', name: 'Profile', icon: User },
   ],
   shop: [
     { id: 'new_order', name: 'New Order', icon: Home },

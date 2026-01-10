@@ -7,7 +7,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/firebase/config';
 import { useToast } from '@/components/ui/use-toast';
-import { Loader2, User, Download, Printer, Calendar, Clock, Info, Filter, Phone, CreditCard, CheckCircle } from 'lucide-react';
+import { Loader2, User, Download, Printer, Calendar, Clock, Info, Filter, Phone, CreditCard } from 'lucide-react';
 import { useMemo, useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 
@@ -43,18 +43,6 @@ export function AllOrders({ orders: initialOrders = [], users = [], loading }: {
       toast({ variant: 'destructive', title: 'Error', description: `Failed to update status: ${error.message}` });
     }
   };
-
-  const handlePaymentStatusChange = async (orderId: string, newStatus: 'Paid') => {
-    const orderRef = doc(db, 'orders', orderId);
-    try {
-      await updateDoc(orderRef, { paymentStatus: newStatus });
-       setOrders(prevOrders => prevOrders.map(o => o.id === orderId ? {...o, paymentStatus: newStatus} : o));
-      toast({ title: 'Success', description: 'Payment status marked as Paid.' });
-    } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Error', description: `Failed to update payment status: ${error.message}` });
-    }
-  };
-
 
   const usersMap = useMemo(() => {
     const map = new Map();
@@ -297,12 +285,6 @@ export function AllOrders({ orders: initialOrders = [], users = [], loading }: {
                                             Total: {totalAmount.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}
                                         </div>
                                         <div className="flex items-center gap-2 no-print">
-                                            {order.paymentMethod === 'Online' && order.paymentStatus === 'Pending' && (
-                                                <Button size="sm" onClick={() => handlePaymentStatusChange(order.id, 'Paid')}>
-                                                    <CheckCircle className="mr-2 h-4 w-4" />
-                                                    Mark as Paid
-                                                </Button>
-                                            )}
                                             <Select onValueChange={(value) => handleStatusChange(order.id, value)} defaultValue={order.status}>
                                                 <SelectTrigger className="w-[120px] h-9">
                                                 <SelectValue placeholder="Status" />

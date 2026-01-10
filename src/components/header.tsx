@@ -2,7 +2,7 @@
 
 import { useUser } from '@/firebase';
 import { Button } from '@/components/ui/button';
-import { ShoppingCart, LogOut, Menu, Loader2, ShoppingBasket, Wallet, CreditCard } from 'lucide-react';
+import { ShoppingCart, LogOut, Menu, Loader2, ShoppingBasket } from 'lucide-react';
 import { useCart } from '@/context/cart-context';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetFooter } from '@/components/ui/sheet';
 import { useToast } from '@/components/ui/use-toast';
@@ -11,32 +11,16 @@ import { db } from '@/firebase/config';
 import { useState } from 'react';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError, SecurityRuleContext } from '@/firebase/errors';
-import { UpiPaymentDialog } from './upi-payment-dialog';
 
 export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
   const { user, signOut, role } = useUser();
   const { cart, updateQuantity, clearCart } = useCart();
   const { toast } = useToast();
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
-  const [isUpiDialogOpen, setIsUpiDialogOpen] = useState(false);
 
   const cartItems = cart;
-  const totalAmount = cart.reduce((sum, item) => sum + item.rate * item.quantity, 0);
 
-  const handlePayOnlineClick = () => {
-    if (!user) {
-      toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to place an order.' });
-      return;
-    }
-    if (cart.length === 0) {
-      toast({ variant: 'destructive', title: 'Empty Cart', description: 'Please add items to your cart.' });
-      return;
-    }
-    setIsUpiDialogOpen(true);
-  };
-
-  const handlePlaceOrder = async (paymentMethod: 'Cash on Delivery' | 'Online') => {
-    setIsUpiDialogOpen(false); // Close UPI dialog if it was open
+  const handlePlaceOrder = async () => {
     if (!user) {
       toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to place an order.' });
       return;
@@ -44,7 +28,6 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
     
     setIsPlacingOrder(true);
     
-    // 1. Check for complete profile before starting the transaction
     const userDocRef = doc(db, 'users', user.uid);
     try {
       const userDoc = await getDoc(userDocRef);
@@ -69,7 +52,6 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
         return;
     }
 
-    // 2. Run the transaction to place order and update stock
     const newOrderRef = doc(collection(db, 'orders'));
     const orderPayload = {
         shopId: user.uid,
@@ -83,7 +65,7 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
         })),
         status: 'Pending',
         createdAt: serverTimestamp(),
-        paymentMethod: paymentMethod,
+        paymentMethod: 'Cash on Delivery',
         paymentStatus: 'Pending',
     };
 
@@ -91,7 +73,6 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
       const productRefs = new Map<string, any>();
       const productSnapshots = new Map<string, any>();
 
-      // First, read all product documents and check stock
       for (const item of cart) {
         const productRef = doc(db, 'products', item.id);
         productRefs.set(item.id, productRef);
@@ -106,10 +87,8 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
         productSnapshots.set(item.id, productSnap);
       }
 
-      // If all stock checks passed, proceed to write
       transaction.set(newOrderRef, orderPayload);
 
-      // Update product stock
       for (const item of cart) {
         const productRef = productRefs.get(item.id);
         const productSnap = productSnapshots.get(item.id);
@@ -210,14 +189,10 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
                       <span>Total Items</span>
                       <span>{cartItems.reduce((sum, item) => sum + item.quantity, 0)}</span>
                     </div>
-                     <div className="grid grid-cols-2 gap-3">
-                      <Button className="h-12 text-base" variant="secondary" onClick={() => handlePlaceOrder('Cash on Delivery')} disabled={isPlacingOrder}>
-                        {isPlacingOrder ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wallet className="mr-2 h-4 w-4" />}
-                        Pay with Cash
-                      </Button>
-                       <Button className="h-12 text-base" onClick={handlePayOnlineClick} disabled={isPlacingOrder}>
-                        {isPlacingOrder ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CreditCard className="mr-2 h-4 w-4" />}
-                        Pay Online
+                     <div className="grid grid-cols-1 gap-3">
+                      <Button className="h-12 text-base" onClick={handlePlaceOrder} disabled={isPlacingOrder}>
+                        {isPlacingOrder ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShoppingBasket className="mr-2 h-4 w-4" />}
+                        Place Order
                       </Button>
                     </div>
                     <Button variant="outline" className="w-full" onClick={clearCart}>Clear Cart</Button>
@@ -233,12 +208,6 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
         </Button>
       </div>
     </header>
-      <UpiPaymentDialog
-        isOpen={isUpiDialogOpen}
-        onOpenChange={setIsUpiDialogOpen}
-        totalAmount={totalAmount}
-        onConfirmPayment={() => handlePlaceOrder('Online')}
-      />
     </>
   );
 }

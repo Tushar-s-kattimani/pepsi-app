@@ -39,10 +39,6 @@
         "location": {
             "type": "string",
             "description": "The location of the shop."
-        },
-        "upiId": {
-            "type": "string",
-            "description": "The UPI ID of the admin user for receiving payments."
         }
       },
       "required": ["uid", "email", "role"]
@@ -117,7 +113,7 @@
         "paymentMethod": {
           "type": "string",
           "description": "The method used for payment.",
-          "enum": ["Cash on Delivery", "Online"]
+          "enum": ["Cash on Delivery"]
         },
         "paymentStatus": {
           "type": "string",
