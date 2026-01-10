@@ -15,7 +15,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { Loader2 } from 'lucide-react';
 
 const profileSchema = z.object({
-  upiId: z.string().min(3, 'A valid UPI ID is required'),
+  upiId: z.string().min(3, 'A valid UPI ID is required').optional().or(z.literal('')),
 });
 
 type ProfileFormValues = z.infer<typeof profileSchema>;
@@ -28,6 +28,9 @@ export function AdminProfile() {
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
+    defaultValues: {
+      upiId: '',
+    }
   });
 
   useEffect(() => {
@@ -56,7 +59,7 @@ export function AdminProfile() {
     setIsSubmitting(true);
     try {
       const userDocRef = doc(db, 'users', user.uid);
-      await updateDoc(userDocRef, { upiId: data.upiId });
+      await updateDoc(userDocRef, { upiId: data.upiId || '' });
       toast({ title: 'Success', description: 'Profile updated successfully.' });
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Error', description: error.message });
