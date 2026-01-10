@@ -39,8 +39,6 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
               userData.phoneNumber = '';
               userData.shopName = '';
               userData.location = '';
-            } else if (newRole === 'admin') {
-              userData.upiId = ''; // Initialize upiId for admin
             }
             await setDoc(userDocRef, userData);
             setRole(newRole);
