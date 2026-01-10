@@ -6,7 +6,7 @@ import { ShoppingCart, LogOut, Menu, Loader2, CreditCard, Truck } from 'lucide-r
 import { useCart } from '@/context/cart-context';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetFooter } from '@/components/ui/sheet';
 import { useToast } from '@/components/ui/use-toast';
-import { collection, serverTimestamp, doc, getDoc, runTransaction, query, where, getDocs } from 'firebase/firestore';
+import { collection, serverTimestamp, doc, getDoc, runTransaction } from 'firebase/firestore';
 import { db } from '@/firebase/config';
 import { useState } from 'react';
 import { UpiPaymentDialog } from './upi-payment-dialog';
@@ -118,13 +118,17 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
 
     setIsFetchingAdminUpi(true);
     try {
-        const q = query(collection(db, "users"), where("role", "==", "admin"));
-        const querySnapshot = await getDocs(q);
-        if (querySnapshot.empty) {
+        // The default admin user ID for tushar@admin.com is 7rYvVp5f5FRXjN1T9g5bJm4xQx92
+        // We will fetch this document directly instead of querying to avoid needing an index.
+        const adminUserId = '7rYvVp5f5FRXjN1T9g5bJm4xQx92';
+        const adminDocRef = doc(db, 'users', adminUserId);
+        const adminDocSnap = await getDoc(adminDocRef);
+
+        if (!adminDocSnap.exists()) {
             throw new Error("Admin account not found.");
         }
-        const adminDoc = querySnapshot.docs[0];
-        const adminData = adminDoc.data();
+        
+        const adminData = adminDocSnap.data();
         if (!adminData.upiId) {
             throw new Error("Admin UPI ID is not configured. Please contact support.");
         }
@@ -212,7 +216,7 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <Button className="h-12 text-base" onClick={() => placeOrder('Cash on Delivery')} disabled={isPlacingOrder}>
                             {isPlacingOrder ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Truck className="mr-2 h-4 w-4" />}
-                            Pay with Cash
+                            Place Order (Cash)
                         </Button>
                         <Button className="h-12 text-base" onClick={handlePayOnline} disabled={isPlacingOrder || isFetchingAdminUpi}>
                             {isFetchingAdminUpi ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CreditCard className="mr-2 h-4 w-4" />}
