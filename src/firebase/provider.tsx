@@ -39,6 +39,7 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
               userData.phoneNumber = '';
               userData.shopName = '';
               userData.location = '';
+              userData.imageUrl = '';
             }
             if (newRole === 'admin') {
               userData.upiId = '';

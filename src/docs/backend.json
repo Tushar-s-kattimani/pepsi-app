@@ -43,6 +43,11 @@
         "upiId": {
           "type": "string",
           "description": "The UPI ID of the admin user for receiving payments."
+        },
+        "imageUrl": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL for the user's profile image."
         }
       },
       "required": ["uid", "email", "role"]
