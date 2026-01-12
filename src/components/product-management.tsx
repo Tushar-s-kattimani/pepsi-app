@@ -73,7 +73,7 @@ const SortableItem = ({ product, handleOpenDialog }: { product: any, handleOpenD
       </div>
        <div className="relative h-12 w-12 mr-4 rounded-md overflow-hidden bg-gray-100 flex items-center justify-center">
         {product.imageUrl ? (
-            <Image src={product.imageUrl} alt={product.name} layout="fill" objectFit="contain" />
+            <Image src={product.imageUrl} alt={product.name} layout="fill" objectFit="contain" data-ai-hint="soda bottle" />
         ) : (
             <ImageIcon className="h-6 w-6 text-gray-400" />
         )}
@@ -314,7 +314,7 @@ export function ProductManagement() {
           <div className="min-w-[700px]">
             <div className="flex items-center bg-gray-50 p-3 my-2 rounded-lg font-semibold text-sm text-muted-foreground">
                 <div className="p-2"><GripVertical className="h-5 w-5 invisible" /></div>
-                <div className="w-[60px]">Image</div>
+                <div className="w-[60px] mr-4">Image</div>
                 <div className="flex-grow grid grid-cols-4 gap-4 items-center">
                     <div>Product</div>
                     <div>Size</div>
