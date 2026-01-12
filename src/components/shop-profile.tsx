@@ -36,6 +36,13 @@ export function ShopProfile() {
 
   const { register, handleSubmit, reset, watch, formState: { errors } } = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
+    defaultValues: {
+        profileName: '',
+        phoneNumber: '',
+        shopName: '',
+        location: '',
+        imageUrl: '',
+    }
   });
 
   const currentImageUrl = watch('imageUrl');

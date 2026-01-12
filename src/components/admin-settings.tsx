@@ -20,6 +20,7 @@ const settingsSchema = z.object({
   upiId: z.string().refine(val => val === '' || upiIdRegex.test(val), {
     message: 'Please enter a valid UPI ID (e.g., your-name@oksbi) or leave it blank.',
   }),
+  profileName: z.string().min(1, "Admin name is required"),
 });
 
 type SettingsFormValues = z.infer<typeof settingsSchema>;
@@ -34,6 +35,7 @@ export function AdminSettings() {
     resolver: zodResolver(settingsSchema),
     defaultValues: {
       upiId: '',
+      profileName: '',
     }
   });
 
@@ -48,6 +50,7 @@ export function AdminSettings() {
               const data = userDoc.data();
               reset({
                 upiId: data.upiId || '',
+                profileName: data.profileName || '',
               });
             }
         } catch (error) {
@@ -69,7 +72,10 @@ export function AdminSettings() {
     setIsSubmitting(true);
     try {
       const userDocRef = doc(db, 'users', user.uid);
-      await updateDoc(userDocRef, { upiId: data.upiId || '' });
+      await updateDoc(userDocRef, { 
+        upiId: data.upiId || '',
+        profileName: data.profileName,
+      });
       toast({ title: 'Success', description: 'Settings updated successfully.' });
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Error', description: `Failed to update settings: ${error.message}` });
@@ -90,15 +96,21 @@ export function AdminSettings() {
   return (
     <Card className="max-w-2xl mx-auto">
       <CardHeader>
-        <CardTitle>Admin Payment Settings</CardTitle>
-        <CardDescription>Set your UPI ID here to accept online payments from shops. Leave it blank to disable online payments.</CardDescription>
+        <CardTitle>Admin Settings</CardTitle>
+        <CardDescription>Manage your profile and payment information.</CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit(onSubmit)}>
         <CardContent className="space-y-6">
+           <div className="space-y-2">
+            <Label htmlFor="profileName">Admin Name</Label>
+            <Input id="profileName" {...register('profileName')} placeholder="Your Name" />
+            {errors.profileName && <p className="text-sm text-red-500 mt-1">{errors.profileName.message}</p>}
+          </div>
           <div className="space-y-2">
             <Label htmlFor="upiId">Your UPI ID</Label>
             <Input id="upiId" {...register('upiId')} placeholder="your-name@oksbi" />
             {errors.upiId && <p className="text-sm text-red-500 mt-1">{errors.upiId.message}</p>}
+            <p className="text-xs text-muted-foreground pt-1">Set your UPI ID here to accept online payments. Leave it blank to disable.</p>
           </div>
         </CardContent>
         <CardFooter>

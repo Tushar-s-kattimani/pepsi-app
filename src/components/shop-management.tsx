@@ -22,6 +22,7 @@ export function ShopManagement({ users = [], loading }: { users: any[], loading:
               <TableRow>
                 <TableHead>Avatar</TableHead>
                 <TableHead>Shop Name</TableHead>
+                <TableHead>Contact Person</TableHead>
                 <TableHead>Shop Email</TableHead>
                 <TableHead>Phone Number</TableHead>
                 <TableHead>Date Joined</TableHead>
@@ -40,6 +41,7 @@ export function ShopManagement({ users = [], loading }: { users: any[], loading:
                     </div>
                   </TableCell>
                   <TableCell>{user.shopName || 'N/A'}</TableCell>
+                  <TableCell>{user.profileName || 'N/A'}</TableCell>
                   <TableCell>{user.email}</TableCell>
                   <TableCell>{user.phoneNumber || 'N/A'}</TableCell>
                   <TableCell>{user.createdAt ? new Date(user.createdAt.toMillis()).toLocaleDateString() : 'N/A'}</TableCell>

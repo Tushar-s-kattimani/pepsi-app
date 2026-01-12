@@ -42,6 +42,7 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
               userData.imageUrl = '';
             }
             if (newRole === 'admin') {
+              userData.profileName = user.email?.split('@')[0] || 'Admin';
               userData.upiId = '';
             }
             await setDoc(userDocRef, userData);
