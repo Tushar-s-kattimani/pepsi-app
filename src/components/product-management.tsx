@@ -29,8 +29,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useToast } from '@/components/ui/use-toast';
 import { addDoc, collection, doc, updateDoc, deleteDoc, writeBatch, query, orderBy } from 'firebase/firestore';
-import { db } from '@/firebase/config';
-import { uploadFile } from '@/supabase/storage';
+import { db, storage } from '@/firebase/config';
+import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { useCollection } from '@/firebase';
 import { Loader2, PackagePlus, GripVertical, Save, Trash, Image as ImageIcon } from 'lucide-react';
 import Image from 'next/image';
@@ -132,6 +132,13 @@ export function ProductManagement() {
     setImageFile(null);
   }
 
+  const uploadFile = async (file: File, path: string): Promise<string> => {
+    const storageRef = ref(storage, path);
+    await uploadBytes(storageRef, file);
+    const downloadUrl = await getDownloadURL(storageRef);
+    return downloadUrl;
+  };
+
   const onSubmit = async (data: ProductFormValues) => {
     setIsSubmitting(true);
     let finalImageUrl = editingProduct?.imageUrl || '';
@@ -163,8 +170,10 @@ export function ProductManagement() {
     if (window.confirm('Are you sure you want to delete this product?')) {
         try {
             await deleteDoc(doc(db, 'products', productId));
-            // Note: Deleting from Supabase storage would require a separate function call
-            // and is not implemented here for brevity.
+            if (imageUrl) {
+              const imageRef = ref(storage, imageUrl);
+              await deleteObject(imageRef).catch(err => console.warn("Could not delete old image, may not exist.", err));
+            }
             toast({ title: 'Success', description: 'Product deleted successfully.' });
             handleCloseDialog();
         } catch (error: any) {

@@ -2,8 +2,8 @@
 
 import { useUser } from '@/firebase';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
-import { db } from '@/firebase/config';
-import { uploadFile } from '@/supabase/storage';
+import { db, storage } from '@/firebase/config';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -78,6 +78,14 @@ export function ShopProfile() {
       setImagePreview(null);
     }
   };
+
+  const uploadFile = async (file: File, path: string): Promise<string> => {
+    const storageRef = ref(storage, path);
+    await uploadBytes(storageRef, file);
+    const downloadUrl = await getDownloadURL(storageRef);
+    return downloadUrl;
+  };
+  
 
   const onSubmit = async (data: ProfileFormValues) => {
     if (!user) {

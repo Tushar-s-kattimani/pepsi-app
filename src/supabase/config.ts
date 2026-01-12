@@ -3,14 +3,14 @@
 import { createClient } from "@supabase/supabase-js";
 
 // IMPORTANT: Replace with your actual Supabase project URL and anon key
-const supabaseUrl = "YOUR_SUPABASE_URL";
-const supabaseAnonKey = "YOUR_SUPABASE_ANON_KEY";
+const supabaseUrl = "https://supabase.com/dashboard/project/hgjdvmhzmeejivpkkoaoL";
+const supabaseAnonKey = "hgjdvmhzmeejivpkkoao";
 
-if (!supabaseUrl || supabaseUrl === "YOUR_SUPABASE_URL") {
+if (!supabaseUrl || supabaseUrl === "https://supabase.com/dashboard/project/hgjdvmhzmeejivpkkoaoL") {
     console.error("Supabase URL is not configured. Please add it to src/supabase/config.ts");
 }
-if (!supabaseAnonKey || supabaseAnonKey === "YOUR_SUPABASE_ANON_KEY") {
+if (!supabaseAnonKey || supabaseAnonKey === "hgjdvmhzmeejivpkkoao") {
     console.error("Supabase anon key is not configured. Please add it to src/supabase/config.ts");
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient(https://supabase.com/dashboard/project/hgjdvmhzmeejivpkkoaoL, hgjdvmhzmeejivpkkoao);
