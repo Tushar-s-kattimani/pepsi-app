@@ -29,9 +29,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useToast } from '@/components/ui/use-toast';
 import { addDoc, collection, doc, updateDoc, deleteDoc, writeBatch, query, orderBy } from 'firebase/firestore';
-import { db } from '@/firebase/config';
+import { db, storage } from '@/firebase/config';
+import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { useCollection } from '@/firebase';
-import { uploadFile } from '@/supabase/storage';
 import { Loader2, PackagePlus, GripVertical, Save, Trash, Image as ImageIcon } from 'lucide-react';
 import Image from 'next/image';
 
@@ -139,7 +139,9 @@ export function ProductManagement() {
     try {
        if (imageFile) {
         const filePath = `products/${Date.now()}_${imageFile.name}`;
-        finalImageUrl = await uploadFile(imageFile, filePath);
+        const storageRef = ref(storage, filePath);
+        await uploadBytes(storageRef, imageFile);
+        finalImageUrl = await getDownloadURL(storageRef);
       }
       
       const productData = { ...data, imageUrl: finalImageUrl };
@@ -160,12 +162,16 @@ export function ProductManagement() {
     }
   };
 
-  const handleDelete = async (productId: string) => {
+  const handleDelete = async (productId: string, imageUrl?: string) => {
     if (window.confirm('Are you sure you want to delete this product?')) {
         try {
             await deleteDoc(doc(db, 'products', productId));
+             if (imageUrl) {
+                const imageRef = ref(storage, imageUrl);
+                await deleteObject(imageRef).catch(err => console.error("Error deleting image, it might not exist:", err));
+            }
             toast({ title: 'Success', description: 'Product deleted successfully.' });
-            handleCloseDialog(); // Close dialog if open
+            handleCloseDialog();
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Error', description: `Failed to delete product: ${error.message}` });
         }
@@ -269,7 +275,7 @@ export function ProductManagement() {
                 </div>
                 <DialogFooter className="flex-col-reverse sm:flex-row sm:justify-between pt-4 gap-2">
                   {editingProduct && (
-                      <Button type="button" variant="destructive" onClick={() => handleDelete(editingProduct.id)} disabled={isSubmitting} className="sm:mr-auto">
+                      <Button type="button" variant="destructive" onClick={() => handleDelete(editingProduct.id, editingProduct.imageUrl)} disabled={isSubmitting} className="sm:mr-auto">
                            <Trash className="mr-2 h-4 w-4" /> Delete
                       </Button>
                   )}
