@@ -31,7 +31,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { addDoc, collection, doc, updateDoc, deleteDoc, writeBatch, query, orderBy } from 'firebase/firestore';
 import { db } from '@/firebase/config';
 import { useCollection } from '@/firebase';
-import { uploadFile } from '@/firebase/storage';
+import { uploadFile } from '@/supabase/storage';
 import { Loader2, PackagePlus, GripVertical, Save, Trash, Image as ImageIcon } from 'lucide-react';
 import Image from 'next/image';
 

@@ -13,7 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { Loader2, User as UserIcon } from 'lucide-react';
-import { uploadFile } from '@/firebase/storage';
+import { uploadFile } from '@/supabase/storage';
 import Image from 'next/image';
 
 const profileSchema = z.object({
