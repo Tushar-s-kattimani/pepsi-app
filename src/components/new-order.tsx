@@ -5,15 +5,25 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { useToast } from '@/components/ui/use-toast';
 import { Loader2, PlusCircle, Trash2, Plus, Minus, ShoppingBasket, Image as ImageIcon } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Input } from '@/components/ui/input';
 import Image from 'next/image';
+import placeholderImageData from '@/lib/placeholder-images.json';
 
 
-export function NewOrder({ products = [], loading }: { products: any[], loading: boolean }) {
+export function NewOrder({ products: initialProducts = [], loading }: { products: any[], loading: boolean }) {
   const { cart, addToCart, updateQuantity, clearCart } = useCart();
   const { toast } = useToast();
   const [quantities, setQuantities] = useState<{ [key: string]: number }>({});
+
+  const products = useMemo(() => {
+    if (!initialProducts) return [];
+    return initialProducts.map((p, index) => ({
+      ...p,
+      imageUrl: p.imageUrl || placeholderImageData.products[index % placeholderImageData.products.length].src,
+      "data-ai-hint": "soda bottle",
+    }));
+  }, [initialProducts]);
 
   const handleQuantityChange = (productId: string, value: string | number) => {
     const newQuantity = Math.max(1, Number(value));
@@ -53,7 +63,15 @@ export function NewOrder({ products = [], loading }: { products: any[], loading:
                     <Card key={product.id} className="flex flex-col overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
                        <div className="relative h-40 w-full bg-gray-100 flex items-center justify-center">
                             {product.imageUrl ? (
-                                <Image src={product.imageUrl} alt={product.name} layout="fill" objectFit="contain" className="p-2"/>
+                                <Image
+                                    src={product.imageUrl}
+                                    alt={product.name}
+                                    width={400}
+                                    height={400}
+                                    objectFit="contain"
+                                    className="p-2"
+                                    data-ai-hint={product['data-ai-hint']}
+                                />
                             ) : (
                                 <ImageIcon className="h-12 w-12 text-gray-300" />
                             )}

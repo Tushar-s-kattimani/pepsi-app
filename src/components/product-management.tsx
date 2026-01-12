@@ -34,6 +34,8 @@ import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage
 import { useCollection } from '@/firebase';
 import { Loader2, PackagePlus, GripVertical, Save, Trash, Image as ImageIcon } from 'lucide-react';
 import Image from 'next/image';
+import placeholderImageData from '@/lib/placeholder-images.json';
+
 
 const productSchema = z.object({
   name: z.string().min(1, 'Product name is required'),
@@ -99,7 +101,11 @@ export function ProductManagement() {
 
   useEffect(() => {
     if(initialProducts) {
-        setProducts(initialProducts);
+        const productsWithImages = initialProducts.map((p, index) => ({
+            ...p,
+            imageUrl: p.imageUrl || placeholderImageData.products[index % placeholderImageData.products.length].src,
+        }));
+        setProducts(productsWithImages);
         setIsOrderChanged(false);
     }
   }, [initialProducts]);
@@ -155,7 +161,12 @@ export function ProductManagement() {
         await updateDoc(productRef, productData);
         toast({ title: 'Success', description: 'Product updated successfully.' });
       } else {
-        await addDoc(collection(db, 'products'), {...productData, position: products.length});
+        const newProductData = {
+            ...productData,
+            position: products.length,
+            imageUrl: finalImageUrl || placeholderImageData.products[products.length % placeholderImageData.products.length].src,
+        };
+        await addDoc(collection(db, 'products'), newProductData);
         toast({ title: 'Success', description: 'Product added successfully.' });
       }
       handleCloseDialog();
@@ -170,7 +181,7 @@ export function ProductManagement() {
     if (window.confirm('Are you sure you want to delete this product?')) {
         try {
             await deleteDoc(doc(db, 'products', productId));
-            if (imageUrl) {
+            if (imageUrl && !imageUrl.includes('picsum.photos')) {
               const imageRef = ref(storage, imageUrl);
               await deleteObject(imageRef).catch(err => console.warn("Could not delete old image, may not exist.", err));
             }
