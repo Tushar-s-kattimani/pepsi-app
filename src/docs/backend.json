@@ -39,6 +39,15 @@
         "location": {
             "type": "string",
             "description": "The location of the shop."
+        },
+        "upiId": {
+          "type": "string",
+          "description": "The UPI ID of the admin user for receiving payments."
+        },
+        "imageUrl": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL for the user's profile image."
         }
       },
       "required": ["uid", "email", "role"]
@@ -67,6 +76,11 @@
         "rate": {
           "type": "number",
           "description": "The price or rate of the product."
+        },
+        "imageUrl": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL of the product image."
         }
       },
       "required": ["name", "size", "stock", "position", "rate"]
@@ -113,7 +127,7 @@
         "paymentMethod": {
           "type": "string",
           "description": "The method used for payment.",
-          "enum": ["Cash on Delivery"]
+          "enum": ["Cash on Delivery", "Online"]
         },
         "paymentStatus": {
           "type": "string",

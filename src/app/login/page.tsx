@@ -7,7 +7,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Package, User as UserIcon, Shield } from 'lucide-react';
+import { Loader2, Package, User as UserIcon, Shield, MailWarning } from 'lucide-react';
+import { auth } from '@/firebase/config';
+import Link from 'next/link';
+import { useToast } from '@/components/ui/use-toast';
+import type { User } from 'firebase/auth';
 
 export default function LoginPage() {
   const [shopEmail, setShopEmail] = useState('');
@@ -17,8 +21,11 @@ export default function LoginPage() {
 
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { signUp, signIn, user, loading: authLoading } = useUser();
+  const [unverifiedUser, setUnverifiedUser] = useState<User | null>(null);
+
+  const { signIn, user, loading: authLoading, signUp, sendVerificationEmail } = useUser();
   const router = useRouter();
+  const { toast } = useToast();
 
   useEffect(() => {
     if (!authLoading && user) {
@@ -26,36 +33,62 @@ export default function LoginPage() {
     }
   }, [user, authLoading, router]);
 
-  const handleShopAuth = async (action: (email: string, pass:string) => Promise<any>) => {
+  const handleShopSignIn = async () => {
     if (!shopEmail || !shopPassword) {
       setError("Email and password cannot be empty.");
       return;
     }
-    if (action === signUp && shopPassword.length < 6) {
-      setError("Password must be at least 6 characters long.");
-      return;
-    }
-    if (shopEmail.endsWith('@admin.com')) {
+     if (shopEmail.endsWith('@admin.com')) {
       setError("This panel is for shop accounts only. Use the Admin panel for admin login.");
       return;
     }
     setLoading(true);
     setError('');
+    setUnverifiedUser(null);
+    
     try {
-      await action(shopEmail, shopPassword);
-      // The useEffect will handle the redirect
+      await signIn(shopEmail, shopPassword);
+      // This part will now only run on successful login if user is verified
     } catch (e: any) {
-      let friendlyMessage = 'An unexpected error occurred.';
-      if (e.code === 'auth/user-not-found' || e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential') {
+       let friendlyMessage = 'An unexpected error occurred. Please try again.';
+       
+       if (e.code === 'auth/unverified-email' && e.unverifiedUser) {
+         setError('Please verify your email address to log in.');
+         setUnverifiedUser(e.unverifiedUser);
+       } else if (e.code === 'auth/user-not-found' || e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential') {
         friendlyMessage = 'Invalid email or password. Please try again.';
-      } else if (e.code === 'auth/email-already-in-use') {
-        friendlyMessage = 'An account with this email already exists. Please sign in.';
+        setError(friendlyMessage);
+      } else {
+        setError('An unexpected error occurred. Please try again.');
+        console.error(e); // Log the full error for debugging
       }
-      setError(friendlyMessage);
     } finally {
       setLoading(false);
     }
   };
+
+  const handleResendVerification = async () => {
+    if (!unverifiedUser) return;
+    setLoading(true);
+    try {
+        await sendVerificationEmail(unverifiedUser);
+        toast({
+            title: 'Verification Email Sent',
+            description: `A new verification link has been sent to ${unverifiedUser.email}.`,
+        });
+        setError('');
+        setUnverifiedUser(null);
+    } catch (error: any) {
+        toast({
+            variant: 'destructive',
+            title: 'Error',
+            description: `Failed to send verification email: ${error.message}`,
+        });
+    } finally {
+        setLoading(false);
+    }
+  };
+
 
   const handleAdminSignIn = async () => {
     if (!adminEmail || !adminPassword) {
@@ -68,11 +101,11 @@ export default function LoginPage() {
     }
     setLoading(true);
     setError('');
+    
     try {
       await signIn(adminEmail, adminPassword);
     } catch (e: any) {
       if (e.code === 'auth/user-not-found') {
-        // If user not found, try to sign them up
         try {
           await signUp(adminEmail, adminPassword);
         } catch (signUpError: any) {
@@ -108,23 +141,23 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen w-full items-center justify-center bg-gray-100 dark:bg-gray-900 p-4">
       <Card className="w-full max-w-md shadow-2xl">
-        <CardHeader className="text-center space-y-4 pt-8">
-            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg">
-                <Package className="h-10 w-10" />
+        <CardHeader className="text-center space-y-2 pt-6 sm:pt-8">
+            <div className="mx-auto flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg">
+                <Package className="h-8 w-8 sm:h-10 sm:w-10" />
             </div>
-          <CardTitle className="text-3xl font-bold tracking-tight">Distribution Hub</CardTitle>
-          <CardDescription className="text-base text-muted-foreground">
-            Select your role to sign in or create an account
+          <CardTitle className="text-2xl sm:text-3xl font-bold tracking-tight">PepsiConnect</CardTitle>
+          <CardDescription className="text-sm sm:text-base text-muted-foreground">
+            Select your role to sign in
           </CardDescription>
         </CardHeader>
-        <CardContent className="pb-8 px-8">
-          <Tabs defaultValue="shop" className="w-full" onValueChange={() => setError('')}>
+        <CardContent className="pb-6 sm:pb-8 px-4 sm:px-8">
+          <Tabs defaultValue="shop" className="w-full" onValueChange={() => {setError(''); setUnverifiedUser(null);}}>
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="shop"><UserIcon className="mr-2 h-4 w-4" /> Shop</TabsTrigger>
               <TabsTrigger value="admin"><Shield className="mr-2 h-4 w-4" /> Admin</TabsTrigger>
             </TabsList>
             
-            <TabsContent value="shop" className="space-y-6 pt-6">
+            <TabsContent value="shop" className="space-y-4 pt-4">
                 <div className="space-y-4">
                     <Input
                     id="shop-email"
@@ -133,39 +166,49 @@ export default function LoginPage() {
                     value={shopEmail}
                     onChange={(e) => setShopEmail(e.target.value)}
                     disabled={loading}
-                    className="py-6 text-base"
+                    className="py-5 sm:py-6 text-base"
                     />
                     <Input
                     id="shop-password"
                     type="password"
-                    placeholder="Password (min. 6 characters)"
+                    placeholder="Password"
                     value={shopPassword}
                     onChange={(e) => setShopPassword(e.target.value)}
                     disabled={loading}
-                    className="py-6 text-base"
+                    className="py-5 sm:py-6 text-base"
                     />
                 </div>
                 {error && <p className="text-sm text-center font-medium text-red-500">{error}</p>}
+                
                 <div className="space-y-3 pt-2">
                     <Button
-                    onClick={() => handleShopAuth(signIn)}
-                    disabled={loading}
-                    className="w-full py-6 text-lg"
+                    onClick={handleShopSignIn}
+                    disabled={loading && !unverifiedUser}
+                    className="w-full py-5 sm:py-6 text-base sm:text-lg"
                     >
-                    {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : 'Sign In'}
+                    {loading && !unverifiedUser ? <Loader2 className="h-6 w-6 animate-spin" /> : 'Sign In'}
                     </Button>
-                    <Button
-                    onClick={() => handleShopAuth(signUp)}
-                    disabled={loading}
-                    variant="outline"
-                    className="w-full py-6 text-lg"
-                    >
-                    {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : 'Create Account'}
-                    </Button>
+                     {unverifiedUser && (
+                        <Button
+                            variant="secondary"
+                            onClick={handleResendVerification}
+                            disabled={loading}
+                            className="w-full py-5 sm:py-6"
+                        >
+                            {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <MailWarning className="mr-2 h-4 w-4" />}
+                            Resend Verification Email
+                        </Button>
+                     )}
+                     <p className="text-center text-sm text-muted-foreground">
+                        Don&apos;t have an account?{' '}
+                        <Link href="/signup" className="font-semibold text-primary hover:underline">
+                            Create one
+                        </Link>
+                    </p>
                 </div>
             </TabsContent>
 
-            <TabsContent value="admin" className="space-y-6 pt-6">
+            <TabsContent value="admin" className="space-y-4 pt-4">
                  <div className="space-y-4">
                     <Input
                     id="admin-email"
@@ -174,7 +217,7 @@ export default function LoginPage() {
                     value={adminEmail}
                     onChange={(e) => setAdminEmail(e.target.value)}
                     disabled={loading}
-                    className="py-6 text-base"
+                    className="py-5 sm:py-6 text-base"
                     />
                     <Input
                     id="admin-password"
@@ -183,7 +226,7 @@ export default function LoginPage() {
                     value={adminPassword}
                     onChange={(e) => setAdminPassword(e.target.value)}
                     disabled={loading}
-                    className="py-6 text-base"
+                    className="py-5 sm:py-6 text-base"
                     />
                 </div>
                 {error && <p className="text-sm text-center font-medium text-red-500">{error}</p>}
@@ -191,7 +234,7 @@ export default function LoginPage() {
                     <Button
                         onClick={handleAdminSignIn}
                         disabled={loading}
-                        className="w-full py-6 text-lg"
+                        className="w-full py-5 sm:py-6 text-base sm:text-lg"
                     >
                         {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : 'Sign In as Admin'}
                     </Button>

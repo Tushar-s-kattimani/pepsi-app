@@ -6,7 +6,7 @@ import { Sidebar } from '@/components/sidebar';
 import { Header } from '@/components/header';
 import { NewOrder } from '@/components/new-order';
 import { OrderHistory } from '@/components/order-history';
-import { collection, query, where } from 'firebase/firestore';
+import { collection, query, where, orderBy } from 'firebase/firestore';
 import { db } from '@/firebase/config';
 import { ShopProfile } from '@/components/shop-profile';
 import { MobileSidebar } from './mobile-sidebar';
@@ -21,9 +21,11 @@ export function ShopDashboard() {
     return query(collection(db, 'orders'), where('shopId', '==', user.uid));
   }, [user?.uid]);
 
+  const productsQuery = useMemo(() => query(collection(db, 'products'), orderBy('position')), []);
+
   const { data: orders, loading: ordersLoading } = useCollection(userOrdersQuery);
 
-  const { data: products, loading: productsLoading } = useCollection('products');
+  const { data: products, loading: productsLoading } = useCollection(productsQuery);
 
   const renderContent = () => {
     switch (activeSection) {

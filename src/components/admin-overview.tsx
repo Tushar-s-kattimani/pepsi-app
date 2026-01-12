@@ -107,89 +107,89 @@ export function AdminOverview({ orders = [], products = [], users = [], loading 
   const lowStockItems = products.filter(p => p.stock > 0 && p.stock <= 100).length;
 
   return (
-    <div className="space-y-8">
-      <h2 className="text-3xl font-bold tracking-tight">Dashboard Overview</h2>
+    <div className="space-y-6 md:space-y-8">
+      <h2 className="text-2xl md:text-3xl font-bold tracking-tight">Dashboard Overview</h2>
       
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="col-span-1">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Items Sold</CardTitle>
             <Package className="h-5 w-5 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">{totalItemsSold.toLocaleString()}</div>
+            <div className="text-2xl md:text-3xl font-bold">{totalItemsSold.toLocaleString()}</div>
              <p className="text-xs text-muted-foreground">From all delivered orders</p>
           </CardContent>
         </Card>
-         <Card className="col-span-1">
+         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">This Month's Items Sold</CardTitle>
             <Calendar className="h-5 w-5 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">{monthlyItemsSold.toLocaleString()}</div>
+            <div className="text-2xl md:text-3xl font-bold">{monthlyItemsSold.toLocaleString()}</div>
              <p className="text-xs text-muted-foreground">Items for the current month</p>
           </CardContent>
         </Card>
-        <Card className="col-span-1">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Today's Items Sold</CardTitle>
             <Sun className="h-5 w-5 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">{dailyItemsSold.toLocaleString()}</div>
+            <div className="text-2xl md:text-3xl font-bold">{dailyItemsSold.toLocaleString()}</div>
              <p className="text-xs text-muted-foreground">Items for today</p>
           </CardContent>
         </Card>
-        <Card className="col-span-1">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Shops</CardTitle>
             <Users className="h-5 w-5 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">{totalShops}</div>
+            <div className="text-2xl md:text-3xl font-bold">{totalShops}</div>
             <p className="text-xs text-muted-foreground">Registered</p>
           </CardContent>
         </Card>
-         <Card className="col-span-1 bg-red-50 border-red-200">
+         <Card className="bg-red-50 border-red-200">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium text-red-800">Out of Stock</CardTitle>
                 <PackageX className="h-5 w-5 text-red-600" />
             </CardHeader>
             <CardContent>
-                <div className="text-3xl font-bold text-red-800">{outOfStockItems}</div>
+                <div className="text-2xl md:text-3xl font-bold text-red-800">{outOfStockItems}</div>
                 <p className="text-xs text-red-700">Items</p>
             </CardContent>
         </Card>
-        <Card className="col-span-1 bg-yellow-50 border-yellow-200">
+        <Card className="bg-yellow-50 border-yellow-200">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium text-yellow-800">Low Stock</CardTitle>
                 <AlertCircle className="h-5 w-5 text-yellow-600" />
             </CardHeader>
             <CardContent>
-                <div className="text-3xl font-bold text-yellow-800">{lowStockItems}</div>
+                <div className="text-2xl md:text-3xl font-bold text-yellow-800">{lowStockItems}</div>
                 <p className="text-xs text-yellow-700">Items (≤100)</p>
             </CardContent>
         </Card>
-        <Card className="col-span-1 sm:col-span-2 lg:col-span-2">
+        <Card className="sm:col-span-2">
              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
                 <ShoppingCart className="h-5 w-5 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-                <div className="text-3xl font-bold">{orders.length}</div>
+                <div className="text-2xl md:text-3xl font-bold">{orders.length}</div>
                 <p className="text-xs text-muted-foreground">Across all statuses</p>
             </CardContent>
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-5">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-5 lg:gap-8">
         <div className="lg:col-span-3 grid grid-cols-1 gap-6">
-            <Card className="col-span-1">
+            <Card>
                 <CardHeader>
                     <CardTitle>Order Status Breakdown</CardTitle>
                 </CardHeader>
-                <CardContent className='grid grid-cols-3 gap-4'>
+                <CardContent className='grid grid-cols-1 sm:grid-cols-3 gap-4'>
                     <div className="flex flex-col items-center space-y-2 rounded-lg bg-yellow-50 p-4">
                         <Clock className="h-8 w-8 text-yellow-500" />
                         <span className="text-2xl font-bold">{pendingOrdersCount}</span>
@@ -214,7 +214,7 @@ export function AdminOverview({ orders = [], products = [], users = [], loading 
             <CardTitle>Top Products by Units Sold</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-[28.5rem]">
+            <div className="h-[24rem] sm:h-[28.5rem]">
               {chartData.productSalesData.labels.length > 0 ? (
                 <Bar data={chartData.productSalesData} options={{ responsive: true, maintainAspectRatio: false, indexAxis: 'y' }} />
               ) : (
@@ -231,7 +231,7 @@ export function AdminOverview({ orders = [], products = [], users = [], loading 
             <CardTitle>Sales Trend</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-96">
+            <div className="h-72 sm:h-96">
               {chartData.salesData.labels.length > 0 ? (
                 <Line data={chartData.salesData} options={{ responsive: true, maintainAspectRatio: false }} />
               ) : (

@@ -3,7 +3,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2 } from 'lucide-react';
+import { Loader2, CreditCard } from 'lucide-react';
 import { useMemo } from 'react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
@@ -12,6 +12,12 @@ const statusColors: { [key: string]: string } = {
   Confirmed: 'bg-blue-100 text-blue-800',
   Delivered: 'bg-green-100 text-green-800',
 };
+
+const paymentStatusColors: { [key: string]: string } = {
+  Pending: 'text-yellow-600',
+  Paid: 'text-green-600',
+};
+
 
 export function OrderHistory({ orders = [], loading }: { orders: any[], loading: boolean }) {
   
@@ -34,7 +40,9 @@ export function OrderHistory({ orders = [], loading }: { orders: any[], loading:
             <div className="flex justify-center py-10"><Loader2 className="h-8 w-8 animate-spin" /></div>
         ) : sortedOrders.length > 0 ? (
           <Accordion type="single" collapsible className="w-full space-y-4">
-            {sortedOrders.map((order) => (
+            {sortedOrders.map((order) => {
+              const totalAmount = order.items.reduce((acc: any, item: any) => acc + (item.quantity * (item.rate || 0)), 0);
+              return (
               <AccordionItem value={order.id} key={order.id} className="border-0 rounded-lg bg-white shadow-sm">
                 <AccordionTrigger className="p-4 hover:no-underline rounded-lg border">
                    <div className="flex w-full items-center justify-between pr-4">
@@ -48,10 +56,10 @@ export function OrderHistory({ orders = [], loading }: { orders: any[], loading:
                             <div>{order.createdAt ? new Date(order.createdAt.toMillis()).toLocaleDateString() : 'N/A'}</div>
                         </div>
                         <div>
-                            <div className="font-semibold text-gray-500">Total Items</div>
-                            <div className="font-bold">{order.items.reduce((acc: any, item: any) => acc + item.quantity, 0)}</div>
+                            <div className="font-semibold text-gray-500">Total Amount</div>
+                            <div className="font-bold">{totalAmount.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</div>
                         </div>
-                         <div>
+                         <div className="text-left">
                             <div className="font-semibold text-gray-500">Status</div>
                             <div>
                                 <span className={`px-2 py-1 text-xs font-semibold rounded-full ${statusColors[order.status]}`}>
@@ -63,6 +71,12 @@ export function OrderHistory({ orders = [], loading }: { orders: any[], loading:
                   </div>
                 </AccordionTrigger>
                 <AccordionContent className="p-4 border border-t-0 rounded-b-lg bg-gray-50/50">
+                    <div className='flex items-center gap-2 mb-4 text-sm'>
+                        <CreditCard className="h-4 w-4" />
+                        <span className="font-semibold">Payment:</span>
+                        <span>{order.paymentMethod} - </span>
+                        <span className={`font-bold ${paymentStatusColors[order.paymentStatus]}`}>{order.paymentStatus}</span>
+                    </div>
                   <h4 className="font-semibold mb-2">Order Items</h4>
                   <Table>
                     <TableHeader>
@@ -70,6 +84,8 @@ export function OrderHistory({ orders = [], loading }: { orders: any[], loading:
                         <TableHead>Product</TableHead>
                         <TableHead>Size</TableHead>
                         <TableHead className="text-center">Quantity</TableHead>
+                        <TableHead className="text-right">Rate</TableHead>
+                        <TableHead className="text-right">Amount</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -78,13 +94,15 @@ export function OrderHistory({ orders = [], loading }: { orders: any[], loading:
                           <TableCell>{item.name}</TableCell>
                           <TableCell>{item.size}</TableCell>
                           <TableCell className="text-center">{item.quantity}</TableCell>
+                          <TableCell className="text-right">{item.rate?.toLocaleString('en-IN', { style: 'currency', currency: 'INR' }) ?? 'N/A'}</TableCell>
+                          <TableCell className="text-right font-medium">{(item.quantity * (item.rate || 0)).toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
                   </Table>
                 </AccordionContent>
               </AccordionItem>
-            ))}
+            )})}
           </Accordion>
         ) : (
             <p className='text-center text-muted-foreground py-10'>You have no orders yet.</p>
