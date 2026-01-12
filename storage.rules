@@ -2,7 +2,7 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-    // Default deny all
+    // Default deny all. Supabase is used for storage.
     match /{allPaths=**} {
       allow read, write: if false;
     }

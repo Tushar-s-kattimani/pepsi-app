@@ -2,8 +2,8 @@
 
 import { useUser } from '@/firebase';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
-import { db, storage } from '@/firebase/config';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { db } from '@/firebase/config';
+import { uploadFile } from '@/supabase/storage';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -89,10 +89,7 @@ export function ShopProfile() {
     
     try {
       if (imageFile) {
-        const filePath = `user-profiles/${user.uid}/${imageFile.name}`;
-        const storageRef = ref(storage, filePath);
-        await uploadBytes(storageRef, imageFile);
-        finalImageUrl = await getDownloadURL(storageRef);
+        finalImageUrl = await uploadFile(imageFile, `user-profiles/${user.uid}/${imageFile.name}`);
       }
       
       const userDocRef = doc(db, 'users', user.uid);
